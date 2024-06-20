@@ -84,119 +84,119 @@ U64 generateWhitePawnAttack(int index) {
 }
 
 U64 generateBlackPawnPush(int index) {
-return (1ULL << (index - 8)) & not_rank_8;
+    return (1ULL << (index - 8)) & not_rank_8;
 }
 
 U64 generateBlackPawnDoublePush(int index) {
-if (1ULL << index & rank_7) {
-    return (1ULL << (index - 16));
-}
-return 0ULL;
-}
+    if (1ULL << index & rank_7) {
+        return (1ULL << (index - 16));
+    }
+    return 0ULL;
+    }
 
 U64 generateBlackPawnAttack(int index) {
-return (1ULL << (index - 7) & not_a_file) | (1ULL << (index - 9) & not_h_file);
+    return (1ULL << (index - 7) & not_a_file) | (1ULL << (index - 9) & not_h_file);
 }
 
 U64 generateKnightMove(int index) {
-U64 knight_square = 1ULL << index;
-U64 moves = 0ULL;
-moves |= (knight_square << 17) & not_a_file;
-moves |= (knight_square <<  15) & not_h_file;
-moves |= (knight_square <<  10) & not_ab_file;
-moves |= (knight_square <<  6) & not_gh_file;
-moves |= (knight_square >> 6) & not_ab_file;
-moves |= (knight_square >> 10) & not_gh_file;
-moves |= (knight_square >> 15) & not_a_file;
-moves |= (knight_square >> 17) & not_h_file;
-return moves;
+    U64 knight_square = 1ULL << index;
+    U64 moves = 0ULL;
+    moves |= (knight_square << 17) & not_a_file;
+    moves |= (knight_square <<  15) & not_h_file;
+    moves |= (knight_square <<  10) & not_ab_file;
+    moves |= (knight_square <<  6) & not_gh_file;
+    moves |= (knight_square >> 6) & not_ab_file;
+    moves |= (knight_square >> 10) & not_gh_file;
+    moves |= (knight_square >> 15) & not_a_file;
+    moves |= (knight_square >> 17) & not_h_file;
+    return moves;
 }
 
 U64 generateKingMove(int index) {
-U64 king_square = 1ULL << index;
-U64 moves = 0ULL;
-moves |= (king_square << 9) & not_a_file;
-moves |= (king_square << 8);
-moves |= (king_square << 7) & not_h_file;
-moves |= (king_square << 1) & not_a_file;
-moves |= (king_square >> 1) & not_h_file;
-moves |= (king_square >> 7) & not_a_file;
-moves |= (king_square >> 8);
-moves |= (king_square >> 9) & not_h_file;
+    U64 king_square = 1ULL << index;
+    U64 moves = 0ULL;
+    moves |= (king_square << 9) & not_a_file;
+    moves |= (king_square << 8);
+    moves |= (king_square << 7) & not_h_file;
+    moves |= (king_square << 1) & not_a_file;
+    moves |= (king_square >> 1) & not_h_file;
+    moves |= (king_square >> 7) & not_a_file;
+    moves |= (king_square >> 8);
+    moves |= (king_square >> 9) & not_h_file;
 
-return moves;
+    return moves;
 }
 
 U64 generateSlidingMove_NW(int index) {
-U64 moves = 0ULL;
-int rank, file;
-for (rank = index / 8 + 1, file = index % 8 - 1; rank < 8 && file >= 0; rank++, file--) {
-    moves |= 1ULL << (rank * 8 + file);
-}
-return moves;
+    U64 moves = 0ULL;
+    int rank, file;
+    for (rank = index / 8 + 1, file = index % 8 - 1; rank < 8 && file >= 0; rank++, file--) {
+        moves |= 1ULL << (rank * 8 + file);
+    }
+    return moves;
 }
 
 U64 generateSlidingMove_N(int index) {
-U64 moves = 0ULL;
-int file = index % 8;
-for (int rank = index / 8 + 1; rank < 8; rank++ ) {
-    moves |= 1ULL << (rank * 8 + file);
-}
-return moves;
+    U64 moves = 0ULL;
+    int file = index % 8;
+    for (int rank = index / 8 + 1; rank < 8; rank++ ) {
+        moves |= 1ULL << (rank * 8 + file);
+    }
+    return moves;
 }
 
 U64 generateSlidingMove_NE(int index) {
-U64 moves = 0ULL;
-int rank, file;
-for (rank = index / 8 + 1, file = index % 8 + 1; rank < 8 && file < 8; rank++, file++) {
-    moves |= 1ULL << (rank * 8 + file);
-}
-return moves;
+    U64 moves = 0ULL;
+    int rank, file;
+    for (rank = index / 8 + 1, file = index % 8 + 1; rank < 8 && file < 8; rank++, file++) {
+        moves |= 1ULL << (rank * 8 + file);
+    }
+    return moves;
 }
 
 U64 generateSlidingMove_E(int index) {
-U64 moves = 0ULL;
-int rank = index / 8;
-for (int file = index % 8 + 1; file < 8; file++ ) {
-    moves |= 1ULL << (rank * 8 + file);
-}
-return moves;
+    U64 moves = 0ULL;
+    int rank = index / 8;
+    for (int file = index % 8 + 1; file < 8; file++ ) {
+        moves |= 1ULL << (rank * 8 + file);
+    }
+    return moves;
 }
 
 U64 generateSlidingMove_SE(int index) {
-U64 moves = 0ULL;
-int rank, file;
-for (rank = index / 8 - 1, file = index % 8 + 1; rank >= 0 && file < 8; rank--, file++) {
-    moves |= 1ULL << (rank * 8 + file);
-}
-return moves;
+    U64 moves = 0ULL;
+    int rank, file;
+    for (rank = index / 8 - 1, file = index % 8 + 1; rank >= 0 && file < 8; rank--, file++) {
+        moves |= 1ULL << (rank * 8 + file);
+    }
+    return moves;
 }
 
 U64 generateSlidingMove_S(int index) {
 U64 moves = 0ULL;
 int file = index % 8;
 for (int rank = index / 8 - 1; rank >= 0; rank-- ) {
-    moves |= 1ULL << (rank * 8 + file);
-}
-return moves;
+        moves |= 1ULL << (rank * 8 + file);
+    }
+    return moves;
 }
 
 U64 generateSlidingMove_SW(int index) {
 U64 moves = 0ULL;
 int rank, file;
 for (rank = index / 8 - 1, file = index % 8 - 1; rank >= 0 && file >=0; rank--, file--) {
-    moves |= 1ULL << (rank * 8 + file);
-}
-return moves;
+        moves |= 1ULL << (rank * 8 + file);
+    }
+    return moves;
 }
 
 U64 generateSlidingMove_W(int index) {
 U64 moves = 0ULL;
 int rank = index / 8;
 for (int file = index % 8 - 1; file >= 0; file-- ) {
-    moves |= 1ULL << (rank * 8 + file);
-}
-return moves;
+        moves |= 1ULL << (rank * 8 + file);
+    }
+    return moves;
 }
 
 void initMoves() {
@@ -240,12 +240,12 @@ for (int i = 0; i < 64; i++) {
 }
 
 U64 generatePositiveRayAttack(int direction, int index, U64 occcupancy) {
-U64 attack_ray = sliding_moves[direction][index];
-U64 blockers = attack_ray & occcupancy;
-if (blockers) {
-    attack_ray &= ~sliding_moves[direction][bitScanForward(blockers)];
-}
-return attack_ray;
+    U64 attack_ray = sliding_moves[direction][index];
+    U64 blockers = attack_ray & occcupancy;
+    if (blockers) {
+        attack_ray &= ~sliding_moves[direction][bitScanForward(blockers)];
+    }
+    return attack_ray;
 }
 
 U64 generateNegativeRayAttack(int direction, int index, U64 occcupancy) {
@@ -258,23 +258,23 @@ return attack_ray;
 }
 
 U64 generateBishopAttacks(int index, U64 occupancy) {
-U64 attacks = 0ULL;
-attacks |= generatePositiveRayAttack(0, index, occupancy);
-attacks |= generatePositiveRayAttack(2, index, occupancy);
-attacks |= generateNegativeRayAttack(4, index, occupancy);
-attacks |= generateNegativeRayAttack(6, index, occupancy);
+    U64 attacks = 0ULL;
+    attacks |= generatePositiveRayAttack(0, index, occupancy);
+    attacks |= generatePositiveRayAttack(2, index, occupancy);
+    attacks |= generateNegativeRayAttack(4, index, occupancy);
+    attacks |= generateNegativeRayAttack(6, index, occupancy);
 
-return attacks;
+    return attacks;
 }
 
 U64 generateRookAttacks(int index, U64 occupancy) {
-U64 attacks = 0ULL;
-attacks |= generatePositiveRayAttack(1, index, occupancy);
-attacks |= generatePositiveRayAttack(3, index, occupancy);
-attacks |= generateNegativeRayAttack(5, index, occupancy);
-attacks |= generateNegativeRayAttack(7, index, occupancy);
+    U64 attacks = 0ULL;
+    attacks |= generatePositiveRayAttack(1, index, occupancy);
+    attacks |= generatePositiveRayAttack(3, index, occupancy);
+    attacks |= generateNegativeRayAttack(5, index, occupancy);
+    attacks |= generateNegativeRayAttack(7, index, occupancy);
 
-return attacks;
+    return attacks;
 }
 
 U64 rook_magic_attacks[64][4096];
@@ -292,7 +292,6 @@ std::mt19937_64 randomU64(42);
 
 // find a working magic number at the given index and populate the arrays
 void findBishopMagic(int index) {
-    bool magic_not_found = true;
     U64 magic_number;
     U64 all_bits = ~0ULL >> (64 - bishop_relevant_bit_count[index]);
     U64 occupancy_bits;
@@ -301,31 +300,21 @@ void findBishopMagic(int index) {
     U64 magic_index;
     U64 mask = bishop_magic_mask[index];
 
-    while (magic_not_found) {
-        magic_number = bishop_magic_numbers[index];
+    magic_number = bishop_magic_numbers[index];
 
-        //reset all the attacks to zero each time
-        for (int i = 0; i < 1024; i++) {
+    //reset all the attacks to zero each time
+    for (int i = 0; i < 1024; i++) {
         bishop_magic_attacks[index][i] = 0ULL;
-        }
+    }
 
-        magic_not_found = false;
-
-        occupancy = 0ULL;
-        for (occupancy_bits = 0ULL; occupancy_bits <= all_bits; occupancy_bits++) {
+    occupancy = 0ULL;
+    for (occupancy_bits = 0ULL; occupancy_bits <= all_bits; occupancy_bits++) {
         iterateOccupancy(occupancy, mask);
         attacks = generateBishopAttacks(index, occupancy);
         magic_index = (occupancy * magic_number) >> (64 - (bishop_relevant_bit_count[index]));
-        if (bishop_magic_attacks[index][magic_index] == attacks) {
-            continue;
-        } else if (bishop_magic_attacks[index][magic_index] == 0ULL) {
-            bishop_magic_attacks[index][magic_index] = attacks;
-            continue;
-        } else {
-            magic_not_found = true;
-            break;
-        }
-        }
+        //reliability check for magic number
+        assert(bishop_magic_attacks[index][magic_index] == attacks || bishop_magic_attacks[index][magic_index] == 0ULL);
+        bishop_magic_attacks[index][magic_index] = attacks;
     }
 
     // bishop_magic_numbers[index] = magic_number;
@@ -334,7 +323,6 @@ void findBishopMagic(int index) {
 // U64 rook_magic_numbers[64];
 
 void findRookMagic(int index) {
-    bool magic_not_found = true;
     U64 magic_number;
     U64 all_bits = ~0ULL >> (64 - rook_relevant_bit_count[index]);
     U64 occupancy_bits;
@@ -344,65 +332,53 @@ void findRookMagic(int index) {
     U64 mask = rook_magic_mask[index];
 
 
-    while (magic_not_found) {
-        //get a new magic number
-        magic_number = rook_magic_numbers[index];
+    //get a new magic number
+    magic_number = rook_magic_numbers[index];
 
-        //reset all attack masks to zero
-        for (int i = 0; i < 4096; i++) {
+    //reset all attack masks to zero
+    for (int i = 0; i < 4096; i++) {
         rook_magic_attacks[index][i] = 0ULL;
-        }
+    }
 
-        magic_not_found = false;
-
-        occupancy = 0ULL;
-        // loop over all possible occupancies
-        for (occupancy_bits = 0; occupancy_bits <= all_bits; occupancy_bits++) {
+    occupancy = 0ULL;
+    // loop over all possible occupancies
+    for (occupancy_bits = 0; occupancy_bits <= all_bits; occupancy_bits++) {
         iterateOccupancy(occupancy, mask);
         attacks = generateRookAttacks(index, occupancy);
         magic_index = (magic_number * occupancy) >> (64 - rook_relevant_bit_count[index]);
-        if (rook_magic_attacks[index][magic_index] == attacks) {
-            continue;
-        } else if (rook_magic_attacks[index][magic_index] == 0ULL) {
-            rook_magic_attacks[index][magic_index] = attacks;
-            continue;
-        } else {
-            magic_not_found = true;
-            break;
-        }
-        }
+        //reliability check for magic numbers
+        assert(rook_magic_attacks[index][magic_index] == attacks || rook_magic_attacks[index][magic_index] == 0);
+        rook_magic_attacks[index][magic_index] = attacks;
     }
-
-    // rook_magic_numbers[index] = magic_number;
 }
 
 void initMagics() {
-for (int i = 0; i < 64; i++) {
-    // std::cout << i << std::endl;
-    findBishopMagic(i);
-    findRookMagic(i);
-}
+    for (int i = 0; i < 64; i++) {
+        // std::cout << i << std::endl;
+        findBishopMagic(i);
+        findRookMagic(i);
+    }
 }
 
 U64 pawnAttacksFromBitboard(int side, U64 bitboard) {
-U64 attacks;
-if (side) {
-    attacks = (bitboard >> 7 & not_a_file) | (bitboard >> 9 & not_h_file);
-} else {
-    attacks = (bitboard << 7 & not_h_file) | (bitboard << 9 & not_a_file);
-}
-return attacks;
+    U64 attacks;
+    if (side) {
+        attacks = (bitboard >> 7 & not_a_file) | (bitboard >> 9 & not_h_file);
+    } else {
+        attacks = (bitboard << 7 & not_h_file) | (bitboard << 9 & not_a_file);
+    }
+    return attacks;
 }
 
 U64 knightAttacksFromBitboard(U64 bitboard) {
-U64 attacks;
-attacks = (bitboard << 17) & not_a_file;
-attacks |= (bitboard <<  15) & not_h_file;
-attacks |= (bitboard <<  10) & not_ab_file;
-attacks |= (bitboard <<  6) & not_gh_file;
-attacks |= (bitboard >> 6) & not_ab_file;
-attacks |= (bitboard >> 10) & not_gh_file;
-attacks |= (bitboard >> 15) & not_a_file;
-attacks |= (bitboard >> 17) & not_h_file;
-return attacks;
+    U64 attacks;
+    attacks = (bitboard << 17) & not_a_file;
+    attacks |= (bitboard <<  15) & not_h_file;
+    attacks |= (bitboard <<  10) & not_ab_file;
+    attacks |= (bitboard <<  6) & not_gh_file;
+    attacks |= (bitboard >> 6) & not_ab_file;
+    attacks |= (bitboard >> 10) & not_gh_file;
+    attacks |= (bitboard >> 15) & not_a_file;
+    attacks |= (bitboard >> 17) & not_h_file;
+    return attacks;
 }
