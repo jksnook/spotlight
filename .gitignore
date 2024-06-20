@@ -1,6 +1,8 @@
 core.*
 .vscode
 
+spotlight
+
 *.sh
 
 # Prerequisites

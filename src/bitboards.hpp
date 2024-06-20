@@ -1,0 +1,318 @@
+#pragma once
+
+#include <cassert>
+#include <random>
+#include <map>
+#include <string>
+#include "types.hpp"
+#include "utils.hpp"
+
+// file masks
+static constexpr U64 a_file = 0x0101010101010101ULL;
+static constexpr U64 b_file = a_file << 1;
+static constexpr U64 g_file = a_file << 6;
+static constexpr U64 h_file = a_file << 7;
+static constexpr U64 ab_file = a_file | b_file;
+static constexpr U64 gh_file = g_file | h_file;
+static constexpr U64 not_a_file = ~a_file;
+static constexpr U64 not_b_file = ~b_file;
+static constexpr U64 not_ab_file = ~ab_file;
+static constexpr U64 not_g_file = ~g_file;
+static constexpr U64 not_h_file = ~h_file;
+static constexpr U64 not_gh_file = ~gh_file;
+
+
+// rank masks
+static constexpr U64 rank_1 = 0xffULL;
+static constexpr U64 rank_2 = rank_1 << 8;
+static constexpr U64 rank_4 = rank_1 << (8 * 4);
+static constexpr U64 rank_5 = rank_1 << (8 * 5);
+static constexpr U64 rank_7 = rank_1 << (8 * 6);
+static constexpr U64 rank_8 = rank_1 << (8 * 7);
+static constexpr U64 rank_1_and_2 = rank_1 | rank_2;
+static constexpr U64 rank_7_and_8 = rank_7 | rank_8;
+static constexpr U64 not_rank_1 = ~rank_1;
+static constexpr U64 not_rank_2 = ~rank_2;
+static constexpr U64 not_rank_7 = ~rank_7;
+static constexpr U64 not_rank_8 = ~rank_8;
+static constexpr U64 not_rank_1_and_2 = ~rank_1_and_2;
+static constexpr U64 not_rank_7_and_8 = ~rank_7_and_8;
+
+const int index64[64] = {
+    0,  1, 48,  2, 57, 49, 28,  3,
+   61, 58, 50, 42, 38, 29, 17,  4,
+   62, 55, 59, 36, 53, 51, 43, 22,
+   45, 39, 33, 30, 24, 18, 12,  5,
+   63, 47, 56, 27, 60, 41, 37, 16,
+   54, 35, 52, 21, 44, 32, 23, 11,
+   46, 26, 40, 15, 34, 20, 31, 10,
+   25, 14, 19,  9, 13,  8,  7,  6
+};
+
+/**
+ * bitScanForward
+ * @author Martin Läuter (1997)
+ *         Charles E. Leiserson
+ *         Harald Prokop
+ *         Keith H. Randall
+ * "Using de Bruijn Sequences to Index a 1 in a Computer Word"
+ * @param bb bitboard to scan
+ * @precondition bb != 0
+ * @return index (0..63) of least significant one bit
+ */
+static inline int bitScanForward(U64 bitboard) {
+  #if defined(__GNUC__) || defined(__GNUG__)
+
+  return __builtin_ctzll(bitboard);
+  
+  #else
+
+  assert(bitboard != 0);
+  const U64 debruijn64 = 0x03f79d71b4cb0a89ULL;
+  return index64[((bitboard & -bitboard) * debruijn64) >> 58];
+
+  #endif
+}
+
+int popLSB(U64 &bitboard);
+
+static inline int countBits(U64 bitboard) {
+  #if defined(__GNUC__) || defined(__GNUG__)
+
+  return __builtin_popcountll(bitboard);
+
+  #else
+
+  static constexpr U64 m1 = 0x5555555555555555ULL;
+  static constexpr U64 m2 = 0x3333333333333333ULL;
+  static constexpr U64 m3 = 0x0f0f0f0f0f0f0f0fULL;
+  static constexpr U64 m4 = 0x00ff00ff00ff00ffULL;
+  static constexpr U64 m5 = 0x0000ffff0000ffffULL;
+  static constexpr U64 m6 = 0x00000000ffffffffULL;
+
+  U64 count = (bitboard & m1) + ((bitboard & m1 << 1) >> 1);
+  count = (count & m2) + ((count & m2 << 2) >> 2);
+  count = (count & m3) + ((count & m3 << 4) >> 4);
+  count = (count & m4) + ((count & m4 << 8) >> 8);
+  count = (count & m5) + ((count & m5 << 16) >> 16);
+  count = (count & m6) + ((count & m6 << 32) >> 32);
+  return count;
+
+  #endif
+
+}
+
+const int index64reverse[64] = {
+    0, 47,  1, 56, 48, 27,  2, 60,
+   57, 49, 41, 37, 28, 16,  3, 61,
+   54, 58, 35, 52, 50, 42, 21, 44,
+   38, 32, 29, 23, 17, 11,  4, 62,
+   46, 55, 26, 59, 40, 36, 15, 53,
+   34, 51, 20, 43, 31, 22, 10, 45,
+   25, 39, 14, 33, 19, 30,  9, 24,
+   13, 18,  8, 12,  7,  6,  5, 63
+};
+
+int bitScanReverse(U64 bitboard);
+
+void printBitboard(U64 bitboard);
+
+extern std::mt19937_64 randomU64;
+
+extern U64 pawn_pushes[2][64];
+extern U64 pawn_double_pushes[2][64];
+extern U64 pawn_attacks[2][64];
+
+extern U64 knight_moves[64];
+extern U64 king_moves[64];
+
+extern U64 sliding_moves[8][64];
+
+extern U64 bishop_moves[64];
+extern U64 rook_moves[64];
+
+extern U64 bishop_magic_mask[64];
+extern U64 rook_magic_mask[64];
+
+extern U64 rook_relevant_bit_count[64];
+extern U64 bishop_relevant_bit_count[64];
+
+const U64 rook_magic_numbers[64] = {
+	0x1480004000201080ULL,
+	0x40002000c81000ULL,
+	0x2100084411002000ULL,
+	0x2880080050020480ULL,
+	0x280080180040002ULL,
+	0x420008a402001005ULL,
+	0x1080020020804100ULL,
+	0x1000028d2820100ULL,
+	0x4038800480204000ULL,
+	0x404400140201004ULL,
+	0x800801001200080ULL,
+	0x1004900100020ULL,
+	0x68200220010380cULL,
+	0x4100808004000200ULL,
+	0x4002884010610ULL,
+	0x801000200a04100ULL,
+	0x280014004200042ULL,
+	0x800404008201004ULL,
+	0x2201090020001041ULL,
+	0x412808058005000ULL,
+	0x3040808014008800ULL,
+	0x20818002000c00ULL,
+	0x2000040010082142ULL,
+	0x42802000091094cULL,
+	0x80248004400bULL,
+	0x8204200040401000ULL,
+	0x12a00500410010ULL,
+	0x42100080080080ULL,
+	0x400041100080100ULL,
+	0x2030820080040080ULL,
+	0x8012000600210408ULL,
+	0x1044020004c481ULL,
+	0x9882400020800080ULL,
+	0x20082280804000ULL,
+	0x30e014082002090ULL,
+	0x400080080801000ULL,
+	0x8800140080802800ULL,
+	0x3001004803000c00ULL,
+	0xc02000802000411ULL,
+	0x21410000890002c2ULL,
+	0xc0016188c0008000ULL,
+	0x1010022001504000ULL,
+	0x813041020010040ULL,
+	0x850000800808032ULL,
+	0xc004800808004ULL,
+	0x22000810020004ULL,
+	0xc000880102840010ULL,
+	0x4403344990a0014ULL,
+	0x908800420400480ULL,
+	0x81002004c0100040ULL,
+	0x40a2200041001500ULL,
+	0x202a10010100ULL,
+	0x101880204008080ULL,
+	0x1000800400220080ULL,
+	0x2101000200040100ULL,
+	0x66300840200ULL,
+	0x4810200504a22ULL,
+	0x100201a824001ULL,
+	0x24601082000842ULL,
+	0x10200200c0810c2ULL,
+	0x902200051018a002ULL,
+	0x400200080c017006ULL,
+	0xc00010428805020cULL,
+	0x4009000082044821ULL,
+};
+
+const U64 bishop_magic_numbers[64] = {
+	0x8c431014048280ULL,
+	0x104e0224002023ULL,
+	0x4008024442000000ULL,
+	0x8510c0181220081ULL,
+	0x90040c2000000a00ULL,
+	0xc416010042082ULL,
+	0xe21050080000ULL,
+	0x110a002401081802ULL,
+	0x40042806080200ULL,
+	0x8011041c840040ULL,
+	0x5018300401a02300ULL,
+	0x110400800000ULL,
+	0x424006021000004bULL,
+	0x2800020110884000ULL,
+	0xc84001820846c000ULL,
+	0x2108002404020882ULL,
+	0x920441082100111ULL,
+	0x8095010009084ULL,
+	0x228c000800292a00ULL,
+	0x5000c01c04008004ULL,
+	0x2800400a02220ULL,
+	0xc6400200501400ULL,
+	0x4204900100909004ULL,
+	0x208521500421000ULL,
+	0x409140208202800ULL,
+	0x90c0021180a00ULL,
+	0x8840a0084180411ULL,
+	0x401404004010200ULL,
+	0xa24301001410400aULL,
+	0x1011c082080222ULL,
+	0x8022109002443010ULL,
+	0x1003281008802ULL,
+	0xa808043000400200ULL,
+	0x908029000284910ULL,
+	0x202020300348008aULL,
+	0x211420080c0100ULL,
+	0x20040300002008ULL,
+	0x1102088202110800ULL,
+	0x100200a014cc00ULL,
+	0x4092004cc0061201ULL,
+	0x4010882401230c6ULL,
+	0x800809c2000b000ULL,
+	0x490080414050080cULL,
+	0x1004402019002800ULL,
+	0x1308c01028818500ULL,
+	0x40c0082081001020ULL,
+	0x10210811310080ULL,
+	0x1008028122000040ULL,
+	0x204c208400004ULL,
+	0x29088c0402420000ULL,
+	0xa4201900000ULL,
+	0x800080184040038ULL,
+	0x80415040020ULL,
+	0xd0081010828000ULL,
+	0x141900428808000ULL,
+	0x8030100a05802004ULL,
+	0x94540901082000ULL,
+	0x288904028c9410ULL,
+	0x8000002602010400ULL,
+	0x200180218800ULL,
+	0x8100020840114900ULL,
+	0x400604004080280ULL,
+	0x20242008061081ULL,
+	0x1810210208014100ULL,
+};
+
+extern U64 rook_magic_attacks[64][4096];
+extern U64 bishop_magic_attacks[64][1024];
+
+U64 generateWhitePawnPush(int index);
+U64 generateWhitePawnDoublePush(int index);
+U64 generateWhitePawnAttack(int index);
+
+U64 generateBlackPawnPush(int index);
+U64 generateBlackPawnDoublePush(int index);
+U64 generateBlackPawnAttack(int index);
+
+U64 generateKnightMove(int index);
+U64 generateKingMove(int index);
+
+U64 generateSlidingMove_NW(int index);
+U64 generateSlidingMove_N(int index);
+U64 generateSlidingMove_NE(int index);
+U64 generateSlidingMove_E(int index);
+U64 generateSlidingMove_SE(int index);
+U64 generateSlidingMove_S(int index);
+U64 generateSlidingMove_SW(int index);
+U64 generateSlidingMove_W(int index);
+
+void initMoves();
+
+U64 generatePositiveRayAttack(int direction, int index, U64 occupancy);
+U64 generateNegativeRayAttack(int direction, int index, U64 occupancy);
+
+U64 generateBishopAttacks(int index, U64 occupancy);
+U64 generateRookAttacks(int index, U64 occupancy);
+
+void iterateOccupancy(U64 &occupancy, U64 mask);
+
+void findRookMagic(int index);
+void findBishopMagic(int index);
+
+void initMagics();
+
+static inline U64 getMagicBishopAttack(int index, U64 occupancy) {
+  return bishop_magic_attacks[index][((occupancy & bishop_magic_mask[index]) * bishop_magic_numbers[index]) >> (64 - bishop_relevant_bit_count[index])];
+}
+
+static inline U64 getMagicRookAttack(int index, U64 occupancy) {
+  return rook_magic_attacks[index][((occupancy & rook_magic_mask[index]) * rook_magic_numbers[index]) >> (64 - rook_relevant_bit_count[index])];
+}
