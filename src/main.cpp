@@ -2,20 +2,16 @@
 #include <string>
 
 #include "bitboards.hpp"
+#include "zobrist.hpp"
+#include "position.hpp"
 
 int main() {
     initMoves();
     initMagics();
+    initZobrist();
 
-    std::cout << "Hello World!" << std::endl;
+    Position pos;
 
-    for (const auto magic: rook_magic_numbers) {
-        std::cout << "0x" << std::hex << magic << "ULL,\n";
-    }
+    pos.print();
 
-    std::cout << "-----------------------------------\n";
-
-    for (const auto magic: bishop_magic_numbers) {
-        std::cout << "0x" << std::hex << magic << "ULL,\n";
-    }
 }
