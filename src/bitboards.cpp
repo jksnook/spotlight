@@ -360,16 +360,6 @@ void initMagics() {
     }
 }
 
-U64 pawnAttacksFromBitboard(int side, U64 bitboard) {
-    U64 attacks;
-    if (side) {
-        attacks = (bitboard >> 7 & not_a_file) | (bitboard >> 9 & not_h_file);
-    } else {
-        attacks = (bitboard << 7 & not_h_file) | (bitboard << 9 & not_a_file);
-    }
-    return attacks;
-}
-
 U64 knightAttacksFromBitboard(U64 bitboard) {
     U64 attacks;
     attacks = (bitboard << 17) & not_a_file;
@@ -381,4 +371,20 @@ U64 knightAttacksFromBitboard(U64 bitboard) {
     attacks |= (bitboard >> 15) & not_a_file;
     attacks |= (bitboard >> 17) & not_h_file;
     return attacks;
+}
+
+U64 bishopAttacksFromBitboard(U64 bishops, U64 occupancy) {
+  U64 attacks = 0ULL;
+  while (bishops) {
+    attacks |= getMagicBishopAttack(popLSB(bishops), occupancy);
+  }
+  return attacks;
+}
+
+U64 rookAttacksFromBitboard(U64 rooks, U64 occupancy) {
+  U64 attacks = 0ULL;
+  while (rooks) {
+    attacks |= getMagicRookAttack(popLSB(rooks), occupancy);
+  }
+  return attacks;
 }

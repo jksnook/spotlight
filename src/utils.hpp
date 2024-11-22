@@ -46,6 +46,22 @@ static std::map<int, char>  piece_to_letter_map = {
     {black_king, 'k'}
 };
 
+inline constexpr int getPieceID(int piece_type, int side) {
+    if (side == WHITE) {
+        return piece_type;
+    } else {
+        return piece_type + 6;
+    }
+}
+
+inline constexpr int getOccupancy(int side) {
+    if (side == BLACK) {
+        return black_occupancy;
+    } else {
+        return white_occupancy;
+    }
+}
+
 const int wqc = 1;
 const U64 wqc_squares = 0b1110ULL;
 static constexpr U64 wqc_king_squares = 0b1100ULL;

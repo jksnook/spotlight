@@ -38,6 +38,10 @@ static constexpr U64 not_rank_8 = ~rank_8;
 static constexpr U64 not_rank_1_and_2 = ~rank_1_and_2;
 static constexpr U64 not_rank_7_and_8 = ~rank_7_and_8;
 
+static constexpr U64 setBit(int bit) {
+	return 1ULL << bit;
+}
+
 const int index64[64] = {
     0,  1, 48,  2, 57, 49, 28,  3,
    61, 58, 50, 42, 38, 29, 17,  4,
@@ -316,3 +320,16 @@ static inline U64 getMagicBishopAttack(int index, U64 occupancy) {
 static inline U64 getMagicRookAttack(int index, U64 occupancy) {
   return rook_magic_attacks[index][((occupancy & rook_magic_mask[index]) * rook_magic_numbers[index]) >> (64 - rook_relevant_bit_count[index])];
 }
+
+template <bool white_to_move>
+U64 pawnAttacksFromBitboard(U64 bitboard) {
+	if constexpr(white_to_move) {
+    	return (bitboard << 7 & not_h_file) | (bitboard << 9 & not_a_file);
+	} else {
+		return (bitboard >> 7 & not_a_file) | (bitboard >> 9 & not_h_file);
+	}
+}
+
+U64 knightAttacksFromBitboard(U64 bitboard);
+U64 bishopAttacksFromBitboard(U64 bishops, U64 occupancy);
+U64 rookAttacksFromBitboard(U64 rooks, U64 occupancy);
