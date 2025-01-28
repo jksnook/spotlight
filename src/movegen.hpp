@@ -184,5 +184,101 @@ void generateMoves(MoveList &moves, Position &pos) {
         addMovesFromBitboard(piece_index, magic_attack & pinners & capture_mask, capture_move, moves);
     }
 
-    
+    // knight moves
+    U64 knights = pos.bitboards[friendly_knight];
+
+    while(knights) {
+        piece_index = popLSB(knights);
+        addMovesFromBitboard(piece_index, knight_moves[piece_index] & ~pos.bitboards[occupancy] & block_mask, quiet_move, moves);
+        addMovesFromBitboard(piece_index, knight_moves[piece_index] & pos.bitboards[enemy_occupancy] & capture_mask, capture_move, moves);
+    }
+
+    // pawn moves
+
+    U64 pawns = pos.bitboards[friendly_pawn];
+
+    // single and double pushes
+
+    U64 double_pushes;
+    U64 single_pushes;
+    U64 left_attacks;
+    U64 right_attacks;
+    if constexpr(white_to_move) {
+        double_pushes = pawns << 16 & block_mask & ~pos.bitboards[occupancy];
+        single_pushes = pawns << 8 & block_mask & ~pos.bitboards[occupancy];
+        left_attacks = pawns << 7 & pos.bitboards[enemy_occupancy] & capture_mask;
+        right_attacks = pawns << 9 & pos.bitboards[enemy_occupancy] & capture_mask;
+    } else {
+        double_pushes = pawns >> 16 & block_mask & ~pos.bitboards[occupancy];
+        single_pushes = pawns >> 8 & block_mask & ~pos.bitboards[occupancy];
+        left_attacks = pawns >> 9 & pos.bitboards[enemy_occupancy] & capture_mask;
+        right_attacks = pawns >> 7 & pos.bitboards[enemy_occupancy] & capture_mask;
+    }
+
+    int start_square;
+    int end_square;
+
+    while (double_pushes) {
+        end_square = popLSB(double_pushes);
+        if constexpr(white_to_move) {
+            start_square = end_square - 16;
+        } else {
+            start_square = end_square + 16;
+        }
+        moves.addMove(encodeMove(start_square, end_square, double_pawn_push));
+    }
+
+    while (single_pushes) {
+        end_square = popLSB(single_pushes);
+        if constexpr(white_to_move) {
+            start_square = end_square - 8;
+        } else {
+            start_square = end_square + 8;
+        }
+        moves.addMove(encodeMove(start_square, end_square, quiet_move));
+    }
+
+    while (left_attacks) {
+        end_square = popLSB(left_attacks);
+        if constexpr(white_to_move) {
+            start_square = end_square - 7;
+        } else {
+            start_square = end_square + 9;
+        }
+        moves.addMove(encodeMove(start_square, end_square, capture_move));
+    }
+
+    while (right_attacks) {
+        end_square = popLSB(right_attacks);
+        if constexpr(white_to_move) {
+            start_square = end_square - 9;
+        } else {
+            start_square = end_square + 7;
+        }
+        moves.addMove(encodeMove(start_square, end_square, capture_move));
+    }
+
+    // sliding piece moves
+
+    // bishop moves (including queens)
+
+    U64 bishops = pos.bitboards[friendly_bishop] | pos.bitboards[friendly_queen];
+
+    while(bishops) {
+        piece_index = popLSB(bishops);
+        magic_attack = getMagicBishopAttack(piece_index, pos.bitboards[occupancy]);
+        addMovesFromBitboard(piece_index, magic_attack & ~pos.bitboards[occupancy] & block_mask, quiet_move, moves);
+        addMovesFromBitboard(piece_index, magic_attack & pos.bitboards[enemy_occupancy] & capture_mask, capture_move, moves);
+    }
+
+    // rook moves (including queens)
+
+    U64 rooks = pos.bitboards[friendly_rook] | pos.bitboards[friendly_queen];
+
+    while(rooks) {
+        piece_index = popLSB(rooks);
+        magic_attack = getMagicRookAttack(piece_index, pos.bitboards[occupancy]);
+        addMovesFromBitboard(piece_index, magic_attack & ~pos.bitboards[occupancy] & block_mask, quiet_move, moves);
+        addMovesFromBitboard(piece_index, magic_attack & pos.bitboards[enemy_occupancy] & capture_mask, capture_move, moves);
+    }
 }

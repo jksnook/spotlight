@@ -19,6 +19,12 @@ int main() {
 
     generateMoves<true, false>(moves, pos);
 
+    std::cout << moves.size() << std::endl;
+
+    for (const auto &m: moves) {
+        printMove(m);
+    }
+
     printMove(encodeMove(0,0,0));
 
 }
