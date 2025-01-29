@@ -2,6 +2,14 @@
 
 #include <iostream>
 
+move16& MoveList::operator[](int index){
+    return move_array[index];
+};
+
+const move16& MoveList::operator[](int index) const {
+    return move_array[index];
+};
+
 void printMove(move16 move) {
     int start = (move) & 0b111111;
     int end = (move >> 6) & 0b111111;

@@ -27,6 +27,7 @@ void Position::readFen(std::string fen) {
             square_index += (c - '0');
         } else if (c != '/') {
             bitboards[letter_piece_map[c]] |= (1ULL << square_index);
+            board[square_index] = letter_piece_map[c];
             square_index++;
         } else {
             square_index -= 16;
@@ -90,14 +91,21 @@ void Position::print() {
     std::cout << "+---+---+---+---+---+---+---+---+\n";
     for (int rank = 7; rank >= 0; rank--) {
         for (int file = 0; file < 8; file++) {
-            bool square_empty = true;
-            for (int piece = white_pawn; piece <= black_king; piece++) {
-                if (bitboards[piece] & (1ULL << (rank * 8 + file))) {
-                    square_empty = false;
-                    std::cout << "| " << piece_to_letter_map[piece] << ' ';
-                }
-            }
-            if (square_empty) {
+            // bool square_empty = true;
+            // for (int piece = white_pawn; piece <= black_king; piece++) {
+            //     if (bitboards[piece] & (1ULL << (rank * 8 + file))) {
+            //         square_empty = false;
+            //         std::cout << "| " << piece_to_letter_map[piece] << ' ';
+            //     }
+            // }
+            // if (square_empty) {
+            //     std::cout << "|   ";
+            // }
+            int sq = (rank * 8 + file);
+            int piece = at(sq);
+            if (piece != NO_PIECE) {
+                std::cout << "| " << piece_to_letter_map[piece] << ' ';
+            } else {
                 std::cout << "|   ";
             }
         }
@@ -126,5 +134,12 @@ U64 Position::generateZobrist() {
 }
 
 Position::Position() {
+    for (auto &i: board) {
+        i = 15;
+    }
     readFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+}
+
+int Position::at(int sq) {
+    return board[sq];
 }

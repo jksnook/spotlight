@@ -36,6 +36,18 @@ static inline move16 encodeMove(int start, int end, int move_type) {
     return (start | (end << 6) | (move_type << 12));
 };
 
+static constexpr int get_from_square(move16 &move) {
+    return move & 0b111111;
+}
+
+static constexpr int get_to_square(move16 &move) {
+    return (move >> 6) & 0b111111;
+}
+
+static constexpr int get_move_type(move16 &move) {
+    return (move >> 12) & 0b1111;
+}
+
 void printMove(move16 move);
 
 class MoveList {
@@ -50,6 +62,9 @@ class MoveList {
         inline void setMove(int index, unsigned long move) {
             move_array[index] = move;
         }
+
+        move16& operator[](int index);
+        const move16& operator[](int index) const;
 
         inline move16 *begin() {return &move_array[0];}
         inline move16 *end() {return &move_array[length];}

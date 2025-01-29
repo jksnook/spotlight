@@ -10,6 +10,7 @@ enum { NORTHWEST, NORTH, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST };
 
 const int WHITE = 0;
 const int BLACK = 1;
+const int NUM_SQUARES = 64;
 
 enum {white_pawn, white_knight, white_bishop, white_rook, white_queen, white_king,
       black_pawn, black_knight, black_bishop, black_rook, black_queen, black_king,
