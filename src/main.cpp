@@ -25,7 +25,11 @@ int main() {
         printMove(m);
     }
 
-    pos.makeMove<true>(moves[19]);
+    pos.makeMove(moves[19]);
+
+    pos.print();
+
+    pos.unmakeMove();
 
     pos.print();
 

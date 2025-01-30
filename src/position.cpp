@@ -135,11 +135,257 @@ U64 Position::generateZobrist() {
 
 Position::Position() {
     for (auto &i: board) {
-        i = 15;
+        i = NO_PIECE;
     }
     readFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
 int Position::at(int sq) {
     return board[sq];
+}
+
+void Position::movePiece(int start, int end, int piece_type) {
+    bitboards[piece_type] ^= setBit(start);
+    bitboards[piece_type] ^= setBit(end);
+    bitboards[occupancy] ^= setBit(start);
+    bitboards[occupancy] ^= setBit(end);
+
+    bitboards[white_occupancy + side_to_move] ^= setBit(start);
+    bitboards[white_occupancy + side_to_move] ^= setBit(end);
+
+    board[start] = NO_PIECE;
+    board[end] = piece_type;
+}
+
+void Position::removePiece(int square, int piece_type) {
+    bitboards[piece_type] ^= setBit(square);
+    bitboards[white_occupancy + side_to_move] ^= setBit(square);
+    bitboards[occupancy] ^= setBit(square);
+
+    board[square] = NO_PIECE;
+}
+
+void Position::placePiece(int square, int piece_type) {
+    bitboards[piece_type] ^= setBit(square);
+    bitboards[white_occupancy + side_to_move] ^= setBit(square);
+    bitboards[occupancy] ^= setBit(square);
+
+    board[square] = piece_type;
+}
+
+void Position::makeMove(move16 &move) {
+    int start_square = get_from_square(move);
+    int end_square = get_to_square(move);
+    int move_type = get_move_type(move);
+    int piece_type = at(start_square);
+
+    Undo undo;
+    undo.move = move;
+    undo.en_passant = en_passant;
+    undo.fifty_move = fifty_move;
+    undo.castle_rights = castle_rights;
+    undo.z_key = z_key;
+    undo.captured_piece = NO_PIECE;
+    int captured_piece = NO_PIECE;
+    en_passant = 0;
+
+    switch (move_type)
+    {
+    case quiet_move:
+        movePiece(start_square, end_square, piece_type);
+        break;
+    case capture_move:
+        captured_piece = at(end_square);
+        undo.captured_piece = captured_piece;
+        removePiece(end_square, captured_piece);
+        movePiece(start_square, end_square, piece_type);
+        fifty_move = 0;
+        break;
+    case double_pawn_push:
+        movePiece(start_square, end_square, piece_type);
+        en_passant = end_square + (side_to_move * 8) + (side_to_move - 1) * 8;
+        fifty_move = 0;
+        break;
+    case queen_castle:
+        movePiece(start_square, end_square, piece_type);
+        movePiece(a1 + a8 * side_to_move, d1 + a8 * side_to_move, white_rook + 6 * side_to_move);
+        fifty_move++;
+        break;
+    case king_castle:
+        movePiece(start_square, end_square, piece_type);
+        movePiece(h1 + a8 * side_to_move, f1 + a8 * side_to_move, white_rook + 6 * side_to_move);
+        fifty_move++;
+        break;
+    case en_passant_capture:
+        captured_piece = white_pawn + 6 * side_to_move;
+        undo.captured_piece = captured_piece;
+        removePiece(end_square + 8 * side_to_move - 8 * (1 - side_to_move), captured_piece);
+        movePiece(start_square, end_square, piece_type);
+        fifty_move = 0;
+        break;
+    case queen_promotion:
+        removePiece(start_square, piece_type);
+        placePiece(end_square, white_queen + black_pawn * side_to_move);
+        fifty_move = 0;
+        break;
+    case knight_promotion:
+        removePiece(start_square, piece_type);
+        placePiece(end_square, white_knight + black_pawn * side_to_move);
+        fifty_move = 0;
+        break;
+    case bishop_promotion:
+        removePiece(start_square, piece_type);
+        placePiece(end_square, white_bishop + black_pawn * side_to_move);
+        fifty_move = 0;
+        break;
+    case rook_promotion:
+        removePiece(start_square, piece_type);
+        placePiece(end_square, white_rook + black_pawn * side_to_move);
+        fifty_move = 0;
+        break;
+    case queen_promotion_capture:
+        captured_piece = at(end_square);
+        undo.captured_piece = captured_piece;
+        removePiece(start_square, piece_type);
+        removePiece(end_square, at(end_square));
+        placePiece(end_square, white_queen + black_pawn * side_to_move);
+        fifty_move = 0;
+        break;
+    case knight_promotion_capture:
+        captured_piece = at(end_square);
+        undo.captured_piece = captured_piece;
+        removePiece(start_square, piece_type);
+        removePiece(end_square, at(end_square));
+        placePiece(end_square, white_knight + black_pawn * side_to_move);
+        fifty_move = 0;
+        break;
+    case bishop_promotion_capture:
+        captured_piece = at(end_square);
+        undo.captured_piece = captured_piece;
+        removePiece(start_square, piece_type);
+        removePiece(end_square, at(end_square));
+        placePiece(end_square, white_bishop + black_pawn * side_to_move);
+        fifty_move = 0;
+        break;
+    case rook_promotion_capture:
+        captured_piece = at(end_square);
+        undo.captured_piece = captured_piece;
+        removePiece(start_square, piece_type);
+        removePiece(end_square, at(end_square));
+        placePiece(end_square, white_rook + black_pawn * side_to_move);
+        fifty_move = 0;
+        break;
+    default:
+        break;
+    }
+
+    if (castle_rights & wqc) {
+        if(!(setBit(a1) & bitboards[white_rook]) || !(1ULL << e1 & bitboards[white_king])) {
+            castle_rights &= ~wqc;
+        }
+    }
+    if (castle_rights & wkc) {
+        if(!(1ULL << h1 & bitboards[white_rook]) || !(1ULL << e1 & bitboards[white_king])) {
+            castle_rights &= ~wkc;
+        }
+    }
+    if (castle_rights & bqc) {
+        if((1ULL << a8 & ~bitboards[black_rook]) || (1ULL << e8 & ~bitboards[black_king])) {
+            castle_rights &= ~bqc;
+        }
+    }
+    if (castle_rights & bkc) {
+        if((1ULL << h8 & ~bitboards[black_rook]) || (1ULL << e8 & ~bitboards[black_king])) {
+            castle_rights &= ~bkc;
+        }
+    }
+
+    side_to_move ^= 1;
+    z_key = generateZobrist();
+    history.push_back(undo);
+}
+
+void Position::unmakeMove() {
+    side_to_move ^= 1;
+    Undo undo = history.back();
+    move16 move = undo.move;
+
+    int start_square = get_from_square(move);
+    int end_square = get_to_square(move);
+    int move_type = get_move_type(move);
+    int piece_type = at(end_square);
+
+    en_passant = undo.en_passant;
+    fifty_move = undo.fifty_move;
+    castle_rights = undo.castle_rights;
+    z_key = undo.z_key;
+
+    switch (move_type)
+    {
+    case quiet_move:
+        movePiece(end_square, start_square, piece_type);
+        break;
+    case capture_move:
+        movePiece(end_square, start_square, piece_type);
+        placePiece(end_square, undo.captured_piece);
+        break;
+    case double_pawn_push:
+        movePiece(end_square, start_square, piece_type);
+        break;
+    case queen_castle:
+        movePiece(end_square, start_square, piece_type);
+        movePiece(d1 + a8 * side_to_move, a1 + a8 * side_to_move, white_rook + 6 * side_to_move);
+        break;
+    case king_castle:
+        movePiece(end_square, start_square, piece_type);
+        movePiece(f1 + a8 * side_to_move, h1 + a8 * side_to_move, white_rook + 6 * side_to_move);
+        break;
+    case en_passant_capture:
+        placePiece(end_square + 8 * side_to_move - 8 * (1 - side_to_move), undo.captured_piece);
+        movePiece(end_square, start_square, piece_type);
+        fifty_move = 0;
+        break;
+    case queen_promotion:
+        removePiece(end_square, white_queen + black_pawn * side_to_move);
+        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+        break;
+    case knight_promotion:
+        removePiece(end_square, white_knight + black_pawn * side_to_move);
+        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+        break;
+    case bishop_promotion:
+        removePiece(end_square, white_bishop + black_pawn * side_to_move);
+        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+        fifty_move = 0;
+        break;
+    case rook_promotion:
+        removePiece(end_square, white_rook + black_pawn * side_to_move);
+        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+        fifty_move = 0;
+        break;
+    case queen_promotion_capture:
+        removePiece(end_square, white_queen + black_pawn * side_to_move);
+        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+        placePiece(end_square, undo.captured_piece);
+        break;
+    case knight_promotion_capture:
+        removePiece(end_square, white_knight + black_pawn * side_to_move);
+        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+        placePiece(end_square, undo.captured_piece);
+        break;
+    case bishop_promotion_capture:
+        removePiece(end_square, white_bishop + black_pawn * side_to_move);
+        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+        placePiece(end_square, undo.captured_piece);
+        break;
+    case rook_promotion_capture:
+        removePiece(end_square, white_rook + black_pawn * side_to_move);
+        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+        placePiece(end_square, undo.captured_piece);
+        break;
+    default:
+        break;
+    }
+
+    history.pop_back();
 }
