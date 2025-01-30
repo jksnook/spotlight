@@ -32,14 +32,17 @@ class Position {
 
         void readFen(std::string fen);
         void print();
+        void printFromBitboard();
         U64 generateZobrist();
 
         void movePiece(int start, int end, int piece_type);
         void removePiece(int square, int piece_type);
         void placePiece(int square, int piece_type);
 
-        void makeMove(move16 &move);
+        void makeMove(move16 move);
         void unmakeMove();
+
+        move16 parseMove(std::string move_string);
 
         int at(int sq);
 

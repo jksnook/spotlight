@@ -9,7 +9,7 @@
 #include "move.hpp"
 
 
-template <bool white_to_move, bool en_passant>
+template <bool white_to_move>
 void generateMoves(MoveList &moves, Position &pos) {
 
     // set up all bitboards for easy access according to friendly vs enemy with compiletime stuff
@@ -33,12 +33,7 @@ void generateMoves(MoveList &moves, Position &pos) {
     constexpr const int friendly_occupancy = getOccupancy(side);
     constexpr const int enemy_occupancy = getOccupancy(enemy_side);
 
-    printBitboard(pos.bitboards[friendly_occupancy]);
 
-    std::cout << "Side to move: " << side << std::endl;
-    std::cout << "enemy side: " << enemy_side << std::endl;
-    std::cout << "enemy pawn: " << enemy_pawn << std::endl;
-    
     // find all squares attacked by the opponent 
 
     U64 enemy_attacks = pawnAttacksFromBitboard<!white_to_move>(pos.bitboards[enemy_pawn]);
@@ -47,8 +42,6 @@ void generateMoves(MoveList &moves, Position &pos) {
     enemy_attacks |= bishopAttacksFromBitboard(pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen], pos.bitboards[occupancy] & ~pos.bitboards[friendly_king]);
     enemy_attacks |= rookAttacksFromBitboard(pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen], pos.bitboards[occupancy] & ~pos.bitboards[friendly_king]);
     enemy_attacks |= king_moves[bitScanForward(pos.bitboards[enemy_king])];
-
-    printBitboard(enemy_attacks);
 
     // find the checks on the king and create attack and block masks
 
@@ -67,8 +60,6 @@ void generateMoves(MoveList &moves, Position &pos) {
     block_mask |= rookAttacksFromBitboard(checking_rooks, pos.bitboards[occupancy]) & rook_rays_from_king;
 
     int num_checks = countBits(checkers);
-
-    std::cout << num_checks << std::endl;
 
     // generate king moves
 
@@ -128,7 +119,7 @@ void generateMoves(MoveList &moves, Position &pos) {
         piece_index = popLSB(pinned_pawns);
         addMovesFromBitboard(piece_index, pawn_attacks[side][piece_index] & pinners & capture_mask, capture_move, moves);
         // en passant
-        if constexpr(en_passant) {
+        if (pos.en_passant) {
             addMovesFromBitboard(piece_index, pawn_attacks[side][piece_index] & (1ULL << pos.en_passant) & pin_rays & capture_mask, en_passant_capture, moves);
         }
     }
@@ -165,9 +156,9 @@ void generateMoves(MoveList &moves, Position &pos) {
         piece_index = popLSB(pinned_pawns);
         addMovesFromBitboard(piece_index, pawn_pushes[side][piece_index] & pin_rays & block_mask, quiet_move, moves);
         if constexpr(white_to_move) {
-            addMovesFromBitboard(piece_index, pawn_double_pushes[side][piece_index] & rank_4 & pin_rays & block_mask, double_pawn_push, moves);
+            addMovesFromBitboard(piece_index, pawn_double_pushes[side][piece_index] & rank_4 & pin_rays & block_mask & ~pos.bitboards[occupancy] << 8, double_pawn_push, moves);
         } else {
-            addMovesFromBitboard(piece_index, pawn_double_pushes[side][piece_index] & rank_5 & pin_rays & block_mask, double_pawn_push, moves);
+            addMovesFromBitboard(piece_index, pawn_double_pushes[side][piece_index] & rank_5 & pin_rays & block_mask & ~pos.bitboards[occupancy] >> 8, double_pawn_push, moves);
         }
     }
 
@@ -204,15 +195,15 @@ void generateMoves(MoveList &moves, Position &pos) {
     U64 left_attacks;
     U64 right_attacks;
     if constexpr(white_to_move) {
-        double_pushes = pawns << 16 & block_mask & ~pos.bitboards[occupancy];
+        double_pushes = (pawns & rank_2) << 16 & block_mask & ~pos.bitboards[occupancy] & ~pos.bitboards[occupancy] << 8;
         single_pushes = pawns << 8 & block_mask & ~pos.bitboards[occupancy];
-        left_attacks = pawns << 7 & pos.bitboards[enemy_occupancy] & capture_mask;
-        right_attacks = pawns << 9 & pos.bitboards[enemy_occupancy] & capture_mask;
+        left_attacks = pawns << 7 & pos.bitboards[enemy_occupancy] & capture_mask & ~h_file;
+        right_attacks = pawns << 9 & pos.bitboards[enemy_occupancy] & capture_mask & ~a_file;
     } else {
-        double_pushes = pawns >> 16 & block_mask & ~pos.bitboards[occupancy];
+        double_pushes = (pawns & rank_7) >> 16 & block_mask & ~pos.bitboards[occupancy] & ~pos.bitboards[occupancy] >> 8;
         single_pushes = pawns >> 8 & block_mask & ~pos.bitboards[occupancy];
-        left_attacks = pawns >> 9 & pos.bitboards[enemy_occupancy] & capture_mask;
-        right_attacks = pawns >> 7 & pos.bitboards[enemy_occupancy] & capture_mask;
+        left_attacks = pawns >> 9 & pos.bitboards[enemy_occupancy] & capture_mask & ~h_file;
+        right_attacks = pawns >> 7 & pos.bitboards[enemy_occupancy] & capture_mask & ~a_file;
     }
 
     int start_square;
@@ -282,3 +273,7 @@ void generateMoves(MoveList &moves, Position &pos) {
         addMovesFromBitboard(piece_index, magic_attack & pos.bitboards[enemy_occupancy] & capture_mask, capture_move, moves);
     }
 }
+
+U64 perftHelper(Position &pos, int depth);
+
+U64 perft(Position &pos, int depth);

@@ -2,6 +2,7 @@
 #include "utils.hpp"
 #include "zobrist.hpp"
 #include "bitboards.hpp"
+#include "movegen.hpp"
 
 #include <iostream>
 
@@ -113,6 +114,25 @@ void Position::print() {
     }
 };
 
+void Position::printFromBitboard() {
+    std::cout << "+---+---+---+---+---+---+---+---+\n";
+    for (int rank = 7; rank >= 0; rank--) {
+        for (int file = 0; file < 8; file++) {
+            bool square_empty = true;
+            for (int piece = white_pawn; piece <= black_king; piece++) {
+                if (bitboards[piece] & (1ULL << (rank * 8 + file))) {
+                    square_empty = false;
+                    std::cout << "| " << piece_to_letter_map[piece] << ' ';
+                }
+            }
+            if (square_empty) {
+                std::cout << "|   ";
+            }
+        }
+        std::cout << "|\n+---+---+---+---+---+---+---+---+\n";
+    }
+};
+
 U64 Position::generateZobrist() {
     U64 zobrist = 0ULL;
     U64 bitboard;
@@ -173,7 +193,7 @@ void Position::placePiece(int square, int piece_type) {
     board[square] = piece_type;
 }
 
-void Position::makeMove(move16 &move) {
+void Position::makeMove(move16 move) {
     int start_square = get_from_square(move);
     int end_square = get_to_square(move);
     int move_type = get_move_type(move);
@@ -389,3 +409,74 @@ void Position::unmakeMove() {
 
     history.pop_back();
 }
+
+move16 Position::parseMove(std::string move_string) {
+    move16 move = 0;
+    int start = (move_string[0] - 'a') + (move_string[1] - '1') * 8;
+    int end = (move_string[2] - 'a') + (move_string[3] - '1') * 8;
+
+    move16 piece_type = 0UL;
+    move16 move_type = 0UL;
+
+    piece_type = at(start);
+
+    if (at(end) != NO_PIECE) {
+        move_type |= capture_move;
+    }
+
+    if ((piece_type == white_pawn && ((1ULL << end) & rank_8)) || (piece_type == black_pawn && ((1ULL << end) & rank_1))) {
+    // determine promotion type here
+        if (move_string.length() > 4) {
+            switch (move_string[4])
+            {
+            case 'q':
+                move_type |= queen_promotion;
+                break;
+            case 'n':
+                move_type |= knight_promotion;
+                break;
+            case 'b':
+                move_type |= bishop_promotion;
+                break;
+            case 'r':
+                move_type |= rook_promotion;
+                break;
+            case 'Q':
+                move_type |= queen_promotion;
+                break;
+            case 'N':
+                move_type |= knight_promotion;
+                break;
+            case 'B':
+                move_type |= bishop_promotion;
+                break;
+            case 'R':
+                move_type |= rook_promotion;
+                break;
+            default:
+                break;
+            }
+        }
+    }  else if ((piece_type == white_pawn || piece_type == black_pawn) && (end == en_passant)) {
+        move_type = en_passant_capture;
+    } else if (piece_type == white_pawn && end == start + 16) {
+        move_type = double_pawn_push;
+    } else if (piece_type == black_pawn && end == start - 16) {
+        move_type = double_pawn_push;
+    } else if (piece_type == white_king && start == e1 && end == g1) {
+        move_type = king_castle;
+    } else if (piece_type == white_king && start == e1 && end == c1) {
+        move_type = queen_castle;
+    } else if (piece_type == black_king && start == e8 && end == g8) {
+        move_type = king_castle;
+    } else if (piece_type == black_king && start == e8 && end == c8) {
+        move_type = queen_castle;
+    }
+
+    move |= end << 6;
+    move |= start;
+    move |= move_type << 12;
+
+    return move;
+}
+
