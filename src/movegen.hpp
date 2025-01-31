@@ -84,7 +84,7 @@ void generateMoves(MoveList &moves, Position &pos) {
     // pinned on diagonals
     U64 blockers = getMagicBishopAttack(king_index, pos.bitboards[occupancy]) & pos.bitboards[occupancy];
     U64 xray = getMagicBishopAttack(king_index, pos.bitboards[occupancy] & ~blockers);
-    U64 pinners = xray & pos.bitboards[enemy_bishop] & pos.bitboards[enemy_queen];
+    U64 pinners = xray & (pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen]);
 
     U64 pin_rays = bishopAttacksFromBitboard(pinners, pos.bitboards[occupancy] & ~blockers) & xray;
 
@@ -113,7 +113,11 @@ void generateMoves(MoveList &moves, Position &pos) {
         addMovesFromBitboard(piece_index, moves_bb, knight_promotion_capture, moves);
     }
 
-    pinned_pawns = pinned_pieces & pos.bitboards[friendly_pawn] & ~rank_2 & ~rank_7;
+    if constexpr(white_to_move) {
+        pinned_pawns = pinned_pieces & pos.bitboards[friendly_pawn] & ~rank_7;
+    } else {
+        pinned_pawns = pinned_pieces & pos.bitboards[friendly_pawn] & ~rank_2;
+    }
     while (pinned_pawns) {
         // normal captures
         piece_index = popLSB(pinned_pawns);
@@ -126,7 +130,7 @@ void generateMoves(MoveList &moves, Position &pos) {
 
     // moves for bishops and queens pinned on diagonals
 
-    U64 pinned_bishops_and_queens = pinned_pieces & pos.bitboards[friendly_bishop] & pos.bitboards[friendly_queen];
+    U64 pinned_bishops_and_queens = pinned_pieces & (pos.bitboards[friendly_bishop] | pos.bitboards[friendly_queen]);
     U64 magic_attack;
 
     while (pinned_bishops_and_queens) {
@@ -140,14 +144,15 @@ void generateMoves(MoveList &moves, Position &pos) {
 
     // pinned on ranks and files
 
-    blockers = getMagicBishopAttack(king_index, pos.bitboards[occupancy]) & pos.bitboards[occupancy];
-    xray = getMagicBishopAttack(king_index, pos.bitboards[occupancy] & ~blockers);
-    pinners = xray & pos.bitboards[enemy_rook] & pos.bitboards[enemy_queen];
+    blockers = getMagicRookAttack(king_index, pos.bitboards[occupancy]) & pos.bitboards[occupancy];
+    xray = getMagicRookAttack(king_index, pos.bitboards[occupancy] & ~blockers);
+    pinners = xray & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen]);
 
-    pin_rays = bishopAttacksFromBitboard(pinners, pos.bitboards[occupancy] & ~blockers) & xray;
+    pin_rays = rookAttacksFromBitboard(pinners, pos.bitboards[occupancy] & ~blockers) & xray;
 
     U64 pinned_on_rank_and_file = pin_rays & pos.bitboards[friendly_occupancy];
     pinned_pieces |= pinned_on_rank_and_file;
+
 
     // pinned pawns on files
     pinned_pawns = pinned_on_rank_and_file & pos.bitboards[friendly_pawn];
@@ -164,7 +169,7 @@ void generateMoves(MoveList &moves, Position &pos) {
 
     // pinned rooks and queens
 
-    U64 pinned_rooks_and_queens = pinned_on_rank_and_file & pos.bitboards[friendly_rook] & pos.bitboards[friendly_queen];
+    U64 pinned_rooks_and_queens = pinned_on_rank_and_file & (pos.bitboards[friendly_rook] | pos.bitboards[friendly_queen]);
 
     while (pinned_rooks_and_queens) {
         piece_index = popLSB(pinned_rooks_and_queens);
@@ -176,7 +181,7 @@ void generateMoves(MoveList &moves, Position &pos) {
     }
 
     // knight moves
-    U64 knights = pos.bitboards[friendly_knight];
+    U64 knights = pos.bitboards[friendly_knight] & ~pinned_pieces;
 
     while(knights) {
         piece_index = popLSB(knights);
@@ -186,7 +191,7 @@ void generateMoves(MoveList &moves, Position &pos) {
 
     // pawn moves
 
-    U64 pawns = pos.bitboards[friendly_pawn];
+    U64 pawns = pos.bitboards[friendly_pawn] & ~pinned_pieces;
 
     // single and double pushes
 
@@ -206,8 +211,55 @@ void generateMoves(MoveList &moves, Position &pos) {
         right_attacks = pawns >> 7 & pos.bitboards[enemy_occupancy] & capture_mask & ~a_file;
     }
 
+    U64 promotions = single_pushes & (rank_8 | rank_1);
+    single_pushes = single_pushes & ~promotions;
+    U64 left_promotion_captures = left_attacks & (rank_8 | rank_1);
+    left_attacks = left_attacks & ~left_promotion_captures;
+    U64 right_promotion_captures = right_attacks & (rank_8 | rank_1);
+    right_attacks = right_attacks & ~right_promotion_captures;
+
     int start_square;
     int end_square;
+
+    while (promotions) {
+        end_square = popLSB(promotions);
+        if constexpr(white_to_move) {
+            start_square = end_square - 8;
+        } else {
+            start_square = end_square + 8;
+        }
+        moves.addMove(encodeMove(start_square, end_square, queen_promotion));
+        moves.addMove(encodeMove(start_square, end_square, knight_promotion));
+        moves.addMove(encodeMove(start_square, end_square, bishop_promotion));
+        moves.addMove(encodeMove(start_square, end_square, rook_promotion));
+    }
+
+    while (left_promotion_captures) {
+        end_square = popLSB(left_promotion_captures);
+        if constexpr(white_to_move) {
+            start_square = end_square - 7;
+        } else {
+            start_square = end_square + 9;
+        }
+        moves.addMove(encodeMove(start_square, end_square, queen_promotion_capture));
+        moves.addMove(encodeMove(start_square, end_square, knight_promotion_capture));
+        moves.addMove(encodeMove(start_square, end_square, bishop_promotion_capture));
+        moves.addMove(encodeMove(start_square, end_square, rook_promotion_capture));
+    }
+
+    while (right_promotion_captures) {
+        end_square = popLSB(right_promotion_captures);
+        if constexpr(white_to_move) {
+            start_square = end_square - 9;
+        } else {
+            start_square = end_square + 7;
+        }
+        moves.addMove(encodeMove(start_square, end_square, queen_promotion_capture));
+        moves.addMove(encodeMove(start_square, end_square, knight_promotion_capture));
+        moves.addMove(encodeMove(start_square, end_square, bishop_promotion_capture));
+        moves.addMove(encodeMove(start_square, end_square, rook_promotion_capture));
+    }
+
 
     while (double_pushes) {
         end_square = popLSB(double_pushes);
@@ -249,11 +301,50 @@ void generateMoves(MoveList &moves, Position &pos) {
         moves.addMove(encodeMove(start_square, end_square, capture_move));
     }
 
+    // en passant 
+    if (pos.en_passant) {
+        U64 en_passant_attackers;
+        pin_rays = 0ULL;
+        if constexpr(white_to_move) {
+            en_passant_attackers = pawn_attacks[BLACK][pos.en_passant] & pawns;
+            if (pos.bitboards[friendly_king] & rank_5) {
+                while (en_passant_attackers) {
+                    start_square = popLSB(en_passant_attackers);
+                    pin_rays = getMagicRookAttack(king_index, pos.bitboards[occupancy] & ~setBit(start_square) & ~setBit(pos.en_passant - 8));
+                    if (!(pin_rays & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen]))) {
+                        moves.addMove(encodeMove(start_square, pos.en_passant, en_passant_capture));
+                    }
+                }
+            } else {
+                while (en_passant_attackers) {
+                    start_square = popLSB(en_passant_attackers);
+                    moves.addMove(encodeMove(start_square, pos.en_passant, en_passant_capture));
+                }
+            }
+        } else {
+            en_passant_attackers = pawn_attacks[WHITE][pos.en_passant] & pawns;
+            if (pos.bitboards[friendly_king] & rank_4) {
+                while (en_passant_attackers) {
+                    start_square = popLSB(en_passant_attackers);
+                    pin_rays = getMagicRookAttack(king_index, pos.bitboards[occupancy] & ~setBit(start_square) & ~setBit(pos.en_passant + 8));
+                    if (!(pin_rays & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen]))) {
+                        moves.addMove(encodeMove(start_square, pos.en_passant, en_passant_capture));
+                    }
+                }
+            } else {
+                while (en_passant_attackers) {
+                    start_square = popLSB(en_passant_attackers);
+                    moves.addMove(encodeMove(start_square, pos.en_passant, en_passant_capture));
+                }
+            }
+        }
+    }
+
     // sliding piece moves
 
     // bishop moves (including queens)
 
-    U64 bishops = pos.bitboards[friendly_bishop] | pos.bitboards[friendly_queen];
+    U64 bishops = (pos.bitboards[friendly_bishop] | pos.bitboards[friendly_queen]) & ~pinned_pieces;
 
     while(bishops) {
         piece_index = popLSB(bishops);
@@ -264,13 +355,35 @@ void generateMoves(MoveList &moves, Position &pos) {
 
     // rook moves (including queens)
 
-    U64 rooks = pos.bitboards[friendly_rook] | pos.bitboards[friendly_queen];
+    U64 rooks = (pos.bitboards[friendly_rook] | pos.bitboards[friendly_queen]) & ~pinned_pieces;
+
+    // printBitboard(capture_mask);
+    // printBitboard(pos.bitboards[white_pawn]);
 
     while(rooks) {
         piece_index = popLSB(rooks);
         magic_attack = getMagicRookAttack(piece_index, pos.bitboards[occupancy]);
         addMovesFromBitboard(piece_index, magic_attack & ~pos.bitboards[occupancy] & block_mask, quiet_move, moves);
         addMovesFromBitboard(piece_index, magic_attack & pos.bitboards[enemy_occupancy] & capture_mask, capture_move, moves);
+    }
+
+    // castling
+    if (num_checks == 0) {
+        if constexpr(white_to_move) {
+            if ((wkc & pos.castle_rights) && !(pos.bitboards[occupancy] & wkc_squares) && !(enemy_attacks & wkc_king_squares)) {
+                moves.addMove(encodeMove(e1, g1, king_castle));
+            }
+            if ((wqc & pos.castle_rights) && !(pos.bitboards[occupancy] & wqc_squares) && !(enemy_attacks & wqc_king_squares)) {
+                moves.addMove(encodeMove(e1, c1, queen_castle));
+            }
+        } else {
+            if ((bkc & pos.castle_rights) && !(pos.bitboards[occupancy] & bkc_squares) && !(enemy_attacks & bkc_king_squares)) {
+                moves.addMove(encodeMove(e8, g8, king_castle));
+            }
+            if ((bqc & pos.castle_rights) && !(pos.bitboards[occupancy] & bqc_squares) && !(enemy_attacks & bqc_king_squares)) {
+                moves.addMove(encodeMove(e8, c8, queen_castle));
+            }
+        }
     }
 }
 

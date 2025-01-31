@@ -25,8 +25,8 @@ static constexpr U64 not_gh_file = ~gh_file;
 // rank masks
 static constexpr U64 rank_1 = 0xffULL;
 static constexpr U64 rank_2 = rank_1 << 8;
-static constexpr U64 rank_4 = rank_1 << (8 * 4);
-static constexpr U64 rank_5 = rank_1 << (8 * 5);
+static constexpr U64 rank_4 = rank_1 << (8 * 3);
+static constexpr U64 rank_5 = rank_1 << (8 * 4);
 static constexpr U64 rank_7 = rank_1 << (8 * 6);
 static constexpr U64 rank_8 = rank_1 << (8 * 7);
 static constexpr U64 rank_1_and_2 = rank_1 | rank_2;
@@ -65,13 +65,13 @@ const int index64[64] = {
  * @return index (0..63) of least significant one bit
  */
 static inline int bitScanForward(U64 bitboard) {
+  assert(bitboard != 0ULL);
   #if defined(__GNUC__) || defined(__GNUG__)
 
   return __builtin_ctzll(bitboard);
   
   #else
 
-  assert(bitboard != 0);
   const U64 debruijn64 = 0x03f79d71b4cb0a89ULL;
   return index64[((bitboard & -bitboard) * debruijn64) >> 58];
 

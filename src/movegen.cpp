@@ -14,9 +14,15 @@ U64 perftHelper(Position &pos, int depth) {
         generateMoves<false>(moves, pos);
     }
 
+    if (depth == 1) {
+        return moves.size();
+    }
+
     for(auto &move: moves) {
+        //printMove(move);
         pos.makeMove(move);
         nodes += perftHelper(pos, depth - 1);
+        //printMove(move);
         pos.unmakeMove();
     }
 
@@ -38,7 +44,10 @@ U64 perft(Position &pos, int depth) {
     }
 
     for(auto &move: moves) {
+        //printMove(move);
         pos.makeMove(move);
+        //pos.printFromBitboard();
+        //printBitboard(pos.bitboards[white_occupancy]);
         int nodes_this_move = perftHelper(pos, depth - 1);
         pos.unmakeMove();
         nodes += nodes_this_move;

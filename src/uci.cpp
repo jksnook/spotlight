@@ -47,12 +47,12 @@ void UCI::parsePosition(std::istringstream& commands) {
         std::string fen;
         token.clear();
         while(commands >> token) {
-        if (token == "moves") {
-            break;
-        }
-        fen += token;
-        fen += " ";
-        token.clear();
+            if (token == "moves") {
+                break;
+            }
+            fen += token;
+            fen += " ";
+            token.clear();
         }
         std::cout << fen << std::endl;
         

@@ -11,6 +11,9 @@ void Position::readFen(std::string fen) {
     for (auto &bitboard: bitboards) {
         bitboard = 0ULL;
     };
+    for (auto &i: board) {
+        i = NO_PIECE;
+    }
 
     z_key = 0ULL;
     ply = 0;
@@ -131,6 +134,7 @@ void Position::printFromBitboard() {
         }
         std::cout << "|\n+---+---+---+---+---+---+---+---+\n";
     }
+    std::cout << "castle rights " << castle_rights << std::endl;
 };
 
 U64 Position::generateZobrist() {
@@ -179,15 +183,16 @@ void Position::movePiece(int start, int end, int piece_type) {
 
 void Position::removePiece(int square, int piece_type) {
     bitboards[piece_type] ^= setBit(square);
-    bitboards[white_occupancy + side_to_move] ^= setBit(square);
-    bitboards[occupancy] ^= setBit(square);
+    bitboards[white_occupancy] &= ~setBit(square);
+    bitboards[black_occupancy] &= ~setBit(square);
+    bitboards[occupancy] &= ~setBit(square);
 
     board[square] = NO_PIECE;
 }
 
 void Position::placePiece(int square, int piece_type) {
     bitboards[piece_type] ^= setBit(square);
-    bitboards[white_occupancy + side_to_move] ^= setBit(square);
+    bitboards[white_occupancy + piece_type / 6] ^= setBit(square);
     bitboards[occupancy] ^= setBit(square);
 
     board[square] = piece_type;
@@ -237,7 +242,7 @@ void Position::makeMove(move16 move) {
         fifty_move++;
         break;
     case en_passant_capture:
-        captured_piece = white_pawn + 6 * side_to_move;
+        captured_piece = white_pawn + 6 * (side_to_move ^ 1);
         undo.captured_piece = captured_piece;
         removePiece(end_square + 8 * side_to_move - 8 * (1 - side_to_move), captured_piece);
         movePiece(start_square, end_square, piece_type);
