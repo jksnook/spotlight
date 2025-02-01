@@ -26,6 +26,7 @@ class Position {
         int fifty_move;
         int ply;
         U64 z_key;
+        bool in_check;
 
 
         std::vector<Undo> history;

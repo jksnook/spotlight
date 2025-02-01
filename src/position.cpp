@@ -157,7 +157,7 @@ U64 Position::generateZobrist() {
     return zobrist;
 }
 
-Position::Position() {
+Position::Position(): in_check(false) {
     for (auto &i: board) {
         i = NO_PIECE;
     }

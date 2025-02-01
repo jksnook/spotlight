@@ -61,6 +61,12 @@ void generateMoves(MoveList &moves, Position &pos) {
 
     int num_checks = countBits(checkers);
 
+    if (num_checks > 0) {
+        pos.in_check = true;
+    } else {
+        pos.in_check = false;
+    }
+
     // generate king moves
 
     // add quiet moves
@@ -385,6 +391,11 @@ void generateMoves(MoveList &moves, Position &pos) {
             }
         }
     }
+}
+
+template <bool white_to_move>
+void inCheck(Position &pos) {
+
 }
 
 U64 perftHelper(Position &pos, int depth);
