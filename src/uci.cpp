@@ -32,6 +32,7 @@ void UCI::loop() {
         } else if (token == "print") {
             position.print();
             position.printFromBitboard();
+            std::cout << position.isTripleRepetition() << std::endl;
         } 
     }
 }

@@ -14,9 +14,9 @@ U64 perftHelper(Position &pos, int depth) {
         generateMoves<false>(moves, pos);
     }
 
-    if (depth == 1) {
-        return moves.size();
-    }
+    // if (depth == 1) {
+    //     return moves.size();
+    // }
 
     for(auto &move: moves) {
         //printMove(move);

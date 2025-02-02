@@ -35,6 +35,7 @@ class Position {
         void print();
         void printFromBitboard();
         U64 generateZobrist();
+        bool isTripleRepetition();
 
         void movePiece(int start, int end, int piece_type);
         void removePiece(int square, int piece_type);

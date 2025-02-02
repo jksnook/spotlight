@@ -382,6 +382,57 @@ void generateMoves(MoveList &moves, Position &pos) {
 template <bool white_to_move>
 void inCheck(Position &pos) {
 
+    // set up all bitboards for easy access according to friendly vs enemy with compiletime stuff
+    constexpr const int side = static_cast<int>(white_to_move) ^ 1;
+    constexpr const int enemy_side = side ^ 1;
+
+    constexpr const int friendly_pawn = getPieceID(white_pawn, side);
+    constexpr const int friendly_knight = getPieceID(white_knight, side);
+    constexpr const int friendly_bishop = getPieceID(white_bishop, side);
+    constexpr const int friendly_rook = getPieceID(white_rook, side);
+    constexpr const int friendly_queen = getPieceID(white_queen, side);
+    constexpr const int friendly_king = getPieceID(white_king, side);
+
+    constexpr const int enemy_pawn = getPieceID(white_pawn, enemy_side);
+    constexpr const int enemy_knight = getPieceID(white_knight, enemy_side);
+    constexpr const int enemy_bishop = getPieceID(white_bishop, enemy_side);
+    constexpr const int enemy_rook = getPieceID(white_rook, enemy_side);
+    constexpr const int enemy_queen = getPieceID(white_queen, enemy_side);
+    constexpr const int enemy_king = getPieceID(white_king, enemy_side);
+
+    constexpr const int friendly_occupancy = getOccupancy(side);
+    constexpr const int enemy_occupancy = getOccupancy(enemy_side);
+
+
+    // find all squares attacked by the opponent 
+
+    U64 enemy_attacks = pawnAttacksFromBitboard<!white_to_move>(pos.bitboards[enemy_pawn]);
+    enemy_attacks |= knightAttacksFromBitboard(pos.bitboards[enemy_knight]);
+    // treat the king as invisible for bishops and rooks
+    enemy_attacks |= bishopAttacksFromBitboard(pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen], pos.bitboards[occupancy] & ~pos.bitboards[friendly_king]);
+    enemy_attacks |= rookAttacksFromBitboard(pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen], pos.bitboards[occupancy] & ~pos.bitboards[friendly_king]);
+    enemy_attacks |= king_moves[bitScanForward(pos.bitboards[enemy_king])];
+
+    // find the checks on the king and create attack and block masks
+
+    U64 checkers = 0ULL;
+    int king_index = bitScanForward(pos.bitboards[friendly_king]);
+
+    checkers |= knight_moves[king_index] & pos.bitboards[enemy_knight];
+    checkers |= pawn_attacks[side][king_index] & pos.bitboards[enemy_pawn];
+    U64 bishop_rays_from_king = getMagicBishopAttack(king_index, pos.bitboards[occupancy]);
+    U64 checking_bishops = bishop_rays_from_king & (pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen]);
+    checkers |= checking_bishops;
+    U64 rook_rays_from_king = getMagicRookAttack(king_index, pos.bitboards[occupancy]);
+    U64 checking_rooks = rook_rays_from_king & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen]);
+    checkers |= checking_rooks;
+    U64 block_mask = bishopAttacksFromBitboard(checking_bishops, pos.bitboards[occupancy]) & bishop_rays_from_king;
+    block_mask |= rookAttacksFromBitboard(checking_rooks, pos.bitboards[occupancy]) & rook_rays_from_king;
+
+    if (checkers) {
+        return true;
+    }
+    return false;
 }
 
 U64 perftHelper(Position &pos, int depth);

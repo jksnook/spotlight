@@ -78,9 +78,9 @@ move16 Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
 int Search::negaMax(Position &pos, int depth, int alpha, int beta) {
     if (timesUp()) {
         return 0;
-    }
-
-    if (depth == 0) {
+    } else if (pos.isTripleRepetition()) {
+        return 0;
+    } else if (depth == 0) {
         return qSearch(pos, depth, alpha, beta);
     }
 

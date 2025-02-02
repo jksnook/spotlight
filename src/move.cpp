@@ -42,9 +42,3 @@ void printMoveLong(move16 move) {
 
     std::cout << moveToString(move) << " " << move_type_map[move_type] << "\n";
 };
-
-void addMovesFromBitboard(int start, U64 bb, int move_type,  MoveList &moves) {
-    while (bb) {
-        moves.addMove(encodeMove(start, popLSB(bb), move_type));
-    }
-};

@@ -141,13 +141,18 @@ U64 Position::generateZobrist() {
     U64 zobrist = 0ULL;
     U64 bitboard;
 
-    for (int piece = white_pawn; piece <= black_king; piece++){
+    // for (int piece = white_pawn; piece <= black_king; piece++){
 
-        bitboard = bitboards[piece];
+    //     bitboard = bitboards[piece];
 
-        while (bitboard) {
-        zobrist ^= piece_keys[piece][popLSB(bitboard)];
-        }
+    //     while (bitboard) {
+    //     zobrist ^= piece_keys[piece][popLSB(bitboard)];
+    //     }
+    // }
+
+    for (int i = 0; i < 64; i++) {
+        int piece = at(i);
+        zobrist ^= piece_keys[piece][i];
     }
 
     zobrist ^= en_passant_keys[en_passant];
@@ -218,6 +223,7 @@ void Position::makeMove(move16 move) {
     {
     case quiet_move:
         movePiece(start_square, end_square, piece_type);
+        fifty_move++;
         break;
     case capture_move:
         captured_piece = at(end_square);
@@ -325,9 +331,9 @@ void Position::makeMove(move16 move) {
         }
     }
 
+    history.push_back(undo);
     side_to_move ^= 1;
     z_key = generateZobrist();
-    history.push_back(undo);
 }
 
 void Position::unmakeMove() {
@@ -483,5 +489,17 @@ move16 Position::parseMove(std::string move_string) {
     move |= move_type << 12;
 
     return move;
+}
+
+bool Position::isTripleRepetition() {
+    const int s = static_cast<int>(history.size());
+    if (s == 0) return false;
+    int repetitions = 0;
+    for (int i = s - 1; i >= s - fifty_move; i--) {
+        if (z_key == history[i].z_key) {
+            repetitions++;
+        }
+    }
+    return repetitions >= 2;
 }
 
