@@ -55,15 +55,15 @@ static inline move16 encodeMove(int start, int end, int move_type) {
     return (start | (end << 6) | (move_type << 12));
 };
 
-static constexpr int get_from_square(move16 &move) {
+static constexpr int getFromSquare(move16 &move) {
     return move & 0b111111;
 }
 
-static constexpr int get_to_square(move16 &move) {
+static constexpr int getToSquare(move16 &move) {
     return (move >> 6) & 0b111111;
 }
 
-static constexpr int get_move_type(move16 &move) {
+static constexpr int getMoveType(const move16 &move) {
     return (move >> 12) & 0b1111;
 }
 

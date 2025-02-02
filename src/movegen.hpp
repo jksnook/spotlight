@@ -311,40 +311,26 @@ void generateMoves(MoveList &moves, Position &pos) {
     if (pos.en_passant) {
         U64 en_passant_attackers;
         pin_rays = 0ULL;
+        en_passant_attackers = pawn_attacks[enemy_side][pos.en_passant] & pawns;
         if constexpr(white_to_move) {
-            en_passant_attackers = pawn_attacks[BLACK][pos.en_passant] & pawns;
-            if (pos.bitboards[friendly_king] & rank_5) {
-                while (en_passant_attackers) {
-                    start_square = popLSB(en_passant_attackers);
-                    pin_rays = getMagicRookAttack(king_index, pos.bitboards[occupancy] & ~setBit(start_square) & ~setBit(pos.en_passant - 8));
-                    if (!(pin_rays & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen]))) {
-                        moves.addMove(encodeMove(start_square, pos.en_passant, en_passant_capture));
-                    }
-                }
-            } else {
-                while (en_passant_attackers) {
-                    start_square = popLSB(en_passant_attackers);
-                    moves.addMove(encodeMove(start_square, pos.en_passant, en_passant_capture));
-                }
-            }
+            piece_index = pos.en_passant - 8;
         } else {
-            en_passant_attackers = pawn_attacks[WHITE][pos.en_passant] & pawns;
-            if (pos.bitboards[friendly_king] & rank_4) {
-                while (en_passant_attackers) {
-                    start_square = popLSB(en_passant_attackers);
-                    pin_rays = getMagicRookAttack(king_index, pos.bitboards[occupancy] & ~setBit(start_square) & ~setBit(pos.en_passant + 8));
-                    if (!(pin_rays & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen]))) {
-                        moves.addMove(encodeMove(start_square, pos.en_passant, en_passant_capture));
+            piece_index = pos.en_passant + 8;
+        }
+        if ((num_checks == 0) || (pawn_attacks[enemy_side][piece_index] & pos.bitboards[friendly_king])) {
+            while (en_passant_attackers) {
+                start_square = popLSB(en_passant_attackers);
+                if (pos.bitboards[friendly_king] & (rank_5 >> (8 * side))) { 
+                    pin_rays = getMagicRookAttack(king_index, pos.bitboards[occupancy] & ~setBit(start_square) & ~setBit(piece_index));
+                    if (pin_rays & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen])) {
+                        break;
                     }
                 }
-            } else {
-                while (en_passant_attackers) {
-                    start_square = popLSB(en_passant_attackers);
-                    moves.addMove(encodeMove(start_square, pos.en_passant, en_passant_capture));
-                }
+                moves.addMove(encodeMove(start_square, pos.en_passant, en_passant_capture));
             }
         }
     }
+
 
     // sliding piece moves
 

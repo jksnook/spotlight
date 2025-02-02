@@ -17,7 +17,7 @@ void UCI::loop() {
         commands >> token;
 
         if (token == "uci") {
-            std::cout << "id name Honest Engine" << std::endl;
+            std::cout << "id name Spotlight" << std::endl;
             std::cout << "uciok" << std::endl;
         } else if (token == "isready") {
             std::cout << "readyok" << std::endl;
@@ -54,8 +54,6 @@ void UCI::parsePosition(std::istringstream& commands) {
             fen += " ";
             token.clear();
         }
-        std::cout << fen << std::endl;
-        
         position.readFen(fen);
     }
 
@@ -76,8 +74,29 @@ void UCI::parseGo(std::istringstream& commands) {
     std::string token;
 
     commands >> token;
+    if (token == "wtime") {
+        token.clear();
+        commands >> token;
+        U64 wtime = stoi(token);
+        token.clear();
+        commands >> token;
+        token.clear();
+        commands >> token;
+        U64 btime = stoi(token);
 
-    if (token == "perft") {
+        U64 search_time;
+
+        if (position.side_to_move == WHITE) {
+            search_time = wtime / 30;
+        } else {
+            search_time = btime / 30;
+        }
+
+        move16 best_move = search.iterSearch(position, 30, search_time);
+        // printMove(best_move);
+
+        std::cout << "bestmove " << moveToString(best_move) << std::endl;
+    } else if (token == "perft") {
         token.clear();
         commands >> token;
         int depth = stoi(token);

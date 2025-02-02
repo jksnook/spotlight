@@ -45,6 +45,7 @@ move16 Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     for (int depth = 0; depth < max_depth; depth++) {
         int beta = POSITIVE_INFINITY;
         int alpha = NEGATIVE_INFINITY;
+        move16 best_move_this_search = 0;
         for (const auto &move: moves) {
             pos.makeMove(move);
             int score = -negaMax(pos, depth, -beta, -alpha);
@@ -54,15 +55,20 @@ move16 Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
                     break;
                 }
                 alpha = score;
+                best_move_this_search = move;
                 if (score > max_score) {
                     best_move = move;
                     max_score = score;
                 }
             }
         }
-        std::cout << "info depth " << depth + 1 << " bestmove " << moveToString(best_move) << std::endl;
         if (timesUp()) {
+            std::cout << "info depth " << depth + 1 << " bestmove " << moveToString(best_move) << " score " << max_score << std::endl;
             break;
+        } else {
+            best_move = best_move_this_search;
+            max_score = alpha;
+            std::cout << "info depth " << depth + 1 << " bestmove " << moveToString(best_move) << " score " << max_score << std::endl;
         }
     }
 
@@ -75,7 +81,7 @@ int Search::negaMax(Position &pos, int depth, int alpha, int beta) {
     }
 
     if (depth == 0) {
-        return eval(pos);
+        return qSearch(pos, depth, alpha, beta);
     }
 
     MoveList moves;
@@ -90,7 +96,7 @@ int Search::negaMax(Position &pos, int depth, int alpha, int beta) {
     if (moves.size() == 0) {
         // if in check return negative infinity else return 0
         if (pos.in_check) {
-            return NEGATIVE_INFINITY + depth;
+            return -MATE_SCORE - depth;
         }
         return 0;
     }
@@ -104,7 +110,54 @@ int Search::negaMax(Position &pos, int depth, int alpha, int beta) {
         alpha = std::max(alpha, max_score);
         pos.unmakeMove();
         if (max_score >= beta) {
-            return max_score;
+            return beta;
+        }
+    }
+
+    return max_score;
+}
+
+int Search::qSearch(Position &pos, int depth, int alpha, int beta) {
+    if (timesUp()) {
+        return 0;
+    }
+
+    MoveList moves;
+    
+    if (pos.side_to_move == WHITE) {
+        generateMoves<true>(moves, pos);
+    } else {
+        generateMoves<false>(moves, pos);
+    }
+
+    // check for stalemate or checkmate
+    if (moves.size() == 0) {
+        // if in check return negative infinity else return 0
+        if (pos.in_check) {
+            return -MATE_SCORE - depth;
+        }
+        return 0;
+    }
+    
+    int max_score = eval(pos);
+
+    if (max_score >= beta) {
+        return beta;
+    } else if (max_score > alpha) {
+        alpha = max_score;
+    }
+
+    for (const auto &move: moves) {
+        if (getMoveType(move) != capture_move) {
+            continue;
+        }
+        pos.makeMove(move);
+        // int score = -negaMax(pos, depth - 1, beta, alpha);
+        max_score = std::max(max_score, -qSearch(pos, depth - 1, -beta, -alpha));
+        alpha = std::max(alpha, max_score);
+        pos.unmakeMove();
+        if (max_score >= beta) {
+            return beta;
         }
     }
 

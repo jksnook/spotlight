@@ -8,8 +8,9 @@
 #include <algorithm>
 #include <chrono>
 
-const int NEGATIVE_INFINITY = 1 << 31;
+const int NEGATIVE_INFINITY = (1 << 31) + 1;
 const int POSITIVE_INFINITY = ~0 ^ NEGATIVE_INFINITY;
+const int MATE_SCORE = 1 << 15;
 
 class Search
 {
@@ -21,6 +22,7 @@ public:
 private:
     void setTimer(U64 duration_in_ms, int interval);
     int negaMax(Position &pos, int depth, int alpha, int beta);
+    int qSearch(Position &pos, int depth, int alpha, int beta);
     bool timesUp();
 
     bool times_up;

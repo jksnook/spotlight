@@ -14,31 +14,37 @@ int main() {
     initMagics();
     initZobrist();
 
-    // UCI uci;
+    UCI uci;
 
-    // uci.loop();
+    uci.loop();
 
-    Position pos;
-
-    std::cout << eval(pos) << std::endl;
-
-    // MoveList moves;
-
-    pos.readFen("k7/8/2R5/1Q6/8/8/4K3/8 w - - 0 1");
+    // Position pos;
 
     // std::cout << eval(pos) << std::endl;
 
-    // // generateMoves<false>(moves, pos);
+    // MoveList moves;
 
-    Search search;
+    // pos.readFen("8/8/6p1/5p1p/2p2r2/1k6/1P1R1B2/1K6 b - - 5 53");
 
-    move16 best_move = search.iterSearch(pos, 15, 1000ULL);
+    // std::cout << eval(pos) << std::endl;
 
-    pos.print();
-    pos.printFromBitboard();
+    // generateMoves<false>(moves, pos);
 
-    printMoveLong(best_move);
+    // std::cout << moves.size() << std::endl;
 
-    // std::cout << perft(pos, 1) << std::endl;
+    // for (const auto &m: moves) {
+    //     std::cout << moveToString(m) << std::endl;
+    // }
+
+    // Search search;
+
+    // move16 best_move = search.iterSearch(pos, 15, 4000ULL);
+
+    // pos.print();
+    // pos.printFromBitboard();
+
+    // printMoveLong(best_move);
+
+    // std::cout << perft(pos, 7) << std::endl;
 
 }

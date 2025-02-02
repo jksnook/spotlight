@@ -199,9 +199,9 @@ void Position::placePiece(int square, int piece_type) {
 }
 
 void Position::makeMove(move16 move) {
-    int start_square = get_from_square(move);
-    int end_square = get_to_square(move);
-    int move_type = get_move_type(move);
+    int start_square = getFromSquare(move);
+    int end_square = getToSquare(move);
+    int move_type = getMoveType(move);
     int piece_type = at(start_square);
 
     Undo undo;
@@ -335,9 +335,9 @@ void Position::unmakeMove() {
     Undo undo = history.back();
     move16 move = undo.move;
 
-    int start_square = get_from_square(move);
-    int end_square = get_to_square(move);
-    int move_type = get_move_type(move);
+    int start_square = getFromSquare(move);
+    int end_square = getToSquare(move);
+    int move_type = getMoveType(move);
     int piece_type = at(end_square);
 
     en_passant = undo.en_passant;

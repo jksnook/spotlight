@@ -2,6 +2,7 @@
 
 #include "position.hpp"
 #include "movegen.hpp"
+#include "search.hpp"
 
 #include <sstream>
 #include <deque>
@@ -20,5 +21,7 @@ public:
 
 private:
   Position position;
+
+  Search search;
 
 };
