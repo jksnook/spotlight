@@ -47,4 +47,6 @@ int main() {
 
     // std::cout << perft(pos, 7) << std::endl;
 
+    // problem with fen r1bqkbnr/p1p5/2n3pp/1pP1pp2/1P1pPP2/B2P4/P2KN1PP/RN1Q1B1R b kq - 1 9
+
 }

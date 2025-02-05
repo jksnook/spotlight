@@ -67,6 +67,7 @@ void UCI::parsePosition(std::istringstream& commands) {
     while (commands >> token) {
         // printMoveLong(position.parseMove(token));
         position.makeMove(position.parseMove(token));
+        position.game_half_moves++;
         // position.print();
     }
 
@@ -95,8 +96,8 @@ void UCI::parseGo(std::istringstream& commands) {
 
         move16 best_move = search.iterSearch(position, 30, search_time);
         // printMove(best_move);
-
         std::cout << "bestmove " << moveToString(best_move) << std::endl;
+        // std::cout << " tt hits: " << search.tt_hits << std::endl;
     } else if (token == "perft") {
         token.clear();
         commands >> token;

@@ -24,7 +24,8 @@ class Position {
         int side_to_move;
         int en_passant;
         int fifty_move;
-        int ply;
+        int half_moves;
+        int game_half_moves;
         U64 z_key;
         bool in_check;
 

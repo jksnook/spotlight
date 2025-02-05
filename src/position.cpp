@@ -16,7 +16,7 @@ void Position::readFen(std::string fen) {
     }
 
     z_key = 0ULL;
-    ply = 0;
+    half_moves = 0;
     side_to_move = 0;
     en_passant = 0;
     fifty_move = 0;
@@ -82,10 +82,11 @@ void Position::readFen(std::string fen) {
     }
     fen = fen.substr(space_pos + 1);
     if (isdigit(fen[0])) {
-        ply = 2 * (std::stoi(fen) - 1);
+        half_moves = 2 * (std::stoi(fen) - 1);
     } else {
-        ply = 0;
+        half_moves = 0;
     }
+    game_half_moves = half_moves;
 
     z_key = generateZobrist();
 
@@ -334,6 +335,7 @@ void Position::makeMove(move16 move) {
     history.push_back(undo);
     side_to_move ^= 1;
     z_key = generateZobrist();
+    half_moves++;
 }
 
 void Position::unmakeMove() {
@@ -350,6 +352,7 @@ void Position::unmakeMove() {
     fifty_move = undo.fifty_move;
     castle_rights = undo.castle_rights;
     z_key = undo.z_key;
+    half_moves--;
 
     switch (move_type)
     {

@@ -380,7 +380,7 @@ void generateMoves(MoveList &moves, Position &pos) {
 }
 
 template <bool white_to_move>
-void inCheck(Position &pos) {
+bool inCheck(Position &pos) {
 
     // set up all bitboards for easy access according to friendly vs enemy with compiletime stuff
     constexpr const int side = static_cast<int>(white_to_move) ^ 1;
