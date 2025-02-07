@@ -115,19 +115,20 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     orderMoves(pos, moves, best_move);
+    // best_move = 0;
     
     int max_score = NEGATIVE_INFINITY;
 
     for (const auto &move: moves) {
         pos.makeMove(move);
         score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
+        pos.unmakeMove();
         if (score > max_score) {
             best_move = move;
             max_score = score;
         }
         // max_score = std::max(max_score, -negaMax(pos, depth - 1, ply + 1, -beta, -alpha));
         alpha = std::max(alpha, max_score);
-        pos.unmakeMove();
         if (max_score >= beta) {
             if (timesUp()) {
                 return 0;
@@ -183,7 +184,8 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         alpha = max_score;
     }
 
-    orderMoves(pos, moves, 0);
+    orderMoves(pos, moves, best_move);
+    best_move = 0;
 
     for (const auto &move: moves) {
         if (getMoveType(move) != capture_move) {

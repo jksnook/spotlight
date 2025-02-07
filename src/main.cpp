@@ -24,17 +24,21 @@ int main() {
 
     // MoveList moves;
 
-    // pos.readFen("8/8/6p1/5p1p/2p2r2/1k6/1P1R1B2/1K6 b - - 5 53");
+    // pos.readFen("1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - -");
 
-    // std::cout << eval(pos) << std::endl;
+    // // std::cout << eval(pos) << std::endl;
 
-    // generateMoves<false>(moves, pos);
+    // generateMoves<true>(moves, pos);
 
     // std::cout << moves.size() << std::endl;
 
     // for (const auto &m: moves) {
     //     std::cout << moveToString(m) << std::endl;
     // }
+
+    // int e = see(pos, moves[7]);
+
+    // std::cout << "static exchange: " << e << std::endl;
 
     // Search search;
 
