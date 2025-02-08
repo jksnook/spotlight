@@ -56,9 +56,10 @@ int see(Position &pos, move16 move) {
     attackers_bb &= ~current_attacker_bb;
     remaining_occupancy &= ~current_attacker_bb;
 
-    U64 diagonal_xray_pieces = pos.bitboards[white_pawn] | pos.bitboards[black_pawn] | pos.bitboards[white_bishop] | pos.bitboards[black_bishop];
-    diagonal_xray_pieces |= pos.bitboards[white_queen] | pos.bitboards[black_queen];
-    U64 vertical_xray_pieces = pos.bitboards[white_rook] | pos.bitboards[black_rook] | pos.bitboards[white_queen] | pos.bitboards[black_queen];
+    U64 diagonal_xray_pieces = pos.bitboards[white_pawn] | pos.bitboards[black_pawn] | pos.bitboards[white_bishop] |
+                               pos.bitboards[black_bishop] | pos.bitboards[white_queen] | pos.bitboards[black_queen];
+    U64 vertical_xray_pieces = pos.bitboards[white_rook] | pos.bitboards[black_rook] | pos.bitboards[white_queen] |
+                               pos.bitboards[black_queen];
 
     capture_scores[1] = see_values[attacking_piece % 6] - capture_scores[0];
     //std::cout << capture_scores[1] << std::endl;

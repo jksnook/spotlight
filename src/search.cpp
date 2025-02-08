@@ -85,7 +85,19 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     } else if (pos.isTripleRepetition()) {
         return 0;
     } else if (depth == 0) {
-        return qSearch(pos, depth, ply, alpha, beta);
+        if (pos.side_to_move == WHITE) {
+            if (inCheck<true>(pos))  {
+                depth++;
+            } else {
+                return qSearch(pos, depth, ply, alpha, beta);
+            } 
+        } else {
+            if (inCheck<false>(pos))  {
+                depth++;
+            } else {
+                return qSearch(pos, depth, ply, alpha, beta);
+            } 
+        }
     }
 
     nodes_searched++;
