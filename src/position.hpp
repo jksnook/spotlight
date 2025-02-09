@@ -5,6 +5,7 @@
 #include "move.hpp"
 #include <vector>
 #include <string>
+#include <sstream>
 
 struct Undo {
     public:
@@ -33,6 +34,7 @@ class Position {
         std::vector<Undo> history;
 
         void readFen(std::string fen);
+        std::string toFen();
         void print();
         void printFromBitboard();
         U64 generateZobrist();

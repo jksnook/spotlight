@@ -20,11 +20,15 @@ int main() {
 
     // Position pos;
 
+    // std::cout << pos.toFen() << std::endl;
+
     // std::cout << eval(pos) << std::endl;
 
     // MoveList moves;
 
-    // pos.readFen("1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - -");
+    // pos.readFen("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
+
+    // std::cout << pos.toFen() << std::endl;
 
     // // std::cout << eval(pos) << std::endl;
 

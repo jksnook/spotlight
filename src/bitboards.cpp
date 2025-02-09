@@ -282,8 +282,8 @@ U64 bishop_magic_attacks[64][1024];
 
 // iterate to the next occupancy as if counting bit by bit with the bits from the mask (still not ideal. looking for something better.)
 void iterateOccupancy(U64 &occupancy, U64 mask) {
-U64 least_sig_zero = (occupancy ^ mask) & -(occupancy ^ mask);
-occupancy = (occupancy & ~((least_sig_zero - 1))) | (least_sig_zero);
+    U64 least_sig_zero = (occupancy ^ mask) & -(occupancy ^ mask);
+    occupancy = (occupancy & ~((least_sig_zero - 1))) | (least_sig_zero);
 }
 
 std::mt19937_64 randomU64(42);

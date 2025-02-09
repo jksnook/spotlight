@@ -90,7 +90,69 @@ void Position::readFen(std::string fen) {
 
     z_key = generateZobrist();
 
-};
+}
+
+std::string Position::toFen() {
+    std::stringstream fen;
+    for (int rank = 7; rank >= 0; rank--) {
+        int empties = 0;
+        for (int file = 0; file < 8; file++) {
+            int sq = rank * 8 + file;
+            int piece = board[sq];
+            if (piece == NO_PIECE) {
+                empties++;
+            } else {
+                if (empties > 0) {
+                    fen << empties;
+                }
+                empties = 0;
+                fen << piece_to_letter_map[piece];
+            }
+        }
+        if (empties > 0) {
+            fen << empties;
+        }
+        if (rank > 0) {
+            fen << '/';
+        }
+    }
+
+    if (side_to_move == WHITE) {
+        fen << " w";
+    } else {
+        fen << " b";
+    }
+
+    fen << " ";
+
+    if (castle_rights) {
+        if (castle_rights & wkc) {
+            fen << "K";
+        }
+        if (castle_rights & wqc) {
+            fen << "Q";
+        }
+        if (castle_rights & bkc) {
+            fen << "k";
+        }
+        if (castle_rights & bqc) {
+            fen << "q";
+        }
+    } else {
+        fen << "-";
+    }
+
+    if (en_passant) {
+        fen << " " << square_names[en_passant];
+    } else {
+        fen << " -";
+    }
+
+    fen << " " << fifty_move;
+    fen << " " << (half_moves / 2 + 1);
+
+    return fen.str();
+}
 
 void Position::print() {
     std::cout << "+---+---+---+---+---+---+---+---+\n";
