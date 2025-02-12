@@ -85,16 +85,35 @@ void UCI::parseGo(std::istringstream& commands) {
         token.clear();
         commands >> token;
         U64 btime = stoi(token);
+        token.clear();
+        commands >> token;
+        int winc = 0;
+        int binc  = 0;
+        if (token == "winc") {
+            token.clear();
+            commands >> token;
+            winc = stoi(token);
+            token.clear();
+            commands >> token;
+        }
+        if (token == "binc") {
+            token.clear();
+            commands >> token;
+            binc = stoi(token);
+            token.clear();
+            commands >> token;
+        }
+        std::cout << winc << " " << binc << "\n";
 
         U64 search_time;
 
         if (position.side_to_move == WHITE) {
-            search_time = wtime / 30;
+            search_time = wtime / 30 + winc / 2;
         } else {
-            search_time = btime / 30;
+            search_time = btime / 30 + binc / 2;
         }
 
-        move16 best_move = search.iterSearch(position, 30, search_time);
+        move16 best_move = search.iterSearch(position, 30, search_time).move;
         // printMove(best_move);
         std::cout << "bestmove " << moveToString(best_move) << std::endl;
         // std::cout << " tt hits: " << search.tt_hits << std::endl;

@@ -8,6 +8,7 @@
 #include "uci.hpp"
 #include "eval.hpp"
 #include "search.hpp"
+#include "datagen.hpp"
 
 int main() {
     initMoves();
@@ -17,6 +18,8 @@ int main() {
     UCI uci;
 
     uci.loop();
+
+    // selfplay(5);
 
     // Position pos;
 

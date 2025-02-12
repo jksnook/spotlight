@@ -23,7 +23,7 @@ void PVTable::zeroLength(int ply) {
 }
 
 Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0) {
-
+    
 }
 
 void Search::setTimer(U64 duration_in_ms, int interval) {
@@ -50,11 +50,11 @@ bool Search::timesUp() {
     return false;
 }
 
-move16 Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
+SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     setTimer(time_in_ms, 1000);
-
-    MoveList moves;
     tt_hits = 0;
+    MoveList moves;
+    SearchResult result;
 
     if (pos.side_to_move == WHITE) {
         generateMoves<true>(moves, pos);
@@ -69,8 +69,17 @@ move16 Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
         pv_search = true;
         nodes_searched = 1;
         orderMoves(pos, moves, best_move);
-        int beta = POSITIVE_INFINITY;
-        int alpha = NEGATIVE_INFINITY;
+        int beta;
+        int alpha;
+        // if (depth > 3) {
+        //     beta = max_score + WINDOW_SIZE;
+        //     alpha = max_score - WINDOW_SIZE;
+        // } else {
+        //     beta = POSITIVE_INFINITY;
+        //     alpha = NEGATIVE_INFINITY;
+        // }
+        beta = POSITIVE_INFINITY;
+        alpha = NEGATIVE_INFINITY;
         move16 best_move_this_search = 0;
         for (const auto &move: moves) {
             pv.zeroLength(1);
@@ -105,7 +114,10 @@ move16 Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
         }
     }
 
-    return best_move;
+    result.move = best_move;
+    result.score = max_score;
+
+    return result;
 }
 
 int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
@@ -175,19 +187,18 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
         pos.unmakeMove();
         if (score > max_score) {
-            best_move = move;
-            pv.updatePV(ply, move);
-            max_score = score;
-        }
-        // max_score = std::max(max_score, -negaMax(pos, depth - 1, ply + 1, -beta, -alpha));
-        alpha = std::max(alpha, max_score);
-        if (max_score >= beta) {
             if (timesUp()) {
                 return 0;
             } 
-            tt.save(pos.z_key, depth, ply, move, max_score, LOWER_BOUND_NODE, pos.half_moves);
-            return beta;
+            best_move = move;
+            pv.updatePV(ply, move);
+            max_score = score;
+            if (max_score >= beta) {
+                tt.save(pos.z_key, depth, ply, move, max_score, LOWER_BOUND_NODE, pos.half_moves);
+                return beta;
+            }
         }
+        alpha = std::max(alpha, max_score);
     }
 
     if (timesUp()) {
@@ -207,10 +218,10 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     int score = 0;
     move16 best_move = 0;
 
-    // if (tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
-    //     tt_hits++;
-    //     return score;
-    // }
+    if (tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
+        tt_hits++;
+        return score;
+    }
 
     if (pv_search) {
         if (ply < pv.length()) {
@@ -255,8 +266,9 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         pos.makeMove(move);
         score = -qSearch(pos, depth - 1, ply + 1, -beta, -alpha);
         pos.unmakeMove();
+        if (timesUp()) return 0;
         if (score >= beta) {
-            // tt.save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.half_moves);
+            tt.save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.half_moves);
             return beta;
         }
         if (score > max_score) {
@@ -269,6 +281,6 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
-    // tt.save(pos.z_key, depth, ply, best_move, max_score, EXACT_NODE, pos.game_half_moves);
+    tt.save(pos.z_key, depth, ply, best_move, max_score, EXACT_NODE, pos.game_half_moves);
     return max_score;
 };

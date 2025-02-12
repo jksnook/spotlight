@@ -14,6 +14,8 @@
 const int NEGATIVE_INFINITY = (1 << 31) + 1;
 const int POSITIVE_INFINITY = ~0 ^ NEGATIVE_INFINITY;
 
+const int WINDOW_SIZE = 100;
+
 class PVTable {
     public:
         std::array<std::array<move16, MAX_DEPTH>, MAX_DEPTH> table;
@@ -21,7 +23,6 @@ class PVTable {
         void updatePV(int ply, move16 first_move);
         void updateFromTT(int ply, move16 first_move);
         void clearPV();
-        void clearForNextDepth();
         void zeroLength(int ply);
 
         inline int length() {return pv_length[0];}
@@ -32,12 +33,17 @@ class PVTable {
     private:
 };
 
+struct SearchResult {
+    move16 move;
+    int score;
+};
+
 class Search
 {
 public:
     Search();
 
-    move16 iterSearch(Position &pos, int maxDepth, U64 time_in_ms);
+    SearchResult iterSearch(Position &pos, int maxDepth, U64 time_in_ms);
     int tt_hits;
     int nodes_searched;
 
