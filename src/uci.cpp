@@ -103,7 +103,6 @@ void UCI::parseGo(std::istringstream& commands) {
             token.clear();
             commands >> token;
         }
-        std::cout << winc << " " << binc << "\n";
 
         U64 search_time;
 

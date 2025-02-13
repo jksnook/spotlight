@@ -14,7 +14,7 @@
 const int NEGATIVE_INFINITY = (1 << 31) + 1;
 const int POSITIVE_INFINITY = ~0 ^ NEGATIVE_INFINITY;
 
-const int WINDOW_SIZE = 100;
+const int WINDOW_SIZE = 60;
 
 class PVTable {
     public:
@@ -52,6 +52,8 @@ private:
     int negaMax(Position &pos, int depth, int ply, int alpha, int beta);
     int qSearch(Position &pos, int depth, int ply, int alpha, int beta);
     bool timesUp();
+    SearchResult rootSearch(Position &pos, MoveList &moves, int depth, int alpha, int beta);
+    void outputInfo(int depth, move16 best_move, int score);
 
     bool pv_search;
     bool times_up;

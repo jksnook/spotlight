@@ -1,11 +1,13 @@
 #include "search.hpp"
 
+// copy the pv from ply + 1 to ply and add the first move to the front
 void PVTable::updatePV(int ply, move16 first_move) {
     std::copy(table[ply + 1].begin(), table[ply + 1].begin() + pv_length[ply + 1], table[ply].begin() + 1);
     pv_length[ply] = pv_length[ply + 1] + 1;
     table[ply][0] = first_move;
 }
 
+// used in TT hits to update the pv
 void PVTable::updateFromTT(int ply, move16 first_move) {
     pv_length[ply] = 1;
     table[ply][0] = first_move;
@@ -18,6 +20,7 @@ void PVTable::clearPV() {
     std::fill(pv_length.begin(), pv_length.end(), 0);
 }
 
+// sets the length of a particular pv index to zero (used before searching each ply)
 void PVTable::zeroLength(int ply) {
     pv_length[ply] = 0;
 }
@@ -34,6 +37,7 @@ void Search::setTimer(U64 duration_in_ms, int interval) {
     start_time = std::chrono::steady_clock::now();
 }
 
+// Checks if the search time has expired
 bool Search::timesUp() {
     if (times_up) {
         return true;
@@ -50,12 +54,24 @@ bool Search::timesUp() {
     return false;
 }
 
+// Output the search info in the UCI format
+void Search::outputInfo(int depth, move16 best_move, int score) {
+    std::cout << "info depth " << depth + 1 << " nodes " << nodes_searched;
+    std::cout << " bestmove " << moveToString(best_move) << " pv ";
+    for (const auto &m: pv) {
+        std::cout << moveToString(m) << " ";
+    }
+    std::cout << " score " << score << std::endl;
+}
+
+// Iterative deepening framework
 SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     setTimer(time_in_ms, 1000);
     tt_hits = 0;
     MoveList moves;
     SearchResult result;
 
+    // Generate moves. This is only done once for the root node.
     if (pos.side_to_move == WHITE) {
         generateMoves<true>(moves, pos);
     } else {
@@ -65,57 +81,90 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     move16 best_move = 0;
     int max_score = NEGATIVE_INFINITY;
 
+    // Perform search at increasing depths
+    bool research = false;
     for (int depth = 0; depth < max_depth; depth++) {
         pv_search = true;
         nodes_searched = 1;
-        orderMoves(pos, moves, best_move);
         int beta;
         int alpha;
-        // if (depth > 3) {
-        //     beta = max_score + WINDOW_SIZE;
-        //     alpha = max_score - WINDOW_SIZE;
-        // } else {
-        //     beta = POSITIVE_INFINITY;
-        //     alpha = NEGATIVE_INFINITY;
-        // }
-        beta = POSITIVE_INFINITY;
-        alpha = NEGATIVE_INFINITY;
-        move16 best_move_this_search = 0;
-        for (const auto &move: moves) {
-            pv.zeroLength(1);
-            pos.makeMove(move);
-            int score = -negaMax(pos, depth, 1, -beta, -alpha);
-            pos.unmakeMove();
-            if (score > alpha) {
-                if (timesUp()) {
-                    break;
-                }
-                alpha = score;
-                best_move_this_search = move;
-                pv.updatePV(0, move);
-                if (score > max_score) {
-                    best_move = move;
-                    max_score = score;
-                }
+        int best_score_this_search_depth = NEGATIVE_INFINITY;
+        move16 best_move_this_search_depth = 0;
+
+        // if this is not a re-search we order moves and set alpha and beta to their min and max values
+        if (!research) {
+            orderMoves(pos, moves, best_move);
+            if (depth > 3) {
+                // set aspiration window
+                beta = max_score + WINDOW_SIZE;
+                alpha = max_score - WINDOW_SIZE;
+            } else {
+                beta = POSITIVE_INFINITY;
+                alpha = NEGATIVE_INFINITY;
             }
         }
-        if (!timesUp()) {
-            best_move = best_move_this_search;
-            max_score = alpha;
-        }
-        std::cout << "info depth " << depth + 1 << " nodes " << nodes_searched;
-        std::cout << " bestmove " << moveToString(best_move) << " pv ";
-        for (const auto &m: pv) {
-            std::cout << moveToString(m) << " ";
-        }
-        std::cout << " score " << max_score << std::endl;
-        if (times_up) {
+
+        // Search from the root node using our pre-generated move list
+        SearchResult result_this_depth = rootSearch(pos, moves, depth, alpha, beta);
+        best_score_this_search_depth = result_this_depth.score;
+        best_move_this_search_depth = result_this_depth.move;
+
+        if (timesUp()) {
+            if (best_score_this_search_depth > max_score) {
+                max_score = best_score_this_search_depth;
+                best_move = best_move_this_search_depth;
+            }
+            outputInfo(depth, best_move, max_score);
             break;
         }
+
+        // check to see if our score fell outside the aspiration window. Re-search if needed.
+        if (best_score_this_search_depth <= alpha) {
+            alpha = NEGATIVE_INFINITY;
+            research = true;
+            depth--;
+            continue;
+        } else if (best_score_this_search_depth >= beta) {
+            beta = POSITIVE_INFINITY;
+            research = true;
+            depth--;
+            continue;
+        } else {
+            research = false;
+        }
+        best_move = best_move_this_search_depth;
+        max_score = best_score_this_search_depth;
+        outputInfo(depth, best_move, max_score);
     }
 
     result.move = best_move;
     result.score = max_score;
+
+    return result;
+}
+
+// Function that gets called to search from the root node
+SearchResult Search::rootSearch(Position &pos, MoveList &moves, int depth, int alpha, int beta) {
+    SearchResult result;
+    result.score = NEGATIVE_INFINITY;
+    result.move = 0;
+    for (const auto &move: moves) {
+        pv.zeroLength(1);
+        pos.makeMove(move);
+        int score = -negaMax(pos, depth, 1, -beta, -alpha);
+        pos.unmakeMove();
+        if (timesUp()) {
+            return result;
+        }
+        if (score > result.score) {
+            result.score = score;
+            result.move = move;
+            if (score > alpha && score < beta) {
+                pv.updatePV(0, move);
+            }
+            alpha = std::max(score, alpha);
+        }
+    }
 
     return result;
 }
@@ -146,12 +195,14 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     int score = 0;
     move16 best_move = 0;
 
+    // Probe transposition table
     if (tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
         tt_hits++;
         pv.updateFromTT(ply, best_move);
         return score;
     }
 
+    // If we are searching the previous PV, put the PV move first
     if (pv_search) {
         if (ply < pv.length()) {
             best_move = pv.getPVMove(ply);
@@ -177,7 +228,6 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     orderMoves(pos, moves, best_move);
-    // best_move = 0;
     
     int max_score = NEGATIVE_INFINITY;
 

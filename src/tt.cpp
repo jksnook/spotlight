@@ -64,7 +64,7 @@ bool TT::getScore(U64 z_key, int depth, int ply, int alpha, int beta, int &score
         score += ply;
     }
 
-    if (score > beta) {
+    if (score >= beta) {
         score = beta;
         return true;
     }
