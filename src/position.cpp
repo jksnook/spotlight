@@ -556,6 +556,33 @@ move16 Position::parseMove(std::string move_string) {
     return move;
 }
 
+void Position::makeNullMove() {
+    Undo undo;
+    undo.move = 0;
+    undo.en_passant = en_passant;
+    undo.fifty_move = fifty_move;
+    undo.z_key = z_key;
+    en_passant = 0;
+
+    side_to_move ^= 1;
+    z_key = generateZobrist();
+    half_moves++;
+    fifty_move++;
+    history.push_back(undo);
+}
+
+void Position::unmakeNullMove() {
+    side_to_move ^= 1;
+    Undo undo = history.back();
+
+    en_passant = undo.en_passant;
+    fifty_move = undo.fifty_move;
+    z_key = undo.z_key;
+    half_moves--;
+
+    history.pop_back();
+}
+
 bool Position::isTripleRepetition() {
     const int s = static_cast<int>(history.size());
     if (s == 0) return false;

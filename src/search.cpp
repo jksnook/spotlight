@@ -25,7 +25,7 @@ void PVTable::zeroLength(int ply) {
     pv_length[ply] = 0;
 }
 
-Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0) {
+Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true) {
     
 }
 
@@ -90,6 +90,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
         int alpha;
         int best_score_this_search_depth = NEGATIVE_INFINITY;
         move16 best_move_this_search_depth = 0;
+        allow_nmp = true;
 
         // if this is not a re-search we order moves and set alpha and beta to their min and max values
         if (!research) {
@@ -190,6 +191,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
+
     nodes_searched++;
 
     int score = 0;
@@ -219,6 +221,22 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         generateMoves<false>(moves, pos);
     }
 
+    // null move pruning
+    if (depth >= NMP_REDUCTION && allow_nmp && !pos.in_check && !pv_search) {
+        allow_nmp = false;
+        pos.makeNullMove();
+        int nmp = -negaMax(pos, depth - NMP_REDUCTION, ply + 1, -beta, -beta + 1);
+        pos.unmakeNullMove();
+        allow_nmp = true;
+
+        if (timesUp()) {
+            return 0;
+        }
+        if (nmp >= beta) {   
+            return beta;
+        }
+    }
+
     // check for stalemate or checkmate
     if (moves.size() == 0) {
         if (pos.in_check) {
@@ -231,7 +249,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     
     int max_score = NEGATIVE_INFINITY;
 
+    bool upper_bound = true;
     for (const auto &move: moves) {
+        // set the following PV length to 0 in case the next node is a leaf node
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
         score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
@@ -244,20 +264,30 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             pv.updatePV(ply, move);
             max_score = score;
             if (max_score >= beta) {
-                tt.save(pos.z_key, depth, ply, move, max_score, LOWER_BOUND_NODE, pos.half_moves);
+                tt.save(pos.z_key, depth, ply, move, max_score, LOWER_BOUND_NODE, pos.game_half_moves);
                 return beta;
             }
+            if (score > alpha) {
+                alpha = score;
+                upper_bound = false;
+            }
         }
-        alpha = std::max(alpha, max_score);
     }
 
     if (timesUp()) {
         return 0;
     }
-    tt.save(pos.z_key, depth, ply, best_move, max_score, EXACT_NODE, pos.game_half_moves);
+
+    if (upper_bound) {
+        tt.save(pos.z_key, depth, ply, best_move, max_score, UPPER_BOUND_NODE, pos.game_half_moves);
+    } else {
+        tt.save(pos.z_key, depth, ply, best_move, max_score, EXACT_NODE, pos.game_half_moves);
+    }
+    
     return max_score;
 }
 
+// quiescence search
 int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     if (timesUp()) {
         return 0;
@@ -298,11 +328,13 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     }
     
     int max_score = eval(pos);
+    bool upper_bound = true;
 
     if (max_score >= beta) {
         return beta;
     } else if (max_score > alpha) {
         alpha = max_score;
+        upper_bound = false;
     }
 
     orderMoves(pos, moves, best_move);
@@ -318,7 +350,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         pos.unmakeMove();
         if (timesUp()) return 0;
         if (score >= beta) {
-            tt.save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.half_moves);
+            tt.save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.game_half_moves);
             return beta;
         }
         if (score > max_score) {
@@ -328,9 +360,14 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         }
         if (score > alpha) {
             alpha = score;
+            upper_bound = false;
         }
     }
 
-    tt.save(pos.z_key, depth, ply, best_move, max_score, EXACT_NODE, pos.game_half_moves);
+    if (upper_bound) {
+        tt.save(pos.z_key, depth, ply, best_move, max_score, UPPER_BOUND_NODE, pos.game_half_moves);
+    } else {
+        tt.save(pos.z_key, depth, ply, best_move, max_score, EXACT_NODE, pos.game_half_moves);
+    }
     return max_score;
 };

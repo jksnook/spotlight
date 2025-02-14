@@ -23,10 +23,14 @@ void TT::clear() {
     }
 }
 
+
+// Transposition table completely broken right now. Disabling to get baseline
 void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, int node_type, int half_moves) {
     TTEntry* old_entry = probe(z_key);
 
-    if ((old_entry->depth > depth && old_entry->z_key == z_key) || (half_moves - old_entry->half_moves < 4)) {
+    // return;
+
+    if ((old_entry->depth > depth && old_entry->z_key == z_key)) {  // || (half_moves - old_entry->half_moves < 4)) {
         return;
     }
 
@@ -64,14 +68,34 @@ bool TT::getScore(U64 z_key, int depth, int ply, int alpha, int beta, int &score
         score += ply;
     }
 
-    if (score >= beta) {
-        score = beta;
+    switch (entry->node_type)
+    {
+    case UPPER_BOUND_NODE:
+        if (score > alpha) {
+            score = 0;
+            return false;
+        } else {
+            score = alpha;
+            return true;
+        }
+        break;
+    case LOWER_BOUND_NODE:
+        if (score >= beta) {
+            score = beta;
+            return true;
+        } else {
+            score = 0;
+            return false;
+        }
+        break;
+    case EXACT_NODE:
+        if (score >= beta) {
+            score = beta;
+        }
         return true;
-    }
-
-    if (entry->node_type == LOWER_BOUND_NODE) {
-        score = 0;
-        return false;
+        break;
+    default:
+        break;
     }
 
     return true;

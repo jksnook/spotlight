@@ -9,8 +9,10 @@ const int TT_SIZE = 1024 * 1024 * 16;
 const int MAX_DEPTH = 100;
 const int MATE_SCORE = 1 << 15;
 const int MATE_THRESHOLD = MATE_SCORE - MAX_DEPTH;
+const int NULL_NODE = 0;
 const int EXACT_NODE = 1;
 const int LOWER_BOUND_NODE = 2;
+const int UPPER_BOUND_NODE = 3;
 
 class TTEntry {
     public:

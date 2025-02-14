@@ -15,6 +15,7 @@ const int NEGATIVE_INFINITY = (1 << 31) + 1;
 const int POSITIVE_INFINITY = ~0 ^ NEGATIVE_INFINITY;
 
 const int WINDOW_SIZE = 60;
+const int NMP_REDUCTION = 4;
 
 class PVTable {
     public:
@@ -56,6 +57,7 @@ private:
     void outputInfo(int depth, move16 best_move, int score);
 
     bool pv_search;
+    bool allow_nmp;
     bool times_up;
 
     std::chrono::steady_clock::time_point start_time;

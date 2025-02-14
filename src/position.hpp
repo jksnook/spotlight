@@ -47,6 +47,9 @@ class Position {
         void makeMove(move16 move);
         void unmakeMove();
 
+        void makeNullMove();
+        void unmakeNullMove();
+
         move16 parseMove(std::string move_string);
 
         int at(int sq);
