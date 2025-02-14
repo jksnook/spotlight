@@ -55,6 +55,10 @@ private:
     bool timesUp();
     SearchResult rootSearch(Position &pos, MoveList &moves, int depth, int alpha, int beta);
     void outputInfo(int depth, move16 best_move, int score);
+    inline void saveKiller(int ply, move16 move) {
+        killer_2[ply] = killer_1[ply];
+        killer_1[ply] = move;
+    }
 
     bool pv_search;
     bool allow_nmp;
@@ -65,6 +69,9 @@ private:
 
     int time_check;
     int time_check_interval;
+
+    move16 killer_1[MAX_DEPTH];
+    move16 killer_2[MAX_DEPTH];
 
     TT tt;
     PVTable pv;

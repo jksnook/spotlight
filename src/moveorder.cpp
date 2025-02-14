@@ -114,6 +114,9 @@ int scoreMove(Position &pos, move16 move) {
         return see(pos, move);
         // return piece_values[pos.at(getToSquare(move)) % 6] - piece_values[pos.at(getFromSquare(move)) % 6] + 500;
         break;
+    case quiet_move:
+        return 0;
+        break;
     case queen_promotion:
         return 400;
         break;
@@ -144,13 +147,15 @@ int scoreMove(Position &pos, move16 move) {
     }
 }
 
-void orderMoves(Position &pos, MoveList &moves, move16 tt_move) {
+void orderMoves(Position &pos, MoveList &moves, move16 tt_move, move16 killer_1, move16 killer_2) {
     int s = moves.size();
     std::vector<std::pair<int, move16>> sorted_moves(s);
 
     for (int i = 0; i < s; i++) {
         if (moves[i] == tt_move) {
             sorted_moves[i] = {2000, moves[i]};
+        } else if (moves[i] == killer_1 || moves[i] == killer_2) {
+            sorted_moves[i] = {1, moves[i]};
         } else {
             sorted_moves[i] = {scoreMove(pos, moves[i]), moves[i]};
         }

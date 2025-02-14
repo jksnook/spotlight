@@ -26,7 +26,10 @@ void PVTable::zeroLength(int ply) {
 }
 
 Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true) {
-    
+    for (int i = 0; i < MAX_DEPTH; i++) {
+        killer_1[i] = 0;
+        killer_2[i] = 0;
+    }
 }
 
 void Search::setTimer(U64 duration_in_ms, int interval) {
@@ -94,7 +97,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
 
         // if this is not a re-search we order moves and set alpha and beta to their min and max values
         if (!research) {
-            orderMoves(pos, moves, best_move);
+            orderMoves(pos, moves, best_move, 0, 0);
             if (depth > 3) {
                 // set aspiration window
                 beta = max_score + WINDOW_SIZE;
@@ -232,7 +235,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         if (timesUp()) {
             return 0;
         }
-        if (nmp >= beta) {   
+        if (nmp >= beta) {
             return beta;
         }
     }
@@ -245,7 +248,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         return 0;
     }
 
-    orderMoves(pos, moves, best_move);
+    orderMoves(pos, moves, best_move, killer_1[ply], killer_2[ply]);
     
     int max_score = NEGATIVE_INFINITY;
 
@@ -264,6 +267,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             pv.updatePV(ply, move);
             max_score = score;
             if (max_score >= beta) {
+                if (!((move >> 12) & capture_move)) {
+                    saveKiller(ply, move);
+                }
                 tt.save(pos.z_key, depth, ply, move, max_score, LOWER_BOUND_NODE, pos.game_half_moves);
                 return beta;
             }
@@ -337,7 +343,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         upper_bound = false;
     }
 
-    orderMoves(pos, moves, best_move);
+    orderMoves(pos, moves, best_move, 0, 0);
     best_move = 0;
 
     for (const auto &move: moves) {
