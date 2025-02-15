@@ -22,9 +22,5 @@ void initZobrist() {
         castle_rights_keys[i] = randomU64();
     }
 
-    // for (int i = 0; i < 8; i++) {
-    //   en_passant_keys[i] = randomU64();
-    // }
-
     side_key = randomU64();
 }

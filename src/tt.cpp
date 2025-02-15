@@ -24,13 +24,10 @@ void TT::clear() {
 }
 
 
-// Transposition table completely broken right now. Disabling to get baseline
 void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, int node_type, int half_moves) {
     TTEntry* old_entry = probe(z_key);
 
-    // return;
-
-    if ((old_entry->depth > depth && old_entry->z_key == z_key)) {  // || (half_moves - old_entry->half_moves < 4)) {
+    if ((old_entry->depth > depth && old_entry->z_key == z_key)) {
         return;
     }
 

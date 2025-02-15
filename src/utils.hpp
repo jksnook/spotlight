@@ -14,7 +14,13 @@ const int NUM_SQUARES = 64;
 
 enum {white_pawn, white_knight, white_bishop, white_rook, white_queen, white_king,
       black_pawn, black_knight, black_bishop, black_rook, black_queen, black_king,
-      white_occupancy, black_occupancy, occupancy, NO_PIECE};
+      white_occupancy, black_occupancy, occupancy};
+
+enum {WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
+      BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
+      WHITE_OCCUPANCY, BLACK_OCCUPANCY, OCCUPANCY, NO_PIECE};
+
+enum {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
 static std::map<char, int>  letter_piece_map = {
     {'P', white_pawn},
@@ -94,6 +100,17 @@ enum {
     a6, b6, c6, d6, e6, f6, g6, h6,
     a7, b7, c7, d7, e7, f7, g7, h7,
     a8, b8, c8, d8, e8, f8, g8, h8,
+};
+
+enum {
+    A1, B1, C1, D1, E1, F1, G1, H1,
+    A2, B2, C2, D2, E2, F2, G2, H2,
+    A3, B3, C3, D3, E3, F3, G3, H3,
+    A4, B4, C4, D4, E4, F4, G4, H4,
+    A5, B5, C5, D5, E5, F5, G5, H5,
+    A6, B6, C6, D6, E6, F6, G6, H6,
+    A7, B7, C7, D7, E7, F7, G7, H7,
+    A8, B8, C8, D8, E8, F8, G8, H8,
 };
 
 const std::string square_names[64] {

@@ -32,6 +32,10 @@ Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allo
     }
 }
 
+void Search::clearTT() {
+    tt.clear();
+}
+
 void Search::setTimer(U64 duration_in_ms, int interval) {
     time_check_interval = interval;
     timer_duration = duration_in_ms;
@@ -58,9 +62,9 @@ bool Search::timesUp() {
 }
 
 // Output the search info in the UCI format
-void Search::outputInfo(int depth, move16 best_move, int score) {
+void Search::outputInfo(int depth, move16 best_move, int score, int nps) {
     std::cout << "info depth " << depth + 1 << " nodes " << nodes_searched;
-    std::cout << " bestmove " << moveToString(best_move) << " pv ";
+    std::cout << " nps "<< nps << " bestmove " << moveToString(best_move) << " pv ";
     for (const auto &m: pv) {
         std::cout << moveToString(m) << " ";
     }
@@ -73,6 +77,8 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     tt_hits = 0;
     MoveList moves;
     SearchResult result;
+    pos.clearHistoryTable();
+    //pv.clearPV();
 
     // Generate moves. This is only done once for the root node.
     if (pos.side_to_move == WHITE) {
@@ -87,7 +93,12 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     // Perform search at increasing depths
     bool research = false;
     for (int depth = 0; depth < max_depth; depth++) {
-        pv_search = true;
+        std::chrono::steady_clock::time_point this_depth_start_time = std::chrono::steady_clock::now();
+        if (depth == 0) {
+            pv_search = false;
+        } else {
+            pv_search = true;
+        }
         nodes_searched = 1;
         int beta;
         int alpha;
@@ -113,12 +124,15 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
         best_score_this_search_depth = result_this_depth.score;
         best_move_this_search_depth = result_this_depth.move;
 
+        std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - this_depth_start_time;
+        U64 nps = nodes_searched / time_elapsed.count();
+
         if (timesUp()) {
             if (best_score_this_search_depth > max_score) {
                 max_score = best_score_this_search_depth;
                 best_move = best_move_this_search_depth;
             }
-            outputInfo(depth, best_move, max_score);
+            outputInfo(depth, best_move, max_score, nps);
             break;
         }
 
@@ -138,7 +152,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
         }
         best_move = best_move_this_search_depth;
         max_score = best_score_this_search_depth;
-        outputInfo(depth, best_move, max_score);
+        outputInfo(depth, best_move, max_score, nps);
     }
 
     result.move = best_move;
@@ -269,11 +283,15 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             if (max_score >= beta) {
                 if (!((move >> 12) & capture_move)) {
                     saveKiller(ply, move);
+                    // pos.updateHistoryTable(getFromSquare(move), getToSquare(move), depth);
                 }
                 tt.save(pos.z_key, depth, ply, move, max_score, LOWER_BOUND_NODE, pos.game_half_moves);
                 return beta;
             }
             if (score > alpha) {
+                // if (!((move >> 12) & capture_move)) {
+                //     pos.updateHistoryTable(getFromSquare(move), getToSquare(move), depth);
+                // }
                 alpha = score;
                 upper_bound = false;
             }

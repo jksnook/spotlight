@@ -4,10 +4,10 @@
 #include "position.hpp"
 #include "eval.hpp"
 
-#include <vector>
-#include <algorithm>
-
 const int see_values[6] = {100, 300, 300, 500, 900, 100000};
+
+const int TT_MOVE_SCORE = (1 << 30);
+const int IGNORE_MOVE = -(1 << 30);
 
 U64 getAllAttacks(Position &pos, int sq);
 

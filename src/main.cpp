@@ -60,4 +60,6 @@ int main() {
 
     // problem with fen r1bqkbnr/p1p5/2n3pp/1pP1pp2/1P1pPP2/B2P4/P2KN1PP/RN1Q1B1R b kq - 1 9
 
+    // incorrect eval at position startpos moves e2e4 b8c6 b1c3 e7e5 g1f3 g8f6 f1d3 f8c5 e1g1 e8g8 c3d5 f8e8 c2c4 g8h8 f3g5 h8g8 g5f3 g8h8 f3g5 h8g8
+
 }

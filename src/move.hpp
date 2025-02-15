@@ -57,11 +57,11 @@ static inline move16 encodeMove(int start, int end, int move_type) {
     return (start | (end << 6) | (move_type << 12));
 };
 
-static inline int getFromSquare(move16 &move) {
+static inline int getFromSquare(const move16 &move) {
     return move & 0b111111;
 }
 
-static inline int getToSquare(move16 &move) {
+static inline int getToSquare(const move16 &move) {
     return (move >> 6) & 0b111111;
 }
 
@@ -106,5 +106,3 @@ static inline void addMovesFromBitboard(int start, U64 bb, int move_type,  MoveL
         moves.addMove(encodeMove(start, popLSB(bb), move_type));
     }
 };
-
-void orderMoves(MoveList &moves, move16 tt_move);

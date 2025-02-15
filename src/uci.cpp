@@ -1,4 +1,5 @@
 #include "uci.hpp"
+#include "test.hpp"
 
 UCI::UCI() {
   Position position;
@@ -19,6 +20,9 @@ void UCI::loop() {
         if (token == "uci") {
             std::cout << "id name Spotlight" << std::endl;
             std::cout << "uciok" << std::endl;
+        } else if (token == "ucinewgame") {
+            position.clearHistoryTable();
+            search.clearTT();
         } else if (token == "isready") {
             std::cout << "readyok" << std::endl;
         } else if (token == "position") {
@@ -33,7 +37,10 @@ void UCI::loop() {
             position.print();
             position.printFromBitboard();
             std::cout << position.isTripleRepetition() << std::endl;
-        } 
+            std::cout << position.fifty_move << std::endl;
+        } else if (token == "runtest") {
+            runTests();
+        }
     }
 }
 

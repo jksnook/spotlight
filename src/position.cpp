@@ -158,16 +158,6 @@ void Position::print() {
     std::cout << "+---+---+---+---+---+---+---+---+\n";
     for (int rank = 7; rank >= 0; rank--) {
         for (int file = 0; file < 8; file++) {
-            // bool square_empty = true;
-            // for (int piece = white_pawn; piece <= black_king; piece++) {
-            //     if (bitboards[piece] & (1ULL << (rank * 8 + file))) {
-            //         square_empty = false;
-            //         std::cout << "| " << piece_to_letter_map[piece] << ' ';
-            //     }
-            // }
-            // if (square_empty) {
-            //     std::cout << "|   ";
-            // }
             int sq = (rank * 8 + file);
             int piece = at(sq);
             if (piece != NO_PIECE) {
@@ -204,15 +194,6 @@ U64 Position::generateZobrist() {
     U64 zobrist = 0ULL;
     U64 bitboard;
 
-    // for (int piece = white_pawn; piece <= black_king; piece++){
-
-    //     bitboard = bitboards[piece];
-
-    //     while (bitboard) {
-    //     zobrist ^= piece_keys[piece][popLSB(bitboard)];
-    //     }
-    // }
-
     for (int i = 0; i < 64; i++) {
         int piece = at(i);
         zobrist ^= piece_keys[piece][i];
@@ -229,6 +210,7 @@ Position::Position(): in_check(false) {
     for (auto &i: board) {
         i = NO_PIECE;
     }
+    clearHistoryTable();
     readFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
@@ -298,6 +280,9 @@ void Position::makeMove(move16 move) {
     case double_pawn_push:
         movePiece(start_square, end_square, piece_type);
         en_passant = end_square + (side_to_move * 8) + (side_to_move - 1) * 8;
+        if (!(pawn_attacks[side_to_move][en_passant] & bitboards[WHITE_PAWN + BLACK_PAWN * (side_to_move ^ 1)])) {
+            en_passant = 0;
+        }
         fifty_move = 0;
         break;
     case queen_castle:
@@ -593,5 +578,20 @@ bool Position::isTripleRepetition() {
         }
     }
     return repetitions >= 2;
+}
+
+void Position::updateHistoryTable(int from, int to, int depth) {
+    // int bonus = std::clamp(depth, -MAX_HISTORY, MAX_HISTORY);
+    // history_table[side_to_move][from][to] += bonus - history_table[side_to_move][from][to] * abs(bonus) / MAX_HISTORY;
+    history_table[side_to_move][from][to] += depth;
+}
+
+void Position::clearHistoryTable() {
+    for (int i = 0; i < 64; i++) {
+        for (int k = 0; k < 64; k++) {
+            history_table[0][i][k] = 0;
+            history_table[1][i][k] = 0;
+        }
+    }
 }
 

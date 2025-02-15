@@ -45,6 +45,7 @@ public:
     Search();
 
     SearchResult iterSearch(Position &pos, int maxDepth, U64 time_in_ms);
+    void clearTT();
     int tt_hits;
     int nodes_searched;
 
@@ -54,7 +55,7 @@ private:
     int qSearch(Position &pos, int depth, int ply, int alpha, int beta);
     bool timesUp();
     SearchResult rootSearch(Position &pos, MoveList &moves, int depth, int alpha, int beta);
-    void outputInfo(int depth, move16 best_move, int score);
+    void outputInfo(int depth, move16 best_move, int score, int nps);
     inline void saveKiller(int ply, move16 move) {
         killer_2[ply] = killer_1[ply];
         killer_1[ply] = move;
