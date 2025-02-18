@@ -19,39 +19,40 @@ bits 12-15: move type
 
 
 // move type codes
-const int quiet_move = 0;
-const int double_pawn_push =  0b0001;
-const int capture_move = 0b0100;
-const int king_castle = 0b0010;
-const int queen_castle = 0b0011;
-const int en_passant_capture = 0b0101;
-const int knight_promotion = 0b1000;
-const int bishop_promotion = 0b1001;
-const int rook_promotion = 0b1010;
-const int queen_promotion = 0b1011;
-const int knight_promotion_capture = 0b1100;
-const int bishop_promotion_capture = 0b1101;
-const int rook_promotion_capture = 0b1110;
-const int queen_promotion_capture = 0b1111;
+const int QUIET_MOVE = 0;
+const int DOUBLE_PAWN_PUSH =  0b0001;
+const int CAPTURE_MOVE = 0b0100;
+const int KING_CASTLE = 0b0010;
+const int QUEEN_CASTLE = 0b0011;
+const int EN_PASSANT_CAPTURE = 0b0101;
+const int KNIGHT_PROMOTION = 0b1000;
+const int BISHOP_PROMOTION = 0b1001;
+const int ROOK_PROMOTION = 0b1010;
+const int QUEEN_PROMOTION = 0b1011;
+const int KNIGHT_PROMOTION_CAPTURE = 0b1100;
+const int BISHOP_PROMOTION_CAPTURE = 0b1101;
+const int ROOK_PROMOTION_CAPTURE = 0b1110;
+const int QUEEN_PROMOTION_CAPTURE = 0b1111;
+
 
 static std::map<int, std::string>  move_type_map = {
-    {quiet_move, "quiet move"},
-    {double_pawn_push, "double pawn push"},
-    {capture_move, "capture"},
-    {king_castle, "king castle"},
-    {queen_castle, "queen castle"},
-    {en_passant_capture, "en passant"},
-    {knight_promotion, "knight promotion"},
-    {bishop_promotion, "bishop promotion"},
-    {rook_promotion, "rook promotion"},
-    {queen_promotion, "queen promotion"},
-    {knight_promotion_capture, "knight promotion capture"},
-    {bishop_promotion_capture, "bishop promotion capture"},
-    {rook_promotion_capture, "rook promotion capture"},
-    {queen_promotion_capture, "queen promotion capture"},
+    {QUIET_MOVE, "quiet move"},
+    {DOUBLE_PAWN_PUSH, "double pawn push"},
+    {CAPTURE_MOVE, "capture"},
+    {KING_CASTLE, "king castle"},
+    {QUEEN_CASTLE, "queen castle"},
+    {EN_PASSANT_CAPTURE, "en passant"},
+    {KNIGHT_PROMOTION, "knight promotion"},
+    {BISHOP_PROMOTION, "bishop promotion"},
+    {ROOK_PROMOTION, "rook promotion"},
+    {QUEEN_PROMOTION, "queen promotion"},
+    {KNIGHT_PROMOTION_CAPTURE, "knight promotion capture"},
+    {BISHOP_PROMOTION_CAPTURE, "bishop promotion capture"},
+    {ROOK_PROMOTION_CAPTURE, "rook promotion capture"},
+    {QUEEN_PROMOTION_CAPTURE, "queen promotion capture"},
 };
 
-const int promotion_flag = 0b1000;
+const int PROMOTION_FLAG = 0b1000;
 
 static inline move16 encodeMove(int start, int end, int move_type) {
     return (start | (end << 6) | (move_type << 12));

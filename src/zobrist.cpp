@@ -10,7 +10,7 @@ void initZobrist() {
     for (int i = 0; i < 64; i++) {
         en_passant_keys[i] = randomU64();
 
-        for (int piece = white_pawn; piece <= black_king; piece++) {
+        for (int piece = WHITE_PAWN; piece <= BLACK_KING; piece++) {
             piece_keys[piece][i] = randomU64();
         }
         piece_keys[NO_PIECE][i] = 0ULL;

@@ -16,16 +16,16 @@ std::string moveToString(move16 move) {
     int start = getFromSquare(move);
     int end = getToSquare(move);
     int move_type = getMoveType(move);
-    s = square_names[start] + square_names[end];
-    if (promotion_flag & move_type) {
-        move_type &= queen_promotion;
-        if (move_type == queen_promotion) {
+    s = SQUARE_NAMES[start] + SQUARE_NAMES[end];
+    if (PROMOTION_FLAG & move_type) {
+        move_type &= QUEEN_PROMOTION;
+        if (move_type == QUEEN_PROMOTION) {
             s+= 'q';
-        } else if (move_type == knight_promotion) {
+        } else if (move_type == KNIGHT_PROMOTION) {
             s+= 'n';
-        } else if (move_type == bishop_promotion) {
+        } else if (move_type == BISHOP_PROMOTION) {
             s+= 'b';
-        } else if (move_type == rook_promotion) {
+        } else if (move_type == ROOK_PROMOTION) {
             s+= 'r';
         }
     }

@@ -77,7 +77,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     tt_hits = 0;
     MoveList moves;
     SearchResult result;
-    pos.clearHistoryTable();
+    // pos.clearHistoryTable();
     //pv.clearPV();
 
     // Generate moves. This is only done once for the root node.
@@ -262,6 +262,8 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         return 0;
     }
 
+    // MovePicker move_picker(pos, moves, best_move, killer_1[ply], killer_2[ply]);
+
     orderMoves(pos, moves, best_move, killer_1[ply], killer_2[ply]);
     
     int max_score = NEGATIVE_INFINITY;
@@ -281,17 +283,17 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             pv.updatePV(ply, move);
             max_score = score;
             if (max_score >= beta) {
-                if (!((move >> 12) & capture_move)) {
+                if (!((move >> 12) & CAPTURE_MOVE)) {
                     saveKiller(ply, move);
-                    // pos.updateHistoryTable(getFromSquare(move), getToSquare(move), depth);
+                    pos.updateHistoryTable(getFromSquare(move), getToSquare(move), depth);
                 }
                 tt.save(pos.z_key, depth, ply, move, max_score, LOWER_BOUND_NODE, pos.game_half_moves);
                 return beta;
             }
             if (score > alpha) {
-                // if (!((move >> 12) & capture_move)) {
-                //     pos.updateHistoryTable(getFromSquare(move), getToSquare(move), depth);
-                // }
+                if (!((move >> 12) & CAPTURE_MOVE)) {
+                    pos.updateHistoryTable(getFromSquare(move), getToSquare(move), depth);
+                }
                 alpha = score;
                 upper_bound = false;
             }
@@ -362,10 +364,11 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     orderMoves(pos, moves, best_move, 0, 0);
+    // MovePicker move_picker(pos, moves, best_move, killer_1[ply], killer_2[ply]);
     best_move = 0;
 
     for (const auto &move: moves) {
-        if (getMoveType(move) != capture_move) {
+        if (getMoveType(move) != CAPTURE_MOVE) {
             continue;
         }
         pv.zeroLength(ply + 1);

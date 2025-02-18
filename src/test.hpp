@@ -3,3 +3,5 @@
 void runTests();
 
 void testSee();
+
+void testPerft();

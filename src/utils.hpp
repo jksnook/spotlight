@@ -12,45 +12,41 @@ const int WHITE = 0;
 const int BLACK = 1;
 const int NUM_SQUARES = 64;
 
-enum {white_pawn, white_knight, white_bishop, white_rook, white_queen, white_king,
-      black_pawn, black_knight, black_bishop, black_rook, black_queen, black_king,
-      white_occupancy, black_occupancy, occupancy};
-
 enum {WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
       BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
       WHITE_OCCUPANCY, BLACK_OCCUPANCY, OCCUPANCY, NO_PIECE};
 
 enum {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
-static std::map<char, int>  letter_piece_map = {
-    {'P', white_pawn},
-    {'N', white_knight},
-    {'B', white_bishop},
-    {'R', white_rook},
-    {'Q', white_queen},
-    {'K', white_king},
-    {'p', black_pawn},
-    {'n', black_knight},
-    {'b', black_bishop},
-    {'r', black_rook},
-    {'q', black_queen},
-    {'k', black_king}
+static std::map<char, int>  LETTER_PIECE_MAP = {
+    {'P', WHITE_PAWN},
+    {'N', WHITE_KNIGHT},
+    {'B', WHITE_BISHOP},
+    {'R', WHITE_ROOK},
+    {'Q', WHITE_QUEEN},
+    {'K', WHITE_KING},
+    {'p', BLACK_PAWN},
+    {'n', BLACK_KNIGHT},
+    {'b', BLACK_BISHOP},
+    {'r', BLACK_ROOK},
+    {'q', BLACK_QUEEN},
+    {'k', BLACK_KING}
 };
 
-static std::map<int, char>  piece_to_letter_map = {
+static std::map<int, char>  PIECE_TO_LETTER_MAP = {
     {NO_PIECE, ' '},
-    {white_pawn, 'P'},
-    {white_knight, 'N'},
-    {white_bishop, 'B'},
-    {white_rook, 'R'},
-    {white_queen, 'Q'},
-    {white_king, 'K'},
-    {black_pawn, 'p'},
-    {black_knight, 'n'},
-    {black_bishop, 'b'},
-    {black_rook, 'r'},
-    {black_queen, 'q'},
-    {black_king, 'k'}
+    {WHITE_PAWN, 'P'},
+    {WHITE_KNIGHT, 'N'},
+    {WHITE_BISHOP, 'B'},
+    {WHITE_ROOK, 'R'},
+    {WHITE_QUEEN, 'Q'},
+    {WHITE_KING, 'K'},
+    {BLACK_PAWN, 'p'},
+    {BLACK_KNIGHT, 'n'},
+    {BLACK_BISHOP, 'b'},
+    {BLACK_ROOK, 'r'},
+    {BLACK_QUEEN, 'q'},
+    {BLACK_KING, 'k'}
 };
 
 inline constexpr int getPieceID(int piece_type, int side) {
@@ -63,30 +59,32 @@ inline constexpr int getPieceID(int piece_type, int side) {
 
 inline constexpr int getOccupancy(int side) {
     if (side == BLACK) {
-        return black_occupancy;
+        return BLACK_OCCUPANCY;
     } else {
-        return white_occupancy;
+        return WHITE_OCCUPANCY;
     }
 }
 
-const int wqc = 1;
-const U64 wqc_squares = 0b1110ULL;
-static constexpr U64 wqc_king_squares = 0b1100ULL;
-const int wkc = 2;
-const U64 wkc_squares = 0b1100000ULL;
-static constexpr U64 wkc_king_squares = 0b1100000ULL;
-const int bqc = 4;
-const U64 bqc_squares = 0b1110ULL << (8 * 7);
-static constexpr U64 bqc_king_squares = wqc_king_squares << (8 * 7);
-const int bkc = 8;
-const U64 bkc_squares = 0b1100000ULL << (8 * 7);
-static constexpr U64 bkc_king_squares = wkc_king_squares << (8 * 7);
 
-static std::map<char, int>  castle_rights_map = {
-    {'Q', wqc},
-    {'K', wkc},
-    {'q', bqc},
-    {'k', bkc},
+// castle rights codes
+const int WQC = 1;
+const U64 WQC_SQUARES = 0b1110ULL;
+static constexpr U64 WQC_KING_SQUARES = 0b1100ULL;
+const int WKC = 2;
+const U64 WKC_SQUARES = 0b1100000ULL;
+static constexpr U64 WKC_KING_SQUARES = 0b1100000ULL;
+const int BQC = 4;
+const U64 BQC_SQUARES = 0b1110ULL << (8 * 7);
+static constexpr U64 BQC_KING_SQUARES = WQC_KING_SQUARES << (8 * 7);
+const int BKC = 8;
+const U64 BKC_SQUARES = 0b1100000ULL << (8 * 7);
+static constexpr U64 BKC_KING_SQUARES = WKC_KING_SQUARES << (8 * 7);
+
+static std::map<char, int>  CASTLE_RIGHTS_MAP = {
+    {'Q', WQC},
+    {'K', WKC},
+    {'q', BQC},
+    {'k', BKC},
     {'-', 0}
 };
 
@@ -113,7 +111,7 @@ enum {
     A8, B8, C8, D8, E8, F8, G8, H8,
 };
 
-const std::string square_names[64] {
+const std::string SQUARE_NAMES[64] {
     "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", 
     "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", 
     "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3", 

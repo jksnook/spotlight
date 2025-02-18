@@ -12,7 +12,7 @@ int eval(Position &pos) {
 
             if (piece != NO_PIECE) {
                 game_phase += phase_values[piece % 6];
-                if (piece < black_pawn) {
+                if (piece < BLACK_PAWN) {
                     early_eval += piece_values[0][piece % 6] + piece_square_tables[piece % 6][0][i ^ 56];
                     late_eval += piece_values[1][piece % 6] + piece_square_tables[piece % 6][0][i ^ 56];
                 } else {

@@ -16,48 +16,46 @@ void generateMoves(MoveList &moves, Position &pos) {
     constexpr const int side = static_cast<int>(white_to_move) ^ 1;
     constexpr const int enemy_side = side ^ 1;
 
-    constexpr const int friendly_pawn = getPieceID(white_pawn, side);
-    constexpr const int friendly_knight = getPieceID(white_knight, side);
-    constexpr const int friendly_bishop = getPieceID(white_bishop, side);
-    constexpr const int friendly_rook = getPieceID(white_rook, side);
-    constexpr const int friendly_queen = getPieceID(white_queen, side);
-    constexpr const int friendly_king = getPieceID(white_king, side);
+    constexpr const int friendly_pawn = getPieceID(PAWN, side);
+    constexpr const int friendly_knight = getPieceID(KNIGHT, side);
+    constexpr const int friendly_bishop = getPieceID(BISHOP, side);
+    constexpr const int friendly_rook = getPieceID(ROOK, side);
+    constexpr const int friendly_queen = getPieceID(QUEEN, side);
+    constexpr const int friendly_king = getPieceID(KING, side);
 
-    constexpr const int enemy_pawn = getPieceID(white_pawn, enemy_side);
-    constexpr const int enemy_knight = getPieceID(white_knight, enemy_side);
-    constexpr const int enemy_bishop = getPieceID(white_bishop, enemy_side);
-    constexpr const int enemy_rook = getPieceID(white_rook, enemy_side);
-    constexpr const int enemy_queen = getPieceID(white_queen, enemy_side);
-    constexpr const int enemy_king = getPieceID(white_king, enemy_side);
+    constexpr const int enemy_pawn = getPieceID(PAWN, enemy_side);
+    constexpr const int enemy_knight = getPieceID(KNIGHT, enemy_side);
+    constexpr const int enemy_bishop = getPieceID(BISHOP, enemy_side);
+    constexpr const int enemy_rook = getPieceID(ROOK, enemy_side);
+    constexpr const int enemy_queen = getPieceID(QUEEN, enemy_side);
+    constexpr const int enemy_king = getPieceID(KING, enemy_side);
 
     constexpr const int friendly_occupancy = getOccupancy(side);
     constexpr const int enemy_occupancy = getOccupancy(enemy_side);
 
 
     // find all squares attacked by the opponent 
-
     U64 enemy_attacks = pawnAttacksFromBitboard<!white_to_move>(pos.bitboards[enemy_pawn]);
     enemy_attacks |= knightAttacksFromBitboard(pos.bitboards[enemy_knight]);
-    // treat the king as invisible for bishops and rooks
-    enemy_attacks |= bishopAttacksFromBitboard(pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen], pos.bitboards[occupancy] & ~pos.bitboards[friendly_king]);
-    enemy_attacks |= rookAttacksFromBitboard(pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen], pos.bitboards[occupancy] & ~pos.bitboards[friendly_king]);
+    // treat the king as invisible for bishops and rooks so we know which squares we can't move to
+    enemy_attacks |= bishopAttacksFromBitboard(pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen], pos.bitboards[OCCUPANCY] & ~pos.bitboards[friendly_king]);
+    enemy_attacks |= rookAttacksFromBitboard(pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen], pos.bitboards[OCCUPANCY] & ~pos.bitboards[friendly_king]);
     enemy_attacks |= king_moves[bitScanForward(pos.bitboards[enemy_king])];
 
     // find the checks on the king and create attack and block masks
-
     U64 checkers = 0ULL;
     int king_index = bitScanForward(pos.bitboards[friendly_king]);
 
     checkers |= knight_moves[king_index] & pos.bitboards[enemy_knight];
     checkers |= pawn_attacks[side][king_index] & pos.bitboards[enemy_pawn];
-    U64 bishop_rays_from_king = getMagicBishopAttack(king_index, pos.bitboards[occupancy]);
+    U64 bishop_rays_from_king = getMagicBishopAttack(king_index, pos.bitboards[OCCUPANCY]);
     U64 checking_bishops = bishop_rays_from_king & (pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen]);
     checkers |= checking_bishops;
-    U64 rook_rays_from_king = getMagicRookAttack(king_index, pos.bitboards[occupancy]);
+    U64 rook_rays_from_king = getMagicRookAttack(king_index, pos.bitboards[OCCUPANCY]);
     U64 checking_rooks = rook_rays_from_king & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen]);
     checkers |= checking_rooks;
-    U64 block_mask = bishopAttacksFromBitboard(checking_bishops, pos.bitboards[occupancy]) & bishop_rays_from_king;
-    block_mask |= rookAttacksFromBitboard(checking_rooks, pos.bitboards[occupancy]) & rook_rays_from_king;
+    U64 block_mask = bishopAttacksFromBitboard(checking_bishops, pos.bitboards[OCCUPANCY]) & bishop_rays_from_king;
+    block_mask |= rookAttacksFromBitboard(checking_rooks, pos.bitboards[OCCUPANCY]) & rook_rays_from_king;
 
     int num_checks = countBits(checkers);
 
@@ -70,16 +68,19 @@ void generateMoves(MoveList &moves, Position &pos) {
     // generate king moves
 
     // add quiet moves
-    addMovesFromBitboard(king_index, king_moves[king_index] & ~enemy_attacks & ~pos.bitboards[occupancy], quiet_move, moves);
+    addMovesFromBitboard(king_index, king_moves[king_index] & ~enemy_attacks & ~pos.bitboards[OCCUPANCY], QUIET_MOVE, moves);
     // add captures
-    addMovesFromBitboard(king_index, king_moves[king_index] & ~enemy_attacks & pos.bitboards[enemy_occupancy], capture_move, moves);
+    addMovesFromBitboard(king_index, king_moves[king_index] & ~enemy_attacks & pos.bitboards[enemy_occupancy], CAPTURE_MOVE, moves);
 
+    // early return if double check
     if (num_checks >= 2) {
         return;
     }
-
+    
+    // capture mask for when we are in check
     U64 capture_mask = checkers;
 
+    // If we are not in check the capture and block masks should be all ones
     if (num_checks == 0) {
         block_mask = ~0ULL;
         capture_mask = ~0ULL;
@@ -88,11 +89,11 @@ void generateMoves(MoveList &moves, Position &pos) {
     // generate moves for pinned pieces
 
     // pinned on diagonals
-    U64 blockers = getMagicBishopAttack(king_index, pos.bitboards[occupancy]) & pos.bitboards[occupancy];
-    U64 xray = getMagicBishopAttack(king_index, pos.bitboards[occupancy] & ~blockers);
+    U64 blockers = getMagicBishopAttack(king_index, pos.bitboards[OCCUPANCY]) & pos.bitboards[OCCUPANCY];
+    U64 xray = getMagicBishopAttack(king_index, pos.bitboards[OCCUPANCY] & ~blockers);
     U64 pinners = xray & (pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen]);
 
-    U64 pin_rays = bishopAttacksFromBitboard(pinners, pos.bitboards[occupancy] & ~blockers) & xray;
+    U64 pin_rays = bishopAttacksFromBitboard(pinners, pos.bitboards[OCCUPANCY] & ~blockers) & xray;
 
     U64 pinned_pieces = pin_rays & pos.bitboards[friendly_occupancy];
 
@@ -106,17 +107,14 @@ void generateMoves(MoveList &moves, Position &pos) {
         pinned_pawns = pinned_pieces & pos.bitboards[friendly_pawn] & rank_2;
     }
 
-    int piece_index;
-
-    U64 moves_bb;
     while (pinned_pawns) {
         // promotion captures
-        piece_index = popLSB(pinned_pawns);
-        moves_bb = pawn_attacks[side][piece_index] & pinners & capture_mask;
-        addMovesFromBitboard(piece_index, moves_bb, queen_promotion_capture, moves);
-        addMovesFromBitboard(piece_index, moves_bb, rook_promotion_capture, moves);
-        addMovesFromBitboard(piece_index, moves_bb, bishop_promotion_capture, moves);
-        addMovesFromBitboard(piece_index, moves_bb, knight_promotion_capture, moves);
+        int piece_index = popLSB(pinned_pawns);
+        U64 moves_bb = pawn_attacks[side][piece_index] & pinners & capture_mask;
+        addMovesFromBitboard(piece_index, moves_bb, QUEEN_PROMOTION_CAPTURE, moves);
+        addMovesFromBitboard(piece_index, moves_bb, ROOK_PROMOTION_CAPTURE, moves);
+        addMovesFromBitboard(piece_index, moves_bb, BISHOP_PROMOTION_CAPTURE, moves);
+        addMovesFromBitboard(piece_index, moves_bb, KNIGHT_PROMOTION_CAPTURE, moves);
     }
 
     if constexpr(white_to_move) {
@@ -124,13 +122,14 @@ void generateMoves(MoveList &moves, Position &pos) {
     } else {
         pinned_pawns = pinned_pieces & pos.bitboards[friendly_pawn] & ~rank_2;
     }
+
     while (pinned_pawns) {
         // normal captures
-        piece_index = popLSB(pinned_pawns);
-        addMovesFromBitboard(piece_index, pawn_attacks[side][piece_index] & pinners & capture_mask, capture_move, moves);
+        int piece_index = popLSB(pinned_pawns);
+        addMovesFromBitboard(piece_index, pawn_attacks[side][piece_index] & pinners & capture_mask, CAPTURE_MOVE, moves);
         // en passant
         if (pos.en_passant) {
-            addMovesFromBitboard(piece_index, pawn_attacks[side][piece_index] & (1ULL << pos.en_passant) & pin_rays & capture_mask, en_passant_capture, moves);
+            addMovesFromBitboard(piece_index, pawn_attacks[side][piece_index] & (1ULL << pos.en_passant) & pin_rays & capture_mask, EN_PASSANT_CAPTURE, moves);
         }
     }
 
@@ -140,21 +139,21 @@ void generateMoves(MoveList &moves, Position &pos) {
     U64 magic_attack;
 
     while (pinned_bishops_and_queens) {
-        piece_index = popLSB(pinned_bishops_and_queens);
-        magic_attack = getMagicBishopAttack(piece_index, pos.bitboards[occupancy]);
+        int piece_index = popLSB(pinned_bishops_and_queens);
+        magic_attack = getMagicBishopAttack(piece_index, pos.bitboards[OCCUPANCY]);
         // quiet moves
-        addMovesFromBitboard(piece_index, magic_attack & pin_rays & block_mask, quiet_move, moves);
+        addMovesFromBitboard(piece_index, magic_attack & pin_rays & block_mask, QUIET_MOVE, moves);
         // captures
-        addMovesFromBitboard(piece_index, magic_attack & pinners & capture_mask, capture_move, moves);
+        addMovesFromBitboard(piece_index, magic_attack & pinners & capture_mask, CAPTURE_MOVE, moves);
     }
 
     // pinned on ranks and files
 
-    blockers = getMagicRookAttack(king_index, pos.bitboards[occupancy]) & pos.bitboards[occupancy];
-    xray = getMagicRookAttack(king_index, pos.bitboards[occupancy] & ~blockers);
+    blockers = getMagicRookAttack(king_index, pos.bitboards[OCCUPANCY]) & pos.bitboards[OCCUPANCY];
+    xray = getMagicRookAttack(king_index, pos.bitboards[OCCUPANCY] & ~blockers);
     pinners = xray & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen]);
 
-    pin_rays = rookAttacksFromBitboard(pinners, pos.bitboards[occupancy] & ~blockers) & xray;
+    pin_rays = rookAttacksFromBitboard(pinners, pos.bitboards[OCCUPANCY] & ~blockers) & xray;
 
     U64 pinned_on_rank_and_file = pin_rays & pos.bitboards[friendly_occupancy];
     pinned_pieces |= pinned_on_rank_and_file;
@@ -164,55 +163,51 @@ void generateMoves(MoveList &moves, Position &pos) {
     pinned_pawns = pinned_on_rank_and_file & pos.bitboards[friendly_pawn];
 
     while(pinned_pawns) {
-        piece_index = popLSB(pinned_pawns);
-        addMovesFromBitboard(piece_index, pawn_pushes[side][piece_index] & pin_rays & block_mask, quiet_move, moves);
+        int piece_index = popLSB(pinned_pawns);
+        addMovesFromBitboard(piece_index, pawn_pushes[side][piece_index] & pin_rays & block_mask, QUIET_MOVE, moves);
         if constexpr(white_to_move) {
-            addMovesFromBitboard(piece_index, pawn_double_pushes[side][piece_index] & rank_4 & pin_rays & block_mask & ~pos.bitboards[occupancy] << 8, double_pawn_push, moves);
+            addMovesFromBitboard(piece_index, pawn_double_pushes[side][piece_index] & rank_4 & pin_rays & block_mask & ~pos.bitboards[OCCUPANCY] << 8, DOUBLE_PAWN_PUSH, moves);
         } else {
-            addMovesFromBitboard(piece_index, pawn_double_pushes[side][piece_index] & rank_5 & pin_rays & block_mask & ~pos.bitboards[occupancy] >> 8, double_pawn_push, moves);
+            addMovesFromBitboard(piece_index, pawn_double_pushes[side][piece_index] & rank_5 & pin_rays & block_mask & ~pos.bitboards[OCCUPANCY] >> 8, DOUBLE_PAWN_PUSH, moves);
         }
     }
 
     // pinned rooks and queens
-
     U64 pinned_rooks_and_queens = pinned_on_rank_and_file & (pos.bitboards[friendly_rook] | pos.bitboards[friendly_queen]);
 
     while (pinned_rooks_and_queens) {
-        piece_index = popLSB(pinned_rooks_and_queens);
-        magic_attack = getMagicRookAttack(piece_index, pos.bitboards[occupancy]);
+        int piece_index = popLSB(pinned_rooks_and_queens);
+        magic_attack = getMagicRookAttack(piece_index, pos.bitboards[OCCUPANCY]);
         // quiet moves
-        addMovesFromBitboard(piece_index, magic_attack & block_mask & pin_rays, quiet_move, moves);
+        addMovesFromBitboard(piece_index, magic_attack & block_mask & pin_rays, QUIET_MOVE, moves);
         // captures
-        addMovesFromBitboard(piece_index, magic_attack & pinners & capture_mask, capture_move, moves);
+        addMovesFromBitboard(piece_index, magic_attack & pinners & capture_mask, CAPTURE_MOVE, moves);
     }
 
     // knight moves
     U64 knights = pos.bitboards[friendly_knight] & ~pinned_pieces;
 
     while(knights) {
-        piece_index = popLSB(knights);
-        addMovesFromBitboard(piece_index, knight_moves[piece_index] & ~pos.bitboards[occupancy] & block_mask, quiet_move, moves);
-        addMovesFromBitboard(piece_index, knight_moves[piece_index] & pos.bitboards[enemy_occupancy] & capture_mask, capture_move, moves);
+        int piece_index = popLSB(knights);
+        addMovesFromBitboard(piece_index, knight_moves[piece_index] & ~pos.bitboards[OCCUPANCY] & block_mask, QUIET_MOVE, moves);
+        addMovesFromBitboard(piece_index, knight_moves[piece_index] & pos.bitboards[enemy_occupancy] & capture_mask, CAPTURE_MOVE, moves);
     }
 
     // pawn moves
-
     U64 pawns = pos.bitboards[friendly_pawn] & ~pinned_pieces;
-
-    // single and double pushes
 
     U64 double_pushes;
     U64 single_pushes;
     U64 left_attacks;
     U64 right_attacks;
     if constexpr(white_to_move) {
-        double_pushes = (pawns & rank_2) << 16 & block_mask & ~pos.bitboards[occupancy] & ~pos.bitboards[occupancy] << 8;
-        single_pushes = pawns << 8 & block_mask & ~pos.bitboards[occupancy];
+        double_pushes = (pawns & rank_2) << 16 & block_mask & ~pos.bitboards[OCCUPANCY] & ~pos.bitboards[OCCUPANCY] << 8;
+        single_pushes = pawns << 8 & block_mask & ~pos.bitboards[OCCUPANCY];
         left_attacks = pawns << 7 & pos.bitboards[enemy_occupancy] & capture_mask & ~h_file;
         right_attacks = pawns << 9 & pos.bitboards[enemy_occupancy] & capture_mask & ~a_file;
     } else {
-        double_pushes = (pawns & rank_7) >> 16 & block_mask & ~pos.bitboards[occupancy] & ~pos.bitboards[occupancy] >> 8;
-        single_pushes = pawns >> 8 & block_mask & ~pos.bitboards[occupancy];
+        double_pushes = (pawns & rank_7) >> 16 & block_mask & ~pos.bitboards[OCCUPANCY] & ~pos.bitboards[OCCUPANCY] >> 8;
+        single_pushes = pawns >> 8 & block_mask & ~pos.bitboards[OCCUPANCY];
         left_attacks = pawns >> 9 & pos.bitboards[enemy_occupancy] & capture_mask & ~h_file;
         right_attacks = pawns >> 7 & pos.bitboards[enemy_occupancy] & capture_mask & ~a_file;
     }
@@ -234,10 +229,10 @@ void generateMoves(MoveList &moves, Position &pos) {
         } else {
             start_square = end_square + 8;
         }
-        moves.addMove(encodeMove(start_square, end_square, queen_promotion));
-        moves.addMove(encodeMove(start_square, end_square, knight_promotion));
-        moves.addMove(encodeMove(start_square, end_square, bishop_promotion));
-        moves.addMove(encodeMove(start_square, end_square, rook_promotion));
+        moves.addMove(encodeMove(start_square, end_square, QUEEN_PROMOTION));
+        moves.addMove(encodeMove(start_square, end_square, KNIGHT_PROMOTION));
+        moves.addMove(encodeMove(start_square, end_square, BISHOP_PROMOTION));
+        moves.addMove(encodeMove(start_square, end_square, ROOK_PROMOTION));
     }
 
     while (left_promotion_captures) {
@@ -247,10 +242,10 @@ void generateMoves(MoveList &moves, Position &pos) {
         } else {
             start_square = end_square + 9;
         }
-        moves.addMove(encodeMove(start_square, end_square, queen_promotion_capture));
-        moves.addMove(encodeMove(start_square, end_square, knight_promotion_capture));
-        moves.addMove(encodeMove(start_square, end_square, bishop_promotion_capture));
-        moves.addMove(encodeMove(start_square, end_square, rook_promotion_capture));
+        moves.addMove(encodeMove(start_square, end_square, QUEEN_PROMOTION_CAPTURE));
+        moves.addMove(encodeMove(start_square, end_square, KNIGHT_PROMOTION_CAPTURE));
+        moves.addMove(encodeMove(start_square, end_square, BISHOP_PROMOTION_CAPTURE));
+        moves.addMove(encodeMove(start_square, end_square, ROOK_PROMOTION_CAPTURE));
     }
 
     while (right_promotion_captures) {
@@ -260,10 +255,10 @@ void generateMoves(MoveList &moves, Position &pos) {
         } else {
             start_square = end_square + 7;
         }
-        moves.addMove(encodeMove(start_square, end_square, queen_promotion_capture));
-        moves.addMove(encodeMove(start_square, end_square, knight_promotion_capture));
-        moves.addMove(encodeMove(start_square, end_square, bishop_promotion_capture));
-        moves.addMove(encodeMove(start_square, end_square, rook_promotion_capture));
+        moves.addMove(encodeMove(start_square, end_square, QUEEN_PROMOTION_CAPTURE));
+        moves.addMove(encodeMove(start_square, end_square, KNIGHT_PROMOTION_CAPTURE));
+        moves.addMove(encodeMove(start_square, end_square, BISHOP_PROMOTION_CAPTURE));
+        moves.addMove(encodeMove(start_square, end_square, ROOK_PROMOTION_CAPTURE));
     }
 
 
@@ -274,7 +269,7 @@ void generateMoves(MoveList &moves, Position &pos) {
         } else {
             start_square = end_square + 16;
         }
-        moves.addMove(encodeMove(start_square, end_square, double_pawn_push));
+        moves.addMove(encodeMove(start_square, end_square, DOUBLE_PAWN_PUSH));
     }
 
     while (single_pushes) {
@@ -284,7 +279,7 @@ void generateMoves(MoveList &moves, Position &pos) {
         } else {
             start_square = end_square + 8;
         }
-        moves.addMove(encodeMove(start_square, end_square, quiet_move));
+        moves.addMove(encodeMove(start_square, end_square, QUIET_MOVE));
     }
 
     while (left_attacks) {
@@ -294,7 +289,7 @@ void generateMoves(MoveList &moves, Position &pos) {
         } else {
             start_square = end_square + 9;
         }
-        moves.addMove(encodeMove(start_square, end_square, capture_move));
+        moves.addMove(encodeMove(start_square, end_square, CAPTURE_MOVE));
     }
 
     while (right_attacks) {
@@ -304,13 +299,13 @@ void generateMoves(MoveList &moves, Position &pos) {
         } else {
             start_square = end_square + 7;
         }
-        moves.addMove(encodeMove(start_square, end_square, capture_move));
+        moves.addMove(encodeMove(start_square, end_square, CAPTURE_MOVE));
     }
 
     // en passant 
     if (pos.en_passant) {
         U64 en_passant_attackers;
-        pin_rays = 0ULL;
+        int piece_index;
         en_passant_attackers = pawn_attacks[enemy_side][pos.en_passant] & pawns;
         if constexpr(white_to_move) {
             piece_index = pos.en_passant - 8;
@@ -321,12 +316,13 @@ void generateMoves(MoveList &moves, Position &pos) {
             while (en_passant_attackers) {
                 start_square = popLSB(en_passant_attackers);
                 if (pos.bitboards[friendly_king] & (rank_5 >> (8 * side))) { 
-                    pin_rays = getMagicRookAttack(king_index, pos.bitboards[occupancy] & ~setBit(start_square) & ~setBit(piece_index));
-                    if (pin_rays & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen])) {
+                    // check to see if the move leaves the king in check
+                    U64 ep_pin_rays = getMagicRookAttack(king_index, pos.bitboards[OCCUPANCY] & ~setBit(start_square) & ~setBit(piece_index));
+                    if (ep_pin_rays & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen])) {
                         break;
                     }
                 }
-                moves.addMove(encodeMove(start_square, pos.en_passant, en_passant_capture));
+                moves.addMove(encodeMove(start_square, pos.en_passant, EN_PASSANT_CAPTURE));
             }
         }
     }
@@ -339,41 +335,38 @@ void generateMoves(MoveList &moves, Position &pos) {
     U64 bishops = (pos.bitboards[friendly_bishop] | pos.bitboards[friendly_queen]) & ~pinned_pieces;
 
     while(bishops) {
-        piece_index = popLSB(bishops);
-        magic_attack = getMagicBishopAttack(piece_index, pos.bitboards[occupancy]);
-        addMovesFromBitboard(piece_index, magic_attack & ~pos.bitboards[occupancy] & block_mask, quiet_move, moves);
-        addMovesFromBitboard(piece_index, magic_attack & pos.bitboards[enemy_occupancy] & capture_mask, capture_move, moves);
+        int piece_index = popLSB(bishops);
+        magic_attack = getMagicBishopAttack(piece_index, pos.bitboards[OCCUPANCY]);
+        addMovesFromBitboard(piece_index, magic_attack & ~pos.bitboards[OCCUPANCY] & block_mask, QUIET_MOVE, moves);
+        addMovesFromBitboard(piece_index, magic_attack & pos.bitboards[enemy_occupancy] & capture_mask, CAPTURE_MOVE, moves);
     }
 
     // rook moves (including queens)
 
     U64 rooks = (pos.bitboards[friendly_rook] | pos.bitboards[friendly_queen]) & ~pinned_pieces;
 
-    // printBitboard(capture_mask);
-    // printBitboard(pos.bitboards[white_pawn]);
-
     while(rooks) {
-        piece_index = popLSB(rooks);
-        magic_attack = getMagicRookAttack(piece_index, pos.bitboards[occupancy]);
-        addMovesFromBitboard(piece_index, magic_attack & ~pos.bitboards[occupancy] & block_mask, quiet_move, moves);
-        addMovesFromBitboard(piece_index, magic_attack & pos.bitboards[enemy_occupancy] & capture_mask, capture_move, moves);
+        int piece_index = popLSB(rooks);
+        magic_attack = getMagicRookAttack(piece_index, pos.bitboards[OCCUPANCY]);
+        addMovesFromBitboard(piece_index, magic_attack & ~pos.bitboards[OCCUPANCY] & block_mask, QUIET_MOVE, moves);
+        addMovesFromBitboard(piece_index, magic_attack & pos.bitboards[enemy_occupancy] & capture_mask, CAPTURE_MOVE, moves);
     }
 
     // castling
     if (num_checks == 0) {
         if constexpr(white_to_move) {
-            if ((wkc & pos.castle_rights) && !(pos.bitboards[occupancy] & wkc_squares) && !(enemy_attacks & wkc_king_squares)) {
-                moves.addMove(encodeMove(e1, g1, king_castle));
+            if ((WKC & pos.castle_rights) && !(pos.bitboards[OCCUPANCY] & WKC_SQUARES) && !(enemy_attacks & WKC_KING_SQUARES)) {
+                moves.addMove(encodeMove(e1, g1, KING_CASTLE));
             }
-            if ((wqc & pos.castle_rights) && !(pos.bitboards[occupancy] & wqc_squares) && !(enemy_attacks & wqc_king_squares)) {
-                moves.addMove(encodeMove(e1, c1, queen_castle));
+            if ((WQC & pos.castle_rights) && !(pos.bitboards[OCCUPANCY] & WQC_SQUARES) && !(enemy_attacks & WQC_KING_SQUARES)) {
+                moves.addMove(encodeMove(e1, c1, QUEEN_CASTLE));
             }
         } else {
-            if ((bkc & pos.castle_rights) && !(pos.bitboards[occupancy] & bkc_squares) && !(enemy_attacks & bkc_king_squares)) {
-                moves.addMove(encodeMove(e8, g8, king_castle));
+            if ((BKC & pos.castle_rights) && !(pos.bitboards[OCCUPANCY] & BKC_SQUARES) && !(enemy_attacks & BKC_KING_SQUARES)) {
+                moves.addMove(encodeMove(e8, g8, KING_CASTLE));
             }
-            if ((bqc & pos.castle_rights) && !(pos.bitboards[occupancy] & bqc_squares) && !(enemy_attacks & bqc_king_squares)) {
-                moves.addMove(encodeMove(e8, c8, queen_castle));
+            if ((BQC & pos.castle_rights) && !(pos.bitboards[OCCUPANCY] & BQC_SQUARES) && !(enemy_attacks & BQC_KING_SQUARES)) {
+                moves.addMove(encodeMove(e8, c8, QUEEN_CASTLE));
             }
         }
     }
@@ -386,19 +379,19 @@ bool inCheck(Position &pos) {
     constexpr const int side = static_cast<int>(white_to_move) ^ 1;
     constexpr const int enemy_side = side ^ 1;
 
-    constexpr const int friendly_pawn = getPieceID(white_pawn, side);
-    constexpr const int friendly_knight = getPieceID(white_knight, side);
-    constexpr const int friendly_bishop = getPieceID(white_bishop, side);
-    constexpr const int friendly_rook = getPieceID(white_rook, side);
-    constexpr const int friendly_queen = getPieceID(white_queen, side);
-    constexpr const int friendly_king = getPieceID(white_king, side);
+    constexpr const int friendly_pawn = getPieceID(WHITE_PAWN, side);
+    constexpr const int friendly_knight = getPieceID(WHITE_KNIGHT, side);
+    constexpr const int friendly_bishop = getPieceID(WHITE_BISHOP, side);
+    constexpr const int friendly_rook = getPieceID(WHITE_ROOK, side);
+    constexpr const int friendly_queen = getPieceID(WHITE_QUEEN, side);
+    constexpr const int friendly_king = getPieceID(WHITE_KING, side);
 
-    constexpr const int enemy_pawn = getPieceID(white_pawn, enemy_side);
-    constexpr const int enemy_knight = getPieceID(white_knight, enemy_side);
-    constexpr const int enemy_bishop = getPieceID(white_bishop, enemy_side);
-    constexpr const int enemy_rook = getPieceID(white_rook, enemy_side);
-    constexpr const int enemy_queen = getPieceID(white_queen, enemy_side);
-    constexpr const int enemy_king = getPieceID(white_king, enemy_side);
+    constexpr const int enemy_pawn = getPieceID(WHITE_PAWN, enemy_side);
+    constexpr const int enemy_knight = getPieceID(WHITE_KNIGHT, enemy_side);
+    constexpr const int enemy_bishop = getPieceID(WHITE_BISHOP, enemy_side);
+    constexpr const int enemy_rook = getPieceID(WHITE_ROOK, enemy_side);
+    constexpr const int enemy_queen = getPieceID(WHITE_QUEEN, enemy_side);
+    constexpr const int enemy_king = getPieceID(WHITE_KING, enemy_side);
 
     constexpr const int friendly_occupancy = getOccupancy(side);
     constexpr const int enemy_occupancy = getOccupancy(enemy_side);
@@ -409,8 +402,8 @@ bool inCheck(Position &pos) {
     U64 enemy_attacks = pawnAttacksFromBitboard<!white_to_move>(pos.bitboards[enemy_pawn]);
     enemy_attacks |= knightAttacksFromBitboard(pos.bitboards[enemy_knight]);
     // treat the king as invisible for bishops and rooks
-    enemy_attacks |= bishopAttacksFromBitboard(pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen], pos.bitboards[occupancy] & ~pos.bitboards[friendly_king]);
-    enemy_attacks |= rookAttacksFromBitboard(pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen], pos.bitboards[occupancy] & ~pos.bitboards[friendly_king]);
+    enemy_attacks |= bishopAttacksFromBitboard(pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen], pos.bitboards[OCCUPANCY] & ~pos.bitboards[friendly_king]);
+    enemy_attacks |= rookAttacksFromBitboard(pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen], pos.bitboards[OCCUPANCY] & ~pos.bitboards[friendly_king]);
     enemy_attacks |= king_moves[bitScanForward(pos.bitboards[enemy_king])];
 
     // find the checks on the king and create attack and block masks
@@ -420,14 +413,14 @@ bool inCheck(Position &pos) {
 
     checkers |= knight_moves[king_index] & pos.bitboards[enemy_knight];
     checkers |= pawn_attacks[side][king_index] & pos.bitboards[enemy_pawn];
-    U64 bishop_rays_from_king = getMagicBishopAttack(king_index, pos.bitboards[occupancy]);
+    U64 bishop_rays_from_king = getMagicBishopAttack(king_index, pos.bitboards[OCCUPANCY]);
     U64 checking_bishops = bishop_rays_from_king & (pos.bitboards[enemy_bishop] | pos.bitboards[enemy_queen]);
     checkers |= checking_bishops;
-    U64 rook_rays_from_king = getMagicRookAttack(king_index, pos.bitboards[occupancy]);
+    U64 rook_rays_from_king = getMagicRookAttack(king_index, pos.bitboards[OCCUPANCY]);
     U64 checking_rooks = rook_rays_from_king & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen]);
     checkers |= checking_rooks;
-    U64 block_mask = bishopAttacksFromBitboard(checking_bishops, pos.bitboards[occupancy]) & bishop_rays_from_king;
-    block_mask |= rookAttacksFromBitboard(checking_rooks, pos.bitboards[occupancy]) & rook_rays_from_king;
+    U64 block_mask = bishopAttacksFromBitboard(checking_bishops, pos.bitboards[OCCUPANCY]) & bishop_rays_from_king;
+    block_mask |= rookAttacksFromBitboard(checking_rooks, pos.bitboards[OCCUPANCY]) & rook_rays_from_king;
 
     if (checkers) {
         return true;

@@ -30,21 +30,21 @@ void Position::readFen(std::string fen) {
         if (isdigit(c)) {
             square_index += (c - '0');
         } else if (c != '/') {
-            bitboards[letter_piece_map[c]] |= (1ULL << square_index);
-            board[square_index] = letter_piece_map[c];
+            bitboards[LETTER_PIECE_MAP[c]] |= (1ULL << square_index);
+            board[square_index] = LETTER_PIECE_MAP[c];
             square_index++;
         } else {
             square_index -= 16;
         };
     };
-    for (int i = white_pawn; i <= black_king; i++) {
-        bitboards[occupancy] |= bitboards[i];
+    for (int i = WHITE_PAWN; i <= BLACK_KING; i++) {
+        bitboards[OCCUPANCY] |= bitboards[i];
     };
-    for (int i = white_pawn; i <= white_king; i++) {
-        bitboards[white_occupancy] |= bitboards[i];
+    for (int i = WHITE_PAWN; i <= WHITE_KING; i++) {
+        bitboards[WHITE_OCCUPANCY] |= bitboards[i];
     };
-    for (int i = black_pawn; i <= black_king; i++) {
-        bitboards[black_occupancy] |= bitboards[i];
+    for (int i = BLACK_PAWN; i <= BLACK_KING; i++) {
+        bitboards[BLACK_OCCUPANCY] |= bitboards[i];
     };
 
     // read side to move
@@ -61,7 +61,7 @@ void Position::readFen(std::string fen) {
     space_pos = fen.find(' ');
     castle_rights = 0;
     for (const auto &c: fen.substr(0, space_pos)) {
-        castle_rights |= castle_rights_map[c];
+        castle_rights |= CASTLE_RIGHTS_MAP[c];
     };
     fen = fen.substr(space_pos + 1);
     space_pos = fen.find(' ');
@@ -106,7 +106,7 @@ std::string Position::toFen() {
                     fen << empties;
                 }
                 empties = 0;
-                fen << piece_to_letter_map[piece];
+                fen << PIECE_TO_LETTER_MAP[piece];
             }
         }
         if (empties > 0) {
@@ -126,16 +126,16 @@ std::string Position::toFen() {
     fen << " ";
 
     if (castle_rights) {
-        if (castle_rights & wkc) {
+        if (castle_rights & WKC) {
             fen << "K";
         }
-        if (castle_rights & wqc) {
+        if (castle_rights & WQC) {
             fen << "Q";
         }
-        if (castle_rights & bkc) {
+        if (castle_rights & BKC) {
             fen << "k";
         }
-        if (castle_rights & bqc) {
+        if (castle_rights & BQC) {
             fen << "q";
         }
     } else {
@@ -143,7 +143,7 @@ std::string Position::toFen() {
     }
 
     if (en_passant) {
-        fen << " " << square_names[en_passant];
+        fen << " " << SQUARE_NAMES[en_passant];
     } else {
         fen << " -";
     }
@@ -161,7 +161,7 @@ void Position::print() {
             int sq = (rank * 8 + file);
             int piece = at(sq);
             if (piece != NO_PIECE) {
-                std::cout << "| " << piece_to_letter_map[piece] << ' ';
+                std::cout << "| " << PIECE_TO_LETTER_MAP[piece] << ' ';
             } else {
                 std::cout << "|   ";
             }
@@ -175,10 +175,10 @@ void Position::printFromBitboard() {
     for (int rank = 7; rank >= 0; rank--) {
         for (int file = 0; file < 8; file++) {
             bool square_empty = true;
-            for (int piece = white_pawn; piece <= black_king; piece++) {
+            for (int piece = WHITE_PAWN; piece <= BLACK_KING; piece++) {
                 if (bitboards[piece] & (1ULL << (rank * 8 + file))) {
                     square_empty = false;
-                    std::cout << "| " << piece_to_letter_map[piece] << ' ';
+                    std::cout << "| " << PIECE_TO_LETTER_MAP[piece] << ' ';
                 }
             }
             if (square_empty) {
@@ -221,11 +221,11 @@ int Position::at(int sq) {
 void Position::movePiece(int start, int end, int piece_type) {
     bitboards[piece_type] ^= setBit(start);
     bitboards[piece_type] ^= setBit(end);
-    bitboards[occupancy] ^= setBit(start);
-    bitboards[occupancy] ^= setBit(end);
+    bitboards[OCCUPANCY] ^= setBit(start);
+    bitboards[OCCUPANCY] ^= setBit(end);
 
-    bitboards[white_occupancy + side_to_move] ^= setBit(start);
-    bitboards[white_occupancy + side_to_move] ^= setBit(end);
+    bitboards[WHITE_OCCUPANCY + side_to_move] ^= setBit(start);
+    bitboards[WHITE_OCCUPANCY + side_to_move] ^= setBit(end);
 
     board[start] = NO_PIECE;
     board[end] = piece_type;
@@ -233,17 +233,17 @@ void Position::movePiece(int start, int end, int piece_type) {
 
 void Position::removePiece(int square, int piece_type) {
     bitboards[piece_type] ^= setBit(square);
-    bitboards[white_occupancy] &= ~setBit(square);
-    bitboards[black_occupancy] &= ~setBit(square);
-    bitboards[occupancy] &= ~setBit(square);
+    bitboards[WHITE_OCCUPANCY] &= ~setBit(square);
+    bitboards[BLACK_OCCUPANCY] &= ~setBit(square);
+    bitboards[OCCUPANCY] &= ~setBit(square);
 
     board[square] = NO_PIECE;
 }
 
 void Position::placePiece(int square, int piece_type) {
     bitboards[piece_type] ^= setBit(square);
-    bitboards[white_occupancy + piece_type / 6] ^= setBit(square);
-    bitboards[occupancy] ^= setBit(square);
+    bitboards[WHITE_OCCUPANCY + piece_type / 6] ^= setBit(square);
+    bitboards[OCCUPANCY] ^= setBit(square);
 
     board[square] = piece_type;
 }
@@ -266,18 +266,18 @@ void Position::makeMove(move16 move) {
 
     switch (move_type)
     {
-    case quiet_move:
+    case QUIET_MOVE:
         movePiece(start_square, end_square, piece_type);
         fifty_move++;
         break;
-    case capture_move:
+    case CAPTURE_MOVE:
         captured_piece = at(end_square);
         undo.captured_piece = captured_piece;
         removePiece(end_square, captured_piece);
         movePiece(start_square, end_square, piece_type);
         fifty_move = 0;
         break;
-    case double_pawn_push:
+    case DOUBLE_PAWN_PUSH:
         movePiece(start_square, end_square, piece_type);
         en_passant = end_square + (side_to_move * 8) + (side_to_move - 1) * 8;
         if (!(pawn_attacks[side_to_move][en_passant] & bitboards[WHITE_PAWN + BLACK_PAWN * (side_to_move ^ 1)])) {
@@ -285,97 +285,97 @@ void Position::makeMove(move16 move) {
         }
         fifty_move = 0;
         break;
-    case queen_castle:
+    case QUEEN_CASTLE:
         movePiece(start_square, end_square, piece_type);
-        movePiece(a1 + a8 * side_to_move, d1 + a8 * side_to_move, white_rook + 6 * side_to_move);
+        movePiece(a1 + a8 * side_to_move, d1 + a8 * side_to_move, WHITE_ROOK + 6 * side_to_move);
         fifty_move++;
         break;
-    case king_castle:
+    case KING_CASTLE:
         movePiece(start_square, end_square, piece_type);
-        movePiece(h1 + a8 * side_to_move, f1 + a8 * side_to_move, white_rook + 6 * side_to_move);
+        movePiece(h1 + a8 * side_to_move, f1 + a8 * side_to_move, WHITE_ROOK + 6 * side_to_move);
         fifty_move++;
         break;
-    case en_passant_capture:
-        captured_piece = white_pawn + 6 * (side_to_move ^ 1);
+    case EN_PASSANT_CAPTURE:
+        captured_piece = WHITE_PAWN + 6 * (side_to_move ^ 1);
         undo.captured_piece = captured_piece;
         removePiece(end_square + 8 * side_to_move - 8 * (1 - side_to_move), captured_piece);
         movePiece(start_square, end_square, piece_type);
         fifty_move = 0;
         break;
-    case queen_promotion:
+    case QUEEN_PROMOTION:
         removePiece(start_square, piece_type);
-        placePiece(end_square, white_queen + black_pawn * side_to_move);
+        placePiece(end_square, WHITE_QUEEN + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
-    case knight_promotion:
+    case KNIGHT_PROMOTION:
         removePiece(start_square, piece_type);
-        placePiece(end_square, white_knight + black_pawn * side_to_move);
+        placePiece(end_square, WHITE_KNIGHT + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
-    case bishop_promotion:
+    case BISHOP_PROMOTION:
         removePiece(start_square, piece_type);
-        placePiece(end_square, white_bishop + black_pawn * side_to_move);
+        placePiece(end_square, WHITE_BISHOP + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
-    case rook_promotion:
+    case ROOK_PROMOTION:
         removePiece(start_square, piece_type);
-        placePiece(end_square, white_rook + black_pawn * side_to_move);
+        placePiece(end_square, WHITE_ROOK + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
-    case queen_promotion_capture:
+    case QUEEN_PROMOTION_CAPTURE:
         captured_piece = at(end_square);
         undo.captured_piece = captured_piece;
         removePiece(start_square, piece_type);
         removePiece(end_square, at(end_square));
-        placePiece(end_square, white_queen + black_pawn * side_to_move);
+        placePiece(end_square, WHITE_QUEEN + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
-    case knight_promotion_capture:
+    case KNIGHT_PROMOTION_CAPTURE:
         captured_piece = at(end_square);
         undo.captured_piece = captured_piece;
         removePiece(start_square, piece_type);
         removePiece(end_square, at(end_square));
-        placePiece(end_square, white_knight + black_pawn * side_to_move);
+        placePiece(end_square, WHITE_KNIGHT + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
-    case bishop_promotion_capture:
+    case BISHOP_PROMOTION_CAPTURE:
         captured_piece = at(end_square);
         undo.captured_piece = captured_piece;
         removePiece(start_square, piece_type);
         removePiece(end_square, at(end_square));
-        placePiece(end_square, white_bishop + black_pawn * side_to_move);
+        placePiece(end_square, WHITE_BISHOP + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
-    case rook_promotion_capture:
+    case ROOK_PROMOTION_CAPTURE:
         captured_piece = at(end_square);
         undo.captured_piece = captured_piece;
         removePiece(start_square, piece_type);
         removePiece(end_square, at(end_square));
-        placePiece(end_square, white_rook + black_pawn * side_to_move);
+        placePiece(end_square, WHITE_ROOK + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
     default:
         break;
     }
 
-    if (castle_rights & wqc) {
-        if(!(setBit(a1) & bitboards[white_rook]) || !(1ULL << e1 & bitboards[white_king])) {
-            castle_rights &= ~wqc;
+    if (castle_rights & WQC) {
+        if(!(setBit(a1) & bitboards[WHITE_ROOK]) || !(1ULL << e1 & bitboards[WHITE_KING])) {
+            castle_rights &= ~WQC;
         }
     }
-    if (castle_rights & wkc) {
-        if(!(1ULL << h1 & bitboards[white_rook]) || !(1ULL << e1 & bitboards[white_king])) {
-            castle_rights &= ~wkc;
+    if (castle_rights & WKC) {
+        if(!(1ULL << h1 & bitboards[WHITE_ROOK]) || !(1ULL << e1 & bitboards[WHITE_KING])) {
+            castle_rights &= ~WKC;
         }
     }
-    if (castle_rights & bqc) {
-        if((1ULL << a8 & ~bitboards[black_rook]) || (1ULL << e8 & ~bitboards[black_king])) {
-            castle_rights &= ~bqc;
+    if (castle_rights & BQC) {
+        if((1ULL << a8 & ~bitboards[BLACK_ROOK]) || (1ULL << e8 & ~bitboards[BLACK_KING])) {
+            castle_rights &= ~BQC;
         }
     }
-    if (castle_rights & bkc) {
-        if((1ULL << h8 & ~bitboards[black_rook]) || (1ULL << e8 & ~bitboards[black_king])) {
-            castle_rights &= ~bkc;
+    if (castle_rights & BKC) {
+        if((1ULL << h8 & ~bitboards[BLACK_ROOK]) || (1ULL << e8 & ~bitboards[BLACK_KING])) {
+            castle_rights &= ~BKC;
         }
     }
 
@@ -403,65 +403,65 @@ void Position::unmakeMove() {
 
     switch (move_type)
     {
-    case quiet_move:
+    case QUIET_MOVE:
         movePiece(end_square, start_square, piece_type);
         break;
-    case capture_move:
+    case CAPTURE_MOVE:
         movePiece(end_square, start_square, piece_type);
         placePiece(end_square, undo.captured_piece);
         break;
-    case double_pawn_push:
+    case DOUBLE_PAWN_PUSH:
         movePiece(end_square, start_square, piece_type);
         break;
-    case queen_castle:
+    case QUEEN_CASTLE:
         movePiece(end_square, start_square, piece_type);
-        movePiece(d1 + a8 * side_to_move, a1 + a8 * side_to_move, white_rook + 6 * side_to_move);
+        movePiece(d1 + a8 * side_to_move, a1 + a8 * side_to_move, WHITE_ROOK + 6 * side_to_move);
         break;
-    case king_castle:
+    case KING_CASTLE:
         movePiece(end_square, start_square, piece_type);
-        movePiece(f1 + a8 * side_to_move, h1 + a8 * side_to_move, white_rook + 6 * side_to_move);
+        movePiece(f1 + a8 * side_to_move, h1 + a8 * side_to_move, WHITE_ROOK + 6 * side_to_move);
         break;
-    case en_passant_capture:
+    case EN_PASSANT_CAPTURE:
         placePiece(end_square + 8 * side_to_move - 8 * (1 - side_to_move), undo.captured_piece);
         movePiece(end_square, start_square, piece_type);
         fifty_move = 0;
         break;
-    case queen_promotion:
-        removePiece(end_square, white_queen + black_pawn * side_to_move);
-        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+    case QUEEN_PROMOTION:
+        removePiece(end_square, WHITE_QUEEN + BLACK_PAWN * side_to_move);
+        placePiece(start_square, WHITE_PAWN + BLACK_PAWN * side_to_move);
         break;
-    case knight_promotion:
-        removePiece(end_square, white_knight + black_pawn * side_to_move);
-        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+    case KNIGHT_PROMOTION:
+        removePiece(end_square, WHITE_KNIGHT + BLACK_PAWN * side_to_move);
+        placePiece(start_square, WHITE_PAWN + BLACK_PAWN * side_to_move);
         break;
-    case bishop_promotion:
-        removePiece(end_square, white_bishop + black_pawn * side_to_move);
-        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+    case BISHOP_PROMOTION:
+        removePiece(end_square, WHITE_BISHOP + BLACK_PAWN * side_to_move);
+        placePiece(start_square, WHITE_PAWN + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
-    case rook_promotion:
-        removePiece(end_square, white_rook + black_pawn * side_to_move);
-        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+    case ROOK_PROMOTION:
+        removePiece(end_square, WHITE_ROOK + BLACK_PAWN * side_to_move);
+        placePiece(start_square, WHITE_PAWN + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
-    case queen_promotion_capture:
-        removePiece(end_square, white_queen + black_pawn * side_to_move);
-        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+    case QUEEN_PROMOTION_CAPTURE:
+        removePiece(end_square, WHITE_QUEEN + BLACK_PAWN * side_to_move);
+        placePiece(start_square, WHITE_PAWN + BLACK_PAWN * side_to_move);
         placePiece(end_square, undo.captured_piece);
         break;
-    case knight_promotion_capture:
-        removePiece(end_square, white_knight + black_pawn * side_to_move);
-        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+    case KNIGHT_PROMOTION_CAPTURE:
+        removePiece(end_square, WHITE_KNIGHT + BLACK_PAWN * side_to_move);
+        placePiece(start_square, WHITE_PAWN + BLACK_PAWN * side_to_move);
         placePiece(end_square, undo.captured_piece);
         break;
-    case bishop_promotion_capture:
-        removePiece(end_square, white_bishop + black_pawn * side_to_move);
-        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+    case BISHOP_PROMOTION_CAPTURE:
+        removePiece(end_square, WHITE_BISHOP + BLACK_PAWN * side_to_move);
+        placePiece(start_square, WHITE_PAWN + BLACK_PAWN * side_to_move);
         placePiece(end_square, undo.captured_piece);
         break;
-    case rook_promotion_capture:
-        removePiece(end_square, white_rook + black_pawn * side_to_move);
-        placePiece(start_square, white_pawn + black_pawn * side_to_move);
+    case ROOK_PROMOTION_CAPTURE:
+        removePiece(end_square, WHITE_ROOK + BLACK_PAWN * side_to_move);
+        placePiece(start_square, WHITE_PAWN + BLACK_PAWN * side_to_move);
         placePiece(end_square, undo.captured_piece);
         break;
     default:
@@ -482,56 +482,56 @@ move16 Position::parseMove(std::string move_string) {
     piece_type = at(start);
 
     if (at(end) != NO_PIECE) {
-        move_type |= capture_move;
+        move_type |= CAPTURE_MOVE;
     }
 
-    if ((piece_type == white_pawn && ((1ULL << end) & rank_8)) || (piece_type == black_pawn && ((1ULL << end) & rank_1))) {
+    if ((piece_type == WHITE_PAWN && ((1ULL << end) & rank_8)) || (piece_type == BLACK_PAWN && ((1ULL << end) & rank_1))) {
     // determine promotion type here
         if (move_string.length() > 4) {
             switch (move_string[4])
             {
             case 'q':
-                move_type |= queen_promotion;
+                move_type |= QUEEN_PROMOTION;
                 break;
             case 'n':
-                move_type |= knight_promotion;
+                move_type |= KNIGHT_PROMOTION;
                 break;
             case 'b':
-                move_type |= bishop_promotion;
+                move_type |= BISHOP_PROMOTION;
                 break;
             case 'r':
-                move_type |= rook_promotion;
+                move_type |= ROOK_PROMOTION;
                 break;
             case 'Q':
-                move_type |= queen_promotion;
+                move_type |= QUEEN_PROMOTION;
                 break;
             case 'N':
-                move_type |= knight_promotion;
+                move_type |= KNIGHT_PROMOTION;
                 break;
             case 'B':
-                move_type |= bishop_promotion;
+                move_type |= BISHOP_PROMOTION;
                 break;
             case 'R':
-                move_type |= rook_promotion;
+                move_type |= ROOK_PROMOTION;
                 break;
             default:
                 break;
             }
         }
-    }  else if ((piece_type == white_pawn || piece_type == black_pawn) && (end == en_passant)) {
-        move_type = en_passant_capture;
-    } else if (piece_type == white_pawn && end == start + 16) {
-        move_type = double_pawn_push;
-    } else if (piece_type == black_pawn && end == start - 16) {
-        move_type = double_pawn_push;
-    } else if (piece_type == white_king && start == e1 && end == g1) {
-        move_type = king_castle;
-    } else if (piece_type == white_king && start == e1 && end == c1) {
-        move_type = queen_castle;
-    } else if (piece_type == black_king && start == e8 && end == g8) {
-        move_type = king_castle;
-    } else if (piece_type == black_king && start == e8 && end == c8) {
-        move_type = queen_castle;
+    }  else if ((piece_type == WHITE_PAWN || piece_type == BLACK_PAWN) && (end == en_passant)) {
+        move_type = EN_PASSANT_CAPTURE;
+    } else if (piece_type == WHITE_PAWN && end == start + 16) {
+        move_type = DOUBLE_PAWN_PUSH;
+    } else if (piece_type == BLACK_PAWN && end == start - 16) {
+        move_type = DOUBLE_PAWN_PUSH;
+    } else if (piece_type == WHITE_KING && start == e1 && end == g1) {
+        move_type = KING_CASTLE;
+    } else if (piece_type == WHITE_KING && start == e1 && end == c1) {
+        move_type = QUEEN_CASTLE;
+    } else if (piece_type == BLACK_KING && start == e8 && end == g8) {
+        move_type = KING_CASTLE;
+    } else if (piece_type == BLACK_KING && start == e8 && end == c8) {
+        move_type = QUEEN_CASTLE;
     }
 
     move |= end << 6;

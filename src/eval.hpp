@@ -7,8 +7,8 @@
 
 constexpr int piece_values[2][6] = {{100, 250, 300, 400, 500, 0}, {100, 250, 300, 400, 500, 0}};
 constexpr int phase_values[6] = {1, 2, 3, 4, 6, 0};
-const int TOTAL_PHASE = phase_values[white_pawn] * 16 + phase_values[white_knight] * 4 
-+ phase_values[white_bishop] * 4 + phase_values[white_rook] * 4 + phase_values[white_queen] * 4;
+const int TOTAL_PHASE = phase_values[PAWN] * 16 + phase_values[KNIGHT] * 4 
++ phase_values[BISHOP] * 4 + phase_values[ROOK] * 4 + phase_values[QUEEN] * 4;
 
 // piece square tables
 

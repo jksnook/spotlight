@@ -11,19 +11,14 @@ void selfplay(int num_games) {
 
     std::vector<std::thread> threads;
 
-    int num_threads = 4;
-
-    for (int i = 0; i < num_threads; i++) {
+    for (int i = 0; i < NUM_THREADS; i++) {
         threads.push_back(std::thread(playGame, std::ref(output_file)));
     }
 
-    for (int i = 0; i < num_threads; i++) {
+    for (int i = 0; i < NUM_THREADS; i++) {
         threads[i].join();
     }
 
-    // for (int i = 0; i < num_games; i++) {
-    //     playGame(output_file);
-    // }
     output_file.close();
 }
 

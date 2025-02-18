@@ -53,6 +53,7 @@ const int index64[64] = {
    25, 14, 19,  9, 13,  8,  7,  6
 };
 
+// Bitscan from the chess programming wiki (use built in CPU instruction if possible)
 /**
  * bitScanForward
  * @author Martin Läuter (1997)
@@ -141,6 +142,7 @@ extern U64 rook_magic_mask[64];
 extern U64 rook_relevant_bit_count[64];
 extern U64 bishop_relevant_bit_count[64];
 
+// saved magic numbers to reduce startup time
 const U64 rook_magic_numbers[64] = {
 	0x1480004000201080ULL,
 	0x40002000c81000ULL,

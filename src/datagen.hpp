@@ -7,6 +7,8 @@
 #include <random>
 #include <chrono>
 
+const int NUM_THREADS = 4;
+
 void selfplay(int num_games);
 
 void playGame(std::ofstream &output_file);

@@ -7,6 +7,7 @@ int popLSB(U64 &bitboard) {
   return bit;
 };
 
+// Reverse Bitscan from the chess programming wiki
 /**
  * bitScanReverse
  * @authors Kim Walisch, Mark Dickinson
@@ -288,9 +289,8 @@ void iterateOccupancy(U64 &occupancy, U64 mask) {
 
 std::mt19937_64 randomU64(42);
 
-// U64 bishop_magic_numbers[64];
-
 // find a working magic number at the given index and populate the arrays
+// Currently just loads a saved number
 void findBishopMagic(int index) {
     U64 magic_number;
     U64 all_bits = ~0ULL >> (64 - bishop_relevant_bit_count[index]);
@@ -316,12 +316,10 @@ void findBishopMagic(int index) {
         assert(bishop_magic_attacks[index][magic_index] == attacks || bishop_magic_attacks[index][magic_index] == 0ULL);
         bishop_magic_attacks[index][magic_index] = attacks;
     }
-
-    // bishop_magic_numbers[index] = magic_number;
 }
 
-// U64 rook_magic_numbers[64];
-
+// find a working magic number at the given index and populate the arrays
+// Currently just loads a saved number
 void findRookMagic(int index) {
     U64 magic_number;
     U64 all_bits = ~0ULL >> (64 - rook_relevant_bit_count[index]);
@@ -342,7 +340,7 @@ void findRookMagic(int index) {
 
     occupancy = 0ULL;
     // loop over all possible occupancies
-    for (occupancy_bits = 0; occupancy_bits <= all_bits; occupancy_bits++) {
+    for (occupancy_bits = 0ULL; occupancy_bits <= all_bits; occupancy_bits++) {
         iterateOccupancy(occupancy, mask);
         attacks = generateRookAttacks(index, occupancy);
         magic_index = (magic_number * occupancy) >> (64 - rook_relevant_bit_count[index]);
@@ -354,7 +352,6 @@ void findRookMagic(int index) {
 
 void initMagics() {
     for (int i = 0; i < 64; i++) {
-        // std::cout << i << std::endl;
         findBishopMagic(i);
         findRookMagic(i);
     }
