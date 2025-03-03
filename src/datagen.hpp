@@ -4,11 +4,9 @@
 #include "search.hpp"
 
 #include <fstream>
-#include <random>
-#include <chrono>
 
-const int NUM_THREADS = 4;
+const int NUM_THREADS = 12;
 
 void selfplay(int num_games);
 
-void playGame(std::ofstream &output_file);
+void playGames(int num_games, int id);

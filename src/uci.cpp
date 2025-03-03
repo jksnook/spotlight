@@ -1,6 +1,9 @@
 #include "uci.hpp"
 #include "test.hpp"
 
+#include <iostream>
+#include <chrono>
+
 UCI::UCI() {
   Position position;
 }
@@ -21,7 +24,6 @@ void UCI::loop() {
             std::cout << "id name Spotlight" << std::endl;
             std::cout << "uciok" << std::endl;
         } else if (token == "ucinewgame") {
-            position.clearHistoryTable();
             search.clearTT();
         } else if (token == "isready") {
             std::cout << "readyok" << std::endl;
@@ -136,5 +138,11 @@ void UCI::parseGo(std::istringstream& commands) {
 
         std::cout << node_count << " nodes searched in " << duration.count() << "s " << nps << " nps\n";
 
+    } else if (token == "nodes") {
+        token.clear();
+        commands >> token;
+        U64 num_nodes = stoi(token);
+        move16 best_move = search.nodeSearch(position, 30, num_nodes).move;
+        std::cout << "bestmove " << moveToString(best_move) << std::endl;
     }
 }

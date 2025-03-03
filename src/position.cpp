@@ -5,6 +5,9 @@
 #include "movegen.hpp"
 
 #include <iostream>
+#include <sstream>
+#include <algorithm>
+
 
 void Position::readFen(std::string fen) {
     //resetting bitboards to zero
@@ -210,7 +213,6 @@ Position::Position(): in_check(false) {
     for (auto &i: board) {
         i = NO_PIECE;
     }
-    clearHistoryTable();
     readFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
@@ -252,7 +254,7 @@ void Position::makeMove(move16 move) {
     int start_square = getFromSquare(move);
     int end_square = getToSquare(move);
     int move_type = getMoveType(move);
-    int piece_type = at(start_square);
+    int piece = at(start_square);
 
     Undo undo;
     undo.move = move;
@@ -267,18 +269,18 @@ void Position::makeMove(move16 move) {
     switch (move_type)
     {
     case QUIET_MOVE:
-        movePiece(start_square, end_square, piece_type);
+        movePiece(start_square, end_square, piece);
         fifty_move++;
         break;
     case CAPTURE_MOVE:
         captured_piece = at(end_square);
         undo.captured_piece = captured_piece;
         removePiece(end_square, captured_piece);
-        movePiece(start_square, end_square, piece_type);
+        movePiece(start_square, end_square, piece);
         fifty_move = 0;
         break;
     case DOUBLE_PAWN_PUSH:
-        movePiece(start_square, end_square, piece_type);
+        movePiece(start_square, end_square, piece);
         en_passant = end_square + (side_to_move * 8) + (side_to_move - 1) * 8;
         if (!(pawn_attacks[side_to_move][en_passant] & bitboards[WHITE_PAWN + BLACK_PAWN * (side_to_move ^ 1)])) {
             en_passant = 0;
@@ -286,12 +288,12 @@ void Position::makeMove(move16 move) {
         fifty_move = 0;
         break;
     case QUEEN_CASTLE:
-        movePiece(start_square, end_square, piece_type);
+        movePiece(start_square, end_square, piece);
         movePiece(a1 + a8 * side_to_move, d1 + a8 * side_to_move, WHITE_ROOK + 6 * side_to_move);
         fifty_move++;
         break;
     case KING_CASTLE:
-        movePiece(start_square, end_square, piece_type);
+        movePiece(start_square, end_square, piece);
         movePiece(h1 + a8 * side_to_move, f1 + a8 * side_to_move, WHITE_ROOK + 6 * side_to_move);
         fifty_move++;
         break;
@@ -299,33 +301,33 @@ void Position::makeMove(move16 move) {
         captured_piece = WHITE_PAWN + 6 * (side_to_move ^ 1);
         undo.captured_piece = captured_piece;
         removePiece(end_square + 8 * side_to_move - 8 * (1 - side_to_move), captured_piece);
-        movePiece(start_square, end_square, piece_type);
+        movePiece(start_square, end_square, piece);
         fifty_move = 0;
         break;
     case QUEEN_PROMOTION:
-        removePiece(start_square, piece_type);
+        removePiece(start_square, piece);
         placePiece(end_square, WHITE_QUEEN + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
     case KNIGHT_PROMOTION:
-        removePiece(start_square, piece_type);
+        removePiece(start_square, piece);
         placePiece(end_square, WHITE_KNIGHT + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
     case BISHOP_PROMOTION:
-        removePiece(start_square, piece_type);
+        removePiece(start_square, piece);
         placePiece(end_square, WHITE_BISHOP + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
     case ROOK_PROMOTION:
-        removePiece(start_square, piece_type);
+        removePiece(start_square, piece);
         placePiece(end_square, WHITE_ROOK + BLACK_PAWN * side_to_move);
         fifty_move = 0;
         break;
     case QUEEN_PROMOTION_CAPTURE:
         captured_piece = at(end_square);
         undo.captured_piece = captured_piece;
-        removePiece(start_square, piece_type);
+        removePiece(start_square, piece);
         removePiece(end_square, at(end_square));
         placePiece(end_square, WHITE_QUEEN + BLACK_PAWN * side_to_move);
         fifty_move = 0;
@@ -333,7 +335,7 @@ void Position::makeMove(move16 move) {
     case KNIGHT_PROMOTION_CAPTURE:
         captured_piece = at(end_square);
         undo.captured_piece = captured_piece;
-        removePiece(start_square, piece_type);
+        removePiece(start_square, piece);
         removePiece(end_square, at(end_square));
         placePiece(end_square, WHITE_KNIGHT + BLACK_PAWN * side_to_move);
         fifty_move = 0;
@@ -341,7 +343,7 @@ void Position::makeMove(move16 move) {
     case BISHOP_PROMOTION_CAPTURE:
         captured_piece = at(end_square);
         undo.captured_piece = captured_piece;
-        removePiece(start_square, piece_type);
+        removePiece(start_square, piece);
         removePiece(end_square, at(end_square));
         placePiece(end_square, WHITE_BISHOP + BLACK_PAWN * side_to_move);
         fifty_move = 0;
@@ -349,7 +351,7 @@ void Position::makeMove(move16 move) {
     case ROOK_PROMOTION_CAPTURE:
         captured_piece = at(end_square);
         undo.captured_piece = captured_piece;
-        removePiece(start_square, piece_type);
+        removePiece(start_square, piece);
         removePiece(end_square, at(end_square));
         placePiece(end_square, WHITE_ROOK + BLACK_PAWN * side_to_move);
         fifty_move = 0;
@@ -393,7 +395,7 @@ void Position::unmakeMove() {
     int start_square = getFromSquare(move);
     int end_square = getToSquare(move);
     int move_type = getMoveType(move);
-    int piece_type = at(end_square);
+    int piece = at(end_square);
 
     en_passant = undo.en_passant;
     fifty_move = undo.fifty_move;
@@ -404,26 +406,26 @@ void Position::unmakeMove() {
     switch (move_type)
     {
     case QUIET_MOVE:
-        movePiece(end_square, start_square, piece_type);
+        movePiece(end_square, start_square, piece);
         break;
     case CAPTURE_MOVE:
-        movePiece(end_square, start_square, piece_type);
+        movePiece(end_square, start_square, piece);
         placePiece(end_square, undo.captured_piece);
         break;
     case DOUBLE_PAWN_PUSH:
-        movePiece(end_square, start_square, piece_type);
+        movePiece(end_square, start_square, piece);
         break;
     case QUEEN_CASTLE:
-        movePiece(end_square, start_square, piece_type);
+        movePiece(end_square, start_square, piece);
         movePiece(d1 + a8 * side_to_move, a1 + a8 * side_to_move, WHITE_ROOK + 6 * side_to_move);
         break;
     case KING_CASTLE:
-        movePiece(end_square, start_square, piece_type);
+        movePiece(end_square, start_square, piece);
         movePiece(f1 + a8 * side_to_move, h1 + a8 * side_to_move, WHITE_ROOK + 6 * side_to_move);
         break;
     case EN_PASSANT_CAPTURE:
         placePiece(end_square + 8 * side_to_move - 8 * (1 - side_to_move), undo.captured_piece);
-        movePiece(end_square, start_square, piece_type);
+        movePiece(end_square, start_square, piece);
         fifty_move = 0;
         break;
     case QUEEN_PROMOTION:
@@ -476,16 +478,16 @@ move16 Position::parseMove(std::string move_string) {
     int start = (move_string[0] - 'a') + (move_string[1] - '1') * 8;
     int end = (move_string[2] - 'a') + (move_string[3] - '1') * 8;
 
-    move16 piece_type = 0UL;
+    move16 piece = 0UL;
     move16 move_type = 0UL;
 
-    piece_type = at(start);
+    piece = at(start);
 
     if (at(end) != NO_PIECE) {
         move_type |= CAPTURE_MOVE;
     }
 
-    if ((piece_type == WHITE_PAWN && ((1ULL << end) & rank_8)) || (piece_type == BLACK_PAWN && ((1ULL << end) & rank_1))) {
+    if ((piece == WHITE_PAWN && ((1ULL << end) & RANK_8)) || (piece == BLACK_PAWN && ((1ULL << end) & RANK_1))) {
     // determine promotion type here
         if (move_string.length() > 4) {
             switch (move_string[4])
@@ -518,19 +520,19 @@ move16 Position::parseMove(std::string move_string) {
                 break;
             }
         }
-    }  else if ((piece_type == WHITE_PAWN || piece_type == BLACK_PAWN) && (end == en_passant)) {
+    }  else if ((piece == WHITE_PAWN || piece == BLACK_PAWN) && (end == en_passant)) {
         move_type = EN_PASSANT_CAPTURE;
-    } else if (piece_type == WHITE_PAWN && end == start + 16) {
+    } else if (piece == WHITE_PAWN && end == start + 16) {
         move_type = DOUBLE_PAWN_PUSH;
-    } else if (piece_type == BLACK_PAWN && end == start - 16) {
+    } else if (piece == BLACK_PAWN && end == start - 16) {
         move_type = DOUBLE_PAWN_PUSH;
-    } else if (piece_type == WHITE_KING && start == e1 && end == g1) {
+    } else if (piece == WHITE_KING && start == e1 && end == g1) {
         move_type = KING_CASTLE;
-    } else if (piece_type == WHITE_KING && start == e1 && end == c1) {
+    } else if (piece == WHITE_KING && start == e1 && end == c1) {
         move_type = QUEEN_CASTLE;
-    } else if (piece_type == BLACK_KING && start == e8 && end == g8) {
+    } else if (piece == BLACK_KING && start == e8 && end == g8) {
         move_type = KING_CASTLE;
-    } else if (piece_type == BLACK_KING && start == e8 && end == c8) {
+    } else if (piece == BLACK_KING && start == e8 && end == c8) {
         move_type = QUEEN_CASTLE;
     }
 
@@ -579,19 +581,3 @@ bool Position::isTripleRepetition() {
     }
     return repetitions >= 2;
 }
-
-void Position::updateHistoryTable(int from, int to, int depth) {
-    // int bonus = std::clamp(depth, -MAX_HISTORY, MAX_HISTORY);
-    // history_table[side_to_move][from][to] += bonus - history_table[side_to_move][from][to] * abs(bonus) / MAX_HISTORY;
-    history_table[side_to_move][from][to] += depth;
-}
-
-void Position::clearHistoryTable() {
-    for (int i = 0; i < 64; i++) {
-        for (int k = 0; k < 64; k++) {
-            history_table[0][i][k] = 0;
-            history_table[1][i][k] = 0;
-        }
-    }
-}
-

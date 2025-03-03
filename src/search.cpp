@@ -1,5 +1,7 @@
 #include "search.hpp"
 
+#include <algorithm>
+
 // copy the pv from ply + 1 to ply and add the first move to the front
 void PVTable::updatePV(int ply, move16 first_move) {
     std::copy(table[ply + 1].begin(), table[ply + 1].begin() + pv_length[ply + 1], table[ply].begin() + 1);
@@ -48,6 +50,12 @@ void Search::setTimer(U64 duration_in_ms, int interval) {
 bool Search::timesUp() {
     if (times_up) {
         return true;
+    } else if (node_search) {
+        if (nodes_searched >= max_nodes) {
+            times_up = true;
+            return true;
+        }
+        return false;
     } else if (time_check > 0) {
         time_check--;
         return false;
@@ -73,6 +81,7 @@ void Search::outputInfo(int depth, move16 best_move, int score, int nps) {
 
 // Iterative deepening framework
 SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
+    node_search = false;
     setTimer(time_in_ms, 1000);
     tt_hits = 0;
     MoveList moves;
@@ -285,15 +294,11 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             if (max_score >= beta) {
                 if (!((move >> 12) & CAPTURE_MOVE)) {
                     saveKiller(ply, move);
-                    pos.updateHistoryTable(getFromSquare(move), getToSquare(move), depth);
                 }
                 tt.save(pos.z_key, depth, ply, move, max_score, LOWER_BOUND_NODE, pos.game_half_moves);
                 return beta;
             }
             if (score > alpha) {
-                if (!((move >> 12) & CAPTURE_MOVE)) {
-                    pos.updateHistoryTable(getFromSquare(move), getToSquare(move), depth);
-                }
                 alpha = score;
                 upper_bound = false;
             }
@@ -397,4 +402,97 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         tt.save(pos.z_key, depth, ply, best_move, max_score, EXACT_NODE, pos.game_half_moves);
     }
     return max_score;
+};
+
+
+//search a fixed number of nodes
+SearchResult Search::nodeSearch(Position &pos, int max_depth, U64 num_nodes) {
+    node_search = true;
+    times_up = false;
+    max_nodes = num_nodes;
+    tt_hits = 0;
+    MoveList moves;
+    SearchResult result;
+    // pos.clearHistoryTable();
+    //pv.clearPV();
+
+    // Generate moves. This is only done once for the root node.
+    if (pos.side_to_move == WHITE) {
+        generateMoves<true>(moves, pos);
+    } else {
+        generateMoves<false>(moves, pos);
+    }
+
+    move16 best_move = 0;
+    int max_score = NEGATIVE_INFINITY;
+
+    // Perform search at increasing depths
+    bool research = false;
+    for (int depth = 0; depth < max_depth; depth++) {
+        std::chrono::steady_clock::time_point this_depth_start_time = std::chrono::steady_clock::now();
+        if (depth == 0) {
+            pv_search = false;
+        } else {
+            pv_search = true;
+        }
+        nodes_searched = 1;
+        int beta;
+        int alpha;
+        int best_score_this_search_depth = NEGATIVE_INFINITY;
+        move16 best_move_this_search_depth = 0;
+        allow_nmp = true;
+
+        // if this is not a re-search we order moves and set alpha and beta to their min and max values
+        if (!research) {
+            orderMoves(pos, moves, best_move, 0, 0);
+            if (depth > 3) {
+                // set aspiration window
+                beta = max_score + WINDOW_SIZE;
+                alpha = max_score - WINDOW_SIZE;
+            } else {
+                beta = POSITIVE_INFINITY;
+                alpha = NEGATIVE_INFINITY;
+            }
+        }
+
+        // Search from the root node using our pre-generated move list
+        SearchResult result_this_depth = rootSearch(pos, moves, depth, alpha, beta);
+        best_score_this_search_depth = result_this_depth.score;
+        best_move_this_search_depth = result_this_depth.move;
+
+        std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - this_depth_start_time;
+        U64 nps = nodes_searched / time_elapsed.count();
+
+        if (timesUp()) {
+            if (best_score_this_search_depth > max_score) {
+                max_score = best_score_this_search_depth;
+                best_move = best_move_this_search_depth;
+            }
+            outputInfo(depth, best_move, max_score, nps);
+            break;
+        }
+
+        // check to see if our score fell outside the aspiration window. Re-search if needed.
+        if (best_score_this_search_depth <= alpha) {
+            alpha = NEGATIVE_INFINITY;
+            research = true;
+            depth--;
+            continue;
+        } else if (best_score_this_search_depth >= beta) {
+            beta = POSITIVE_INFINITY;
+            research = true;
+            depth--;
+            continue;
+        } else {
+            research = false;
+        }
+        best_move = best_move_this_search_depth;
+        max_score = best_score_this_search_depth;
+        outputInfo(depth, best_move, max_score, nps);
+    }
+
+    result.move = best_move;
+    result.score = max_score;
+
+    return result;
 };

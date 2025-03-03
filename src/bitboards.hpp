@@ -2,43 +2,43 @@
 
 #include <cassert>
 #include <random>
-#include <map>
 #include <string>
+
 #include "types.hpp"
 #include "utils.hpp"
 
 // file masks
-static constexpr U64 a_file = 0x0101010101010101ULL;
-static constexpr U64 b_file = a_file << 1;
-static constexpr U64 g_file = a_file << 6;
-static constexpr U64 h_file = a_file << 7;
-static constexpr U64 ab_file = a_file | b_file;
-static constexpr U64 gh_file = g_file | h_file;
-static constexpr U64 not_a_file = ~a_file;
-static constexpr U64 not_b_file = ~b_file;
-static constexpr U64 not_ab_file = ~ab_file;
-static constexpr U64 not_g_file = ~g_file;
-static constexpr U64 not_h_file = ~h_file;
-static constexpr U64 not_gh_file = ~gh_file;
+static constexpr U64 A_FILE = 0x0101010101010101ULL;
+static constexpr U64 B_FILE = A_FILE << 1;
+static constexpr U64 G_FILE = A_FILE << 6;
+static constexpr U64 H_FILE = A_FILE << 7;
+static constexpr U64 AB_FILE = A_FILE | B_FILE;
+static constexpr U64 GH_FILE = G_FILE | H_FILE;
+static constexpr U64 NOT_A_FILE = ~A_FILE;
+static constexpr U64 NOT_B_FILE = ~B_FILE;
+static constexpr U64 NOT_AB_FILE = ~AB_FILE;
+static constexpr U64 NOT_G_FILE = ~G_FILE;
+static constexpr U64 NOT_H_FILE = ~H_FILE;
+static constexpr U64 NOT_GH_FILE = ~GH_FILE;
 
 
 // rank masks
-static constexpr U64 rank_1 = 0xffULL;
-static constexpr U64 rank_2 = rank_1 << 8;
-static constexpr U64 rank_4 = rank_1 << (8 * 3);
-static constexpr U64 rank_5 = rank_1 << (8 * 4);
-static constexpr U64 rank_7 = rank_1 << (8 * 6);
-static constexpr U64 rank_8 = rank_1 << (8 * 7);
-static constexpr U64 rank_1_and_2 = rank_1 | rank_2;
-static constexpr U64 rank_7_and_8 = rank_7 | rank_8;
-static constexpr U64 not_rank_1 = ~rank_1;
-static constexpr U64 not_rank_2 = ~rank_2;
-static constexpr U64 not_rank_7 = ~rank_7;
-static constexpr U64 not_rank_8 = ~rank_8;
-static constexpr U64 not_rank_1_and_2 = ~rank_1_and_2;
-static constexpr U64 not_rank_7_and_8 = ~rank_7_and_8;
+static constexpr U64 RANK_1 = 0xffULL;
+static constexpr U64 RANK_2 = RANK_1 << 8;
+static constexpr U64 RANK_4 = RANK_1 << (8 * 3);
+static constexpr U64 RANK_5 = RANK_1 << (8 * 4);
+static constexpr U64 RANK_7 = RANK_1 << (8 * 6);
+static constexpr U64 RANK_8 = RANK_1 << (8 * 7);
+static constexpr U64 RANK_1_AND_2 = RANK_1 | RANK_2;
+static constexpr U64 RANK_7_AND_8 = RANK_7 | RANK_8;
+static constexpr U64 NOT_RANK_1 = ~RANK_1;
+static constexpr U64 NOR_RANK_2 = ~RANK_2;
+static constexpr U64 NOT_RANK_7 = ~RANK_7;
+static constexpr U64 NOT_RANK_8 = ~RANK_8;
+static constexpr U64 NOT_RANK_1_AND_2 = ~RANK_1_AND_2;
+static constexpr U64 NOT_RANK_7_AND_8 = ~RANK_7_AND_8;
 
-static constexpr U64 setBit(int bit) {
+inline constexpr U64 setBit(int bit) {
 	return 1ULL << bit;
 }
 
@@ -326,9 +326,9 @@ static inline U64 getMagicRookAttack(int index, U64 occupancy) {
 template <bool white_to_move>
 U64 pawnAttacksFromBitboard(U64 bitboard) {
 	if constexpr(white_to_move) {
-    	return (bitboard << 7 & not_h_file) | (bitboard << 9 & not_a_file);
+    	return (bitboard << 7 & NOT_H_FILE) | (bitboard << 9 & NOT_A_FILE);
 	} else {
-		return (bitboard >> 7 & not_a_file) | (bitboard >> 9 & not_h_file);
+		return (bitboard >> 7 & NOT_A_FILE) | (bitboard >> 9 & NOT_H_FILE);
 	}
 }
 

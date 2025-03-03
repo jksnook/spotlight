@@ -2,7 +2,7 @@ CXX := g++
 TARGET := spotlight
 TMPDIR := .tmp
 
-CXXFLAGS := -O3
+CXXFLAGS := -O3 -g
 NAME := spotlight
 
 SOURCES := $(wildcard src/*.cpp)

@@ -70,60 +70,60 @@ U64 rook_relevant_bit_count[64];
 U64 bishop_relevant_bit_count[64];
 
 U64 generateWhitePawnPush(int index) {
-    return (1ULL << (index + 8)) & not_rank_1;
+    return (1ULL << (index + 8)) & NOT_RANK_1;
 }
 
 U64 generateWhitePawnDoublePush(int index) {
-    if (1ULL << index & rank_2) {
+    if (1ULL << index & RANK_2) {
         return (1ULL << (index + 16));
     }
     return 0ULL;
 }
 
 U64 generateWhitePawnAttack(int index) {
-    return (1ULL << (index + 7) & not_h_file) | (1ULL << (index + 9) & not_a_file);
+    return (1ULL << (index + 7) & NOT_H_FILE) | (1ULL << (index + 9) & NOT_A_FILE);
 }
 
 U64 generateBlackPawnPush(int index) {
-    return (1ULL << (index - 8)) & not_rank_8;
+    return (1ULL << (index - 8)) & NOT_RANK_8;
 }
 
 U64 generateBlackPawnDoublePush(int index) {
-    if (1ULL << index & rank_7) {
+    if (1ULL << index & RANK_7) {
         return (1ULL << (index - 16));
     }
     return 0ULL;
     }
 
 U64 generateBlackPawnAttack(int index) {
-    return (1ULL << (index - 7) & not_a_file) | (1ULL << (index - 9) & not_h_file);
+    return (1ULL << (index - 7) & NOT_A_FILE) | (1ULL << (index - 9) & NOT_H_FILE);
 }
 
 U64 generateKnightMove(int index) {
     U64 knight_square = 1ULL << index;
     U64 moves = 0ULL;
-    moves |= (knight_square << 17) & not_a_file;
-    moves |= (knight_square <<  15) & not_h_file;
-    moves |= (knight_square <<  10) & not_ab_file;
-    moves |= (knight_square <<  6) & not_gh_file;
-    moves |= (knight_square >> 6) & not_ab_file;
-    moves |= (knight_square >> 10) & not_gh_file;
-    moves |= (knight_square >> 15) & not_a_file;
-    moves |= (knight_square >> 17) & not_h_file;
+    moves |= (knight_square << 17) & NOT_A_FILE;
+    moves |= (knight_square <<  15) & NOT_H_FILE;
+    moves |= (knight_square <<  10) & NOT_AB_FILE;
+    moves |= (knight_square <<  6) & NOT_GH_FILE;
+    moves |= (knight_square >> 6) & NOT_AB_FILE;
+    moves |= (knight_square >> 10) & NOT_GH_FILE;
+    moves |= (knight_square >> 15) & NOT_A_FILE;
+    moves |= (knight_square >> 17) & NOT_H_FILE;
     return moves;
 }
 
 U64 generateKingMove(int index) {
     U64 king_square = 1ULL << index;
     U64 moves = 0ULL;
-    moves |= (king_square << 9) & not_a_file;
+    moves |= (king_square << 9) & NOT_A_FILE;
     moves |= (king_square << 8);
-    moves |= (king_square << 7) & not_h_file;
-    moves |= (king_square << 1) & not_a_file;
-    moves |= (king_square >> 1) & not_h_file;
-    moves |= (king_square >> 7) & not_a_file;
+    moves |= (king_square << 7) & NOT_H_FILE;
+    moves |= (king_square << 1) & NOT_A_FILE;
+    moves |= (king_square >> 1) & NOT_H_FILE;
+    moves |= (king_square >> 7) & NOT_A_FILE;
     moves |= (king_square >> 8);
-    moves |= (king_square >> 9) & not_h_file;
+    moves |= (king_square >> 9) & NOT_H_FILE;
 
     return moves;
 }
@@ -225,15 +225,15 @@ for (int i = 0; i < 64; i++) {
     bishop_moves[i] = sliding_moves[0][i] | sliding_moves[2][i] | sliding_moves[4][i] | sliding_moves[6][i];
     rook_moves[i] = sliding_moves[1][i] | sliding_moves[3][i] | sliding_moves[5][i] | sliding_moves[7][i];
 
-    bishop_magic_mask[i] = bishop_moves[i] & not_a_file & not_h_file & not_rank_1 & not_rank_8;
+    bishop_magic_mask[i] = bishop_moves[i] & NOT_A_FILE & NOT_H_FILE & NOT_RANK_1 & NOT_RANK_8;
     rook_magic_mask[i] = rook_moves[i];
 
     U64 this_square = 1ULL << i;
 
-    if (this_square & not_a_file) rook_magic_mask[i] &= not_a_file;
-    if (this_square & not_h_file) rook_magic_mask[i] &= not_h_file;
-    if (this_square & not_rank_1) rook_magic_mask[i] &= not_rank_1;
-    if (this_square & not_rank_8) rook_magic_mask[i] &= not_rank_8;
+    if (this_square & NOT_A_FILE) rook_magic_mask[i] &= NOT_A_FILE;
+    if (this_square & NOT_H_FILE) rook_magic_mask[i] &= NOT_H_FILE;
+    if (this_square & NOT_RANK_1) rook_magic_mask[i] &= NOT_RANK_1;
+    if (this_square & NOT_RANK_8) rook_magic_mask[i] &= NOT_RANK_8;
 
     bishop_relevant_bit_count[i] = countBits(bishop_magic_mask[i]);
     rook_relevant_bit_count[i] = countBits(rook_magic_mask[i]);
@@ -359,14 +359,14 @@ void initMagics() {
 
 U64 knightAttacksFromBitboard(U64 bitboard) {
     U64 attacks;
-    attacks = (bitboard << 17) & not_a_file;
-    attacks |= (bitboard <<  15) & not_h_file;
-    attacks |= (bitboard <<  10) & not_ab_file;
-    attacks |= (bitboard <<  6) & not_gh_file;
-    attacks |= (bitboard >> 6) & not_ab_file;
-    attacks |= (bitboard >> 10) & not_gh_file;
-    attacks |= (bitboard >> 15) & not_a_file;
-    attacks |= (bitboard >> 17) & not_h_file;
+    attacks = (bitboard << 17) & NOT_A_FILE;
+    attacks |= (bitboard <<  15) & NOT_H_FILE;
+    attacks |= (bitboard <<  10) & NOT_AB_FILE;
+    attacks |= (bitboard <<  6) & NOT_GH_FILE;
+    attacks |= (bitboard >> 6) & NOT_AB_FILE;
+    attacks |= (bitboard >> 10) & NOT_GH_FILE;
+    attacks |= (bitboard >> 15) & NOT_A_FILE;
+    attacks |= (bitboard >> 17) & NOT_H_FILE;
     return attacks;
 }
 

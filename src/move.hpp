@@ -5,8 +5,6 @@
 #include "bitboards.hpp"
 
 #include <map>
-#include <vector>
-#include <algorithm>
 
 /*
 Move encoding is with a 16 bit unsigned integer.

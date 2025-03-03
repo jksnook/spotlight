@@ -3,11 +3,12 @@
 #include "types.hpp"
 #include "utils.hpp"
 #include "move.hpp"
+
 #include <vector>
 #include <string>
 #include <sstream>
 
-const int MAX_HISTORY = 1000;
+const int MAX_HISTORY = 4000;
 
 struct Undo {
     public:
@@ -33,10 +34,6 @@ class Position {
         bool in_check;
 
         std::vector<Undo> history;
-        int history_table[2][64][64];
-
-        void updateHistoryTable(int from, int to, int depth);
-        void clearHistoryTable();
 
         void readFen(std::string fen);
         std::string toFen();

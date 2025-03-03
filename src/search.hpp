@@ -7,7 +7,6 @@
 #include "tt.hpp"
 #include "moveorder.hpp"
 
-#include <algorithm>
 #include <chrono>
 
 
@@ -44,7 +43,8 @@ class Search
 public:
     Search();
 
-    SearchResult iterSearch(Position &pos, int maxDepth, U64 time_in_ms);
+    SearchResult iterSearch(Position &pos, int max_depth, U64 time_in_ms);
+    SearchResult nodeSearch(Position &pos, int max_depth, U64 num_nodes);
     void clearTT();
     int tt_hits;
     int nodes_searched;
@@ -62,6 +62,7 @@ private:
     }
 
     bool pv_search;
+    bool node_search;
     bool allow_nmp;
     bool times_up;
 
@@ -70,6 +71,7 @@ private:
 
     int time_check;
     int time_check_interval;
+    int max_nodes;
 
     move16 killer_1[MAX_DEPTH];
     move16 killer_2[MAX_DEPTH];

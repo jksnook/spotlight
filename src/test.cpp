@@ -33,19 +33,19 @@ void testSee() {
     pos.readFen("4k3/p7/8/1pP5/8/8/1R6/4K3 w - b6 0 2");
     move = encodeMove(C5, B6, EN_PASSANT_CAPTURE);
     score = see(pos, move);
-    correct_score = see_values[PAWN] * 1000;
+    correct_score = SEE_VALUES[PAWN] * 1000;
     assert(score == correct_score);
 
     pos.readFen("4k3/8/8/1pP5/8/8/8/4K3 w - b6 0 2");
     move = encodeMove(C5, B6, EN_PASSANT_CAPTURE);
     score = see(pos, move);
-    correct_score = see_values[PAWN] * 1000;
+    correct_score = SEE_VALUES[PAWN] * 1000;
     assert(score == correct_score);
 
     pos.readFen("4k3/8/8/8/8/8/2p5/1R2K3 b - - 0 1");
     move = encodeMove(C2, B1, QUEEN_PROMOTION_CAPTURE);
     score = see(pos, move);
-    correct_score = (see_values[QUEEN] + see_values[ROOK] - see_values[PAWN]) * 1000;
+    correct_score = (SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN]) * 1000;
     assert(score == correct_score);
 }
 

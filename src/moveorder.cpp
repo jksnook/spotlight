@@ -46,10 +46,10 @@ int see(Position &pos, move16 move) {
     int attacking_piece;
     if (move_type == EN_PASSANT_CAPTURE) {
         attacking_piece = BLACK_PAWN - side * BLACK_PAWN;
-        capture_scores[0] = see_values[PAWN];
+        capture_scores[0] = SEE_VALUES[PAWN];
     } else {
         attacking_piece = pos.at(from_sq);
-        capture_scores[0] = see_values[pos.at(to_sq) % 6];
+        capture_scores[0] = SEE_VALUES[pos.at(to_sq) % 6];
     }
     assert(attacking_piece != NO_PIECE);
     
@@ -58,19 +58,19 @@ int see(Position &pos, move16 move) {
         switch (move_type)
         {
         case QUEEN_PROMOTION_CAPTURE:
-            capture_scores[0] += see_values[QUEEN] - see_values[PAWN];
+            capture_scores[0] += SEE_VALUES[QUEEN] - SEE_VALUES[PAWN];
             attacking_piece = WHITE_QUEEN + BLACK_PAWN * side;
             break;
         case KNIGHT_PROMOTION_CAPTURE:
-            capture_scores[0] += see_values[KNIGHT] - see_values[PAWN];
+            capture_scores[0] += SEE_VALUES[KNIGHT] - SEE_VALUES[PAWN];
             attacking_piece = WHITE_KNIGHT + BLACK_PAWN * side;
             break;
         case BISHOP_PROMOTION_CAPTURE:
-            capture_scores[0] += see_values[BISHOP] - see_values[PAWN];
+            capture_scores[0] += SEE_VALUES[BISHOP] - SEE_VALUES[PAWN];
             attacking_piece = WHITE_BISHOP + BLACK_PAWN * side;
             break;
         case ROOK_PROMOTION_CAPTURE:
-            capture_scores[0] += see_values[ROOK] - see_values[PAWN];
+            capture_scores[0] += SEE_VALUES[ROOK] - SEE_VALUES[PAWN];
             attacking_piece = WHITE_ROOK + BLACK_PAWN * side;
             break;
         default:
@@ -84,16 +84,19 @@ int see(Position &pos, move16 move) {
     U64 current_attacker_bb = 1ULL << from_sq;
     attackers_bb &= ~current_attacker_bb;
     remaining_occupancy &= ~current_attacker_bb;
-    U64 diagonal_xray_pieces = pos.bitboards[WHITE_PAWN] | pos.bitboards[BLACK_PAWN] | pos.bitboards[WHITE_BISHOP] |
-                               pos.bitboards[BLACK_BISHOP] | pos.bitboards[WHITE_QUEEN] | pos.bitboards[BLACK_QUEEN];
-    U64 vertical_xray_pieces = pos.bitboards[WHITE_ROOK] | pos.bitboards[BLACK_ROOK] | pos.bitboards[WHITE_QUEEN] |
-                               pos.bitboards[BLACK_QUEEN];
+    U64 diagonal_xray_pieces = pos.bitboards[WHITE_PAWN] | pos.bitboards[BLACK_PAWN] | pos.bitboards[WHITE_BISHOP] | 
+        pos.bitboards[BLACK_BISHOP] | pos.bitboards[WHITE_QUEEN] | pos.bitboards[BLACK_QUEEN];
+    U64 vertical_xray_pieces = pos.bitboards[WHITE_ROOK] | pos.bitboards[BLACK_ROOK] | pos.bitboards[WHITE_QUEEN] | 
+        pos.bitboards[BLACK_QUEEN];
 
-    capture_scores[1] = see_values[attacking_piece % BLACK_PAWN] - capture_scores[0];
+    capture_scores[1] = SEE_VALUES[attacking_piece % BLACK_PAWN] - capture_scores[0];
+
+    // extra updates for en passant
     if (move_type == EN_PASSANT_CAPTURE) {
         remaining_occupancy &= ~(1ULL << (to_sq - 8 * side + 8 * (1 - side)));
         refreshXraysRanksFiles(pos, to_sq, remaining_occupancy, attackers_bb);
     }
+
     if (current_attacker_bb & diagonal_xray_pieces) refreshXraysDiagonal(pos, to_sq, remaining_occupancy, attackers_bb);
     if (current_attacker_bb & vertical_xray_pieces) refreshXraysRanksFiles(pos, to_sq, remaining_occupancy, attackers_bb);
 
@@ -113,7 +116,7 @@ int see(Position &pos, move16 move) {
             break;
         }
 
-        capture_scores[k] = see_values[attacking_piece % 6] - capture_scores[k - 1];
+        capture_scores[k] = SEE_VALUES[attacking_piece % BLACK_PAWN] - capture_scores[k - 1];
         remaining_occupancy &= ~current_attacker_bb;
 
         if (current_attacker_bb & diagonal_xray_pieces) {
@@ -132,11 +135,13 @@ int see(Position &pos, move16 move) {
         capture_scores[k - 1] = -std::max(-capture_scores[k - 1], capture_scores[k]);
     }
 
-    return capture_scores[0] * 1000;
+    return capture_scores[0] * SEE_MULTIPLIER;
 }
 
 int scoreMove(Position &pos, move16 move) {
     int move_type = getMoveType(move);
+    int piece;
+    int from;
     switch (move_type)
     {
     case CAPTURE_MOVE:
@@ -144,15 +149,12 @@ int scoreMove(Position &pos, move16 move) {
         break;
     case QUIET_MOVE:
         return 0;
-        // return pos.history_table[pos.side_to_move][getFromSquare(move)][getToSquare(move)];
         break;
     case DOUBLE_PAWN_PUSH:
         return 0;
-        // return pos.history_table[pos.side_to_move][getFromSquare(move)][getToSquare(move)];
         break;
     case QUEEN_PROMOTION:
         return 400000;
-        // return pos.history_table[pos.side_to_move][getFromSquare(move)][getToSquare(move)] + 400000;
         break;
     case ROOK_PROMOTION:
         return IGNORE_MOVE;
@@ -162,7 +164,7 @@ int scoreMove(Position &pos, move16 move) {
         break;
     case KNIGHT_PROMOTION:
         return 0;
-        // return pos.history_table[pos.side_to_move][getFromSquare(move)][getToSquare(move)];
+        break;
     case QUEEN_PROMOTION_CAPTURE:
         return see(pos, move);
         break;
@@ -174,8 +176,10 @@ int scoreMove(Position &pos, move16 move) {
         break;
     case KNIGHT_PROMOTION_CAPTURE:
         return see(pos, move);
+        break;
     case EN_PASSANT_CAPTURE:
         return see(pos, move);
+        break;
     default:
         return 0;
         break;
@@ -190,9 +194,9 @@ void orderMoves(Position &pos, MoveList &moves, move16 tt_move, move16 killer_1,
         if (moves[i] == tt_move) {
             sorted_moves[i] = {TT_MOVE_SCORE, moves[i]};
         } else if (moves[i] == killer_1) {
-            sorted_moves[i] = {5001 + scoreMove(pos, moves[i]), moves[i]};
+            sorted_moves[i] = {KILLER_1_SCORE, moves[i]};
         } else if (moves[i] == killer_2) {
-            sorted_moves[i] = {5000 + scoreMove(pos, moves[i]), moves[i]};
+            sorted_moves[i] = {KILLER_2_SCORE, moves[i]};
         } else {
             sorted_moves[i] = {scoreMove(pos, moves[i]), moves[i]};
         }
@@ -213,9 +217,9 @@ MovePicker::MovePicker(Position &pos, MoveList &moves, move16 tt_move, move16 ki
         if (moves[i] == tt_move) {
             scored_moves[i] = {TT_MOVE_SCORE, moves[i]};
         } else if (moves[i] == killer_1) {
-            scored_moves[i] = {5001 + scoreMove(pos, moves[i]), moves[i]};
+            scored_moves[i] = {KILLER_1_SCORE, moves[i]};
         } else if (moves[i] == killer_2) {
-            scored_moves[i] = {5000 + scoreMove(pos, moves[i]), moves[i]};
+            scored_moves[i] = {KILLER_2_SCORE, moves[i]};
         } else {
             scored_moves[i] = {scoreMove(pos, moves[i]), moves[i]};
         }

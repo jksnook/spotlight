@@ -9,47 +9,50 @@
 #include "eval.hpp"
 #include "search.hpp"
 #include "datagen.hpp"
+#include "tuner.hpp"
 
 int main() {
     initMoves();
     initMagics();
     initZobrist();
 
-    UCI uci;
+    // UCI uci;
 
-    uci.loop();
+    // uci.loop();
 
-    // selfplay(5);
+    // selfplay(100);
+
+    Tuner tuner;
+
+    tuner.run();
+
+    tuner.printWeights();
+
+    // tuner.k_param = tuner.computeOptimalK();
+
+    // std::cout << tuner.k_param << std::endl;
+
+    // tuner.forward();
+
+    // std::cout << tuner.evaluationError(tuner.k_param) << std::endl;
+
+    // tuner.calculateGradient();
+
+    // tuner.updateWeights(0.1);
+
+    // tuner.forward();
+
+    // std::cout << tuner.evaluationError(tuner.k_param) << std::endl;
 
     // Position pos;
 
-    // std::cout << pos.toFen() << std::endl;
-
-    // std::cout << eval(pos) << std::endl;
-
     // MoveList moves;
 
-    // pos.readFen("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
-
-    // std::cout << pos.toFen() << std::endl;
-
-    // // std::cout << eval(pos) << std::endl;
-
-    // generateMoves<true>(moves, pos);
-
-    // std::cout << moves.size() << std::endl;
-
-    // for (const auto &m: moves) {
-    //     std::cout << moveToString(m) << std::endl;
-    // }
-
-    // int e = see(pos, moves[7]);
-
-    // std::cout << "static exchange: " << e << std::endl;
+    // pos.readFen("r1b1kb1r/2pp1ppp/1np1q3/p3P3/2P5/1P6/PB1NQPPP/R3KB1R b KQkq - 0 1");
 
     // Search search;
 
-    // move16 best_move = search.iterSearch(pos, 15, 4000ULL);
+    // move16 best_move = search.nodeSearch(pos, 15, 75000ULL).move;
 
     // pos.print();
     // pos.printFromBitboard();
@@ -61,5 +64,7 @@ int main() {
     // problem with fen r1bqkbnr/p1p5/2n3pp/1pP1pp2/1P1pPP2/B2P4/P2KN1PP/RN1Q1B1R b kq - 1 9
 
     // incorrect eval at position startpos moves e2e4 b8c6 b1c3 e7e5 g1f3 g8f6 f1d3 f8c5 e1g1 e8g8 c3d5 f8e8 c2c4 g8h8 f3g5 h8g8 g5f3 g8h8 f3g5 h8g8
+
+    // r1b1kb1r/2pp1ppp/1np1q3/p3P3/2P5/1P6/PB1NQPPP/R3KB1R b KQkq - 0 1
 
 }

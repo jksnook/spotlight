@@ -1,5 +1,7 @@
 core.*
 .vscode
+selfplay.txt
+selfplay*.txt
 
 spotlight
 
