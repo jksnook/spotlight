@@ -45,6 +45,7 @@ public:
 
     SearchResult iterSearch(Position &pos, int max_depth, U64 time_in_ms);
     SearchResult nodeSearch(Position &pos, int max_depth, U64 num_nodes);
+    int qScore(Position &pos);
     void clearTT();
     int tt_hits;
     int nodes_searched;
@@ -65,6 +66,7 @@ private:
     bool node_search;
     bool allow_nmp;
     bool times_up;
+    bool enable_qsearch_tt;
 
     std::chrono::steady_clock::time_point start_time;
     U64 timer_duration;

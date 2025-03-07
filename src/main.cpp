@@ -16,17 +16,19 @@ int main() {
     initMagics();
     initZobrist();
 
-    // UCI uci;
+    UCI uci;
 
-    // uci.loop();
+    uci.loop();
 
-    // selfplay(100);
+    // selfplay(30);
 
-    Tuner tuner;
+    // Tuner tuner;
 
-    tuner.run();
+    // tuner.run();
 
-    tuner.printWeights();
+    // tuner.printWeights();
+
+    // tuner.outputToFile();
 
     // tuner.k_param = tuner.computeOptimalK();
 
@@ -48,18 +50,14 @@ int main() {
 
     // MoveList moves;
 
-    // pos.readFen("r1b1kb1r/2pp1ppp/1np1q3/p3P3/2P5/1P6/PB1NQPPP/R3KB1R b KQkq - 0 1");
+    // pos.readFen("rnbq1rk1/p5b1/2p1pp2/7p/3PN1pB/6P1/PPP1BP1P/R2QR1K1 w - - 7 16");
 
     // Search search;
 
-    // move16 best_move = search.nodeSearch(pos, 15, 75000ULL).move;
-
     // pos.print();
-    // pos.printFromBitboard();
 
-    // printMoveLong(best_move);
-
-    // std::cout << perft(pos, 7) << std::endl;
+    // std::cout << search.qScore(pos) << std::endl;
+    // std::cout << eval(pos) << std::endl;
 
     // problem with fen r1bqkbnr/p1p5/2n3pp/1pP1pp2/1P1pPP2/B2P4/P2KN1PP/RN1Q1B1R b kq - 1 9
 

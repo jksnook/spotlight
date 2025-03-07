@@ -7,28 +7,35 @@
 #include <sstream>
 #include <iostream>
 
+/*
+Tuning implementation from Andrew Grant's tuning paper:
+https://github.com/AndyGrant/Ethereal/blob/master/Tuning.pdf
+*/
+
 Tuner::Tuner(): weights{}, gradient{} {
     std::ifstream fen_file;
     std::string line;
     Position pos;
 
-    fen_file.open("selfplay.txt");
+    fen_file.open(TUNING_FILE);
+    int positions_loaded = 0;
 
-    while(std::getline(fen_file, line)) {
+    while(positions_loaded < MAX_POSITIONS && std::getline(fen_file, line)) {
         PositionData entry;
         std::string outcome;
         std::string fen;
 
-        std::size_t i = line.find_last_of(' ');
+        std::size_t start_of_outcome = line.find_last_of(' ') + 1;
+        std::size_t end_of_outcome = line.find_last_not_of(" \t\n\r");
 
-        fen = line.substr(0, i);
-        outcome = line.substr(i + 1);
+        fen = line.substr(0, start_of_outcome - 1);
+        outcome = line.substr(start_of_outcome, end_of_outcome - start_of_outcome + 1);
 
-        if (outcome == "0") {
+        if (outcome == "0" || outcome == "[0.0]") {
             entry.result = 0.0;
-        } else if (outcome == "0.5") {
+        } else if (outcome == "0.5" || outcome == "[0.5]") {
             entry.result = 0.5;
-        } else if (outcome == "1") {
+        } else if (outcome == "1" || outcome == "[1.0]") {
             entry.result = 1.0;
         }
 
@@ -63,12 +70,11 @@ Tuner::Tuner(): weights{}, gradient{} {
 
         int total_eval = (early_eval * game_phase + late_eval * (TOTAL_PHASE - game_phase)) / TOTAL_PHASE;
 
-        // if (pos.side_to_move == BLACK) {
-        //     total_eval *= -1;
-        // }
-
-        entry.s_eval = total_eval;
-        entry.eval = static_cast<double>(total_eval);
+        entry.s_eval = eval(pos);
+        if (pos.side_to_move == BLACK) {
+            entry.s_eval *= -1;
+        }
+        entry.d_eval = static_cast<double>(total_eval);
         entry.phase = game_phase;
 
         for (int i = 0; i < NUM_WEIGHTS / 2; i++) {
@@ -81,19 +87,10 @@ Tuner::Tuner(): weights{}, gradient{} {
             }
         }
 
-        // for (int piece = 0; piece < BLACK_PAWN; piece++) {
-        //     for (int phase = 0; phase < 2; phase++) {
-        //         for (int square = 0; square < 64; square++) {
-        //             int weight_idx = piece * 64 + square;
-        //             weights[weight_idx][phase] = piece_square_tables[piece][phase][square];
-        //         }
-        //     }
-        // }
-
         t_positions.push_back(entry);
-
-        // std::cout << pos.toFen() << " " << outcome << " " << entry.eval << "\n";
+        positions_loaded++;
     }
+    std::cout << positions_loaded << " Positions Loaded\n";
 }
 
 void Tuner::forward() {
@@ -102,13 +99,11 @@ void Tuner::forward() {
         double late_eval = 0.0;
 
         for (auto &c: p.active_coeffs) {
-            // need to include phase somehow
             early_eval += (c.wcoef - c.bcoef) * weights[c.index][0];
             late_eval += (c.wcoef - c.bcoef) * weights[c.index][1];
         }
 
-        p.eval = (early_eval * p.phase + late_eval * (TOTAL_PHASE - p.phase)) / TOTAL_PHASE + p.s_eval;
-        // std::cout << p.eval << "\n";
+        p.d_eval = (early_eval * p.phase + late_eval * (TOTAL_PHASE - p.phase)) / TOTAL_PHASE + p.s_eval;
     }
 }
 
@@ -116,11 +111,21 @@ double Tuner::sigmoid(double k, double eval) {
     return 1.0 / (1.0 + exp(-k * eval / 400.0));
 }
 
+double Tuner::staticEvaluationError(double k) {
+    double total_error = 0.0;
+
+    for (auto &p: t_positions) {
+        total_error += pow((p.result - sigmoid(k, p.s_eval)), 2);
+    }
+
+    return total_error / static_cast<double>(t_positions.size());
+}
+
 double Tuner::evaluationError(double k) {
     double total_error = 0.0;
 
     for (auto &p: t_positions) {
-        total_error += pow((p.result - sigmoid(k, p.eval)), 2);
+        total_error += pow((p.result - sigmoid(k, p.d_eval)), 2);
     }
 
     return total_error / static_cast<double>(t_positions.size());
@@ -130,42 +135,42 @@ double Tuner::computeOptimalK() {
     double start = 0.0, end = 10.0, step = 1.0;
     double curr = start;
     double error;
-    double best = evaluationError(curr);
+    double best = staticEvaluationError(start);
+    std::cout << "Computing optimal K\n";
 
     for (int i = 0; i < K_PRECISION - 1; i++) {
 
         curr = start - step;
         while (curr < end) {
             curr = curr + step;
-            error = evaluationError(curr);
+            error = staticEvaluationError(curr);
             if (error <= best) {
                 start = curr;
                 best = error;
             }
         }
 
-        start = start - step;
         end = start + step;
+        start = start - step;
         step = step / 10.0;
         std::cout << start << "\n";
 
     }
 
-    curr = start - step;
-    while (curr <= end) {
-        curr = curr + step;
-        error = evaluationError(curr);
-        if (error < best) {
-            start = curr;
-        }
-    }
-    std::cout << start << "\n";
+    // curr = start - step;
+    // while (curr <= end) {
+    //     curr = curr + step;
+    //     error = evaluationError(curr);
+    //     if (error < best) {
+    //         start = curr;
+    //     }
+    // }
+    // std::cout << start << "\n";
 
     return start;
 }
 
 void Tuner::zeroGrad() {
-    //gradient.fill({0.0, 0.0});
     for (auto &a: gradient) {
         a[0] = 0.0;
         a[1] = 0.0;
@@ -174,25 +179,21 @@ void Tuner::zeroGrad() {
 
 void Tuner::calculateGradient() {
     for (auto &p: t_positions) {
-        double s = sigmoid(k_param, p.eval);
+        double s = sigmoid(k_param, p.d_eval);
         double derr = (p.result - s);
         double ds = s * (1 - s);
         double mg_phase = static_cast<double>(p.phase) / TOTAL_PHASE;
-        double eg_phase = (TOTAL_PHASE - p.phase) / TOTAL_PHASE;
-        // double mg_base = derr * ds * mg_phase;
-        // double eg_base = derr * ds * eg_phase;
+        double eg_phase = 1.0 - mg_phase;
         for (auto  &t: p.active_coeffs) {
             double temp = (t.wcoef - t.bcoef) * derr * ds;
-            //std::cout << temp << "\n";
             gradient[t.index][0] += temp * mg_phase;
-            //std::cout << t.wcoef - t.bcoef << "\n";
             gradient[t.index][1] += temp * eg_phase;
         }
     }
 }
 
 void Tuner::updateWeights(double lr) {
-    for (int i = 0; i < NUM_WEIGHTS / 2; i++) {
+    for (int i = 0; i < PSQ_ARRAY_SIZE; i++) {
         weights[i][0] -= gradient[i][0] * lr;
         weights[i][1] -= gradient[i][1] * lr;
     }  
@@ -200,16 +201,15 @@ void Tuner::updateWeights(double lr) {
 
 void Tuner::run() {
     k_param = computeOptimalK();
-    // std::cout << k_param << "\n";
-    // k_param = 0.9;
+    std::array<std::array<double, 2>, PSQ_ARRAY_SIZE> ada_grad{};
+
+    std::cout << "Tuning\n";
     for (int epoch = 0; epoch < MAX_EPOCHS; epoch++) {
-        std::array<std::array<double, 2>, NUM_WEIGHTS / 2> ada_grad{};
 
         zeroGrad();
         forward();
         calculateGradient();
-        //std::cout << gradient[26][0] << "\n";
-        for (int i = 0; i < NUM_WEIGHTS / 2; i++) {
+        for (int i = 0; i < PSQ_ARRAY_SIZE; i++) {
             ada_grad[i][0] += pow(2.0 * gradient[i][0] / NUM_WEIGHTS, 2.0);
             ada_grad[i][1] += pow(2.0 * gradient[i][1] / NUM_WEIGHTS, 2.0);
 
@@ -217,22 +217,74 @@ void Tuner::run() {
             weights[i][1] += (k_param * 2.0 / NUM_WEIGHTS) * gradient[i][1] * (LEARNING_RATE / sqrt(1e-8 + ada_grad[i][1]));
         }
 
-        //updateWeights(LEARNING_RATE);
-        std::cout << evaluationError(k_param) << "\n";
+        if (epoch % REPORT_INTERVAL == 0) {
+            std::cout << "Evaluation Error: " << evaluationError(k_param) << "\n";
+        }
     }
 }
 
 void Tuner::printWeights() {
     for (int piece = PAWN; piece <= KING; piece++) {
-        for (int rank = 0; rank < 8; rank ++) {
-            for (int file = 0; file < 8; file++) {
-                int sq = rank * 8 + file;
-                int idx = piece * 64 + sq;
-                std::cout << std::round(weights[idx][0]) + piece_square_tables[piece][0][sq] << ", ";
-                // std::cout << weights[idx][0] << ", ";
+        std::cout << "{\n";
+        for (int phase = 0; phase <= 1; phase++) {
+            std::cout << "    {\n";
+            for (int rank = 0; rank < 8; rank ++) {
+                std::cout << "       ";
+                for (int file = 0; file < 8; file++) {
+                    int sq = rank * 8 + file;
+                    int idx = piece * 64 + sq;
+                    int w = std::round(weights[idx][phase]) + piece_square_tables[piece][phase][sq];
+                    int spaces = 3;
+                    if (w != 0) {
+                        spaces = 3 - floor(log10(abs(w)));
+                        if (w < 0) {
+                            spaces -= 1;
+                        }
+                    }
+                    for (int i = 0; i < spaces; i++) {
+                        std::cout << " ";
+                    }
+                    std::cout << w << ",";
+                }
+                std::cout << "\n";
             }
-            std::cout << "\n";
+            std::cout << "    },\n";
         }
-        std::cout << "\n";
+        std::cout << "},\n";
     }
+}
+
+void Tuner::outputToFile() {
+    std::ofstream out_file;
+    out_file.open(TUNING_PARAMS_FILE);
+    if (!out_file.is_open()) return;
+    for (int piece = PAWN; piece <= KING; piece++) {
+        out_file << "{\n";
+        for (int phase = 0; phase <= 1; phase++) {
+            out_file << "    {\n";
+            for (int rank = 0; rank < 8; rank ++) {
+                out_file << "       ";
+                for (int file = 0; file < 8; file++) {
+                    int sq = rank * 8 + file;
+                    int idx = piece * 64 + sq;
+                    int w = std::round(weights[idx][phase]) + piece_square_tables[piece][phase][sq];
+                    int spaces = 3;
+                    if (w != 0) {
+                        spaces = 3 - floor(log10(abs(w)));
+                        if (w < 0) {
+                            spaces -= 1;
+                        }
+                    }
+                    for (int i = 0; i < spaces; i++) {
+                        out_file << " ";
+                    }
+                    out_file << w << ",";
+                }
+                out_file << "\n";
+            }
+            out_file << "    },\n";
+        }
+        out_file << "},\n";
+    }
+    out_file.close();
 }

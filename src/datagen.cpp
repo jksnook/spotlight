@@ -7,6 +7,15 @@
 #include <chrono>
 #include <string>
 
+bool isQuiet(MoveList &moves) {
+    for (const auto &m: moves) {
+        if (getMoveType(m) & CAPTURE_MOVE) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void selfplay(int num_games) {
     // std::ofstream output_file;
 
@@ -44,8 +53,10 @@ void playGames(int num_games, int id) {
 
         std::string result;
 
+        int num_random = myRandom() % MAX_RANDOM_MOVES;
+
         // make some random moves
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < num_random; i++) {
             if (pos.isTripleRepetition()) {
                 std::cout << "Draw" << std::endl;
                 result = "0.5";
@@ -85,10 +96,8 @@ void playGames(int num_games, int id) {
             pos.makeMove(moves[random_index]);
         }
 
-        int score = 0;
-
         while(true) {
-            if (pos.fifty_move >= 50) {
+            if (pos.fifty_move >= FIFTY_MOVE_LIMIT) {
                 std::cout << "Draw by fifty moves rule" << std::endl;
                 result = "0.5";
                 break;
@@ -96,10 +105,6 @@ void playGames(int num_games, int id) {
                 std::cout << "Draw by triple repetition" << std::endl;
                 result = "0.5";
                 break;
-            }
-
-            if (score < MATE_THRESHOLD && score > -MATE_THRESHOLD) {
-                fens.push_back(pos.toFen());
             }
 
             MoveList moves;
@@ -133,7 +138,14 @@ void playGames(int num_games, int id) {
             SearchResult search_result = search.nodeSearch(pos, MAX_DEPTH, 100000);
 
             move16 move = search_result.move;
-            score = search_result.score;
+            int score = search_result.score;
+
+            int eval_score = eval(pos);
+            int qscore = search.qScore(pos);
+
+            if (eval_score == qscore && score < MATE_THRESHOLD && score > -MATE_THRESHOLD) {
+                fens.push_back(pos.toFen());
+            }
 
             pos.makeMove(move);
         }

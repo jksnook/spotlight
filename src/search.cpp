@@ -27,7 +27,7 @@ void PVTable::zeroLength(int ply) {
     pv_length[ply] = 0;
 }
 
-Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true) {
+Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), enable_qsearch_tt(true) {
     for (int i = 0; i < MAX_DEPTH; i++) {
         killer_1[i] = 0;
         killer_2[i] = 0;
@@ -82,7 +82,8 @@ void Search::outputInfo(int depth, move16 best_move, int score, int nps) {
 // Iterative deepening framework
 SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     node_search = false;
-    setTimer(time_in_ms, 1000);
+    enable_qsearch_tt = true;
+    setTimer(time_in_ms, 3000);
     tt_hits = 0;
     MoveList moves;
     SearchResult result;
@@ -329,7 +330,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     int score = 0;
     move16 best_move = 0;
 
-    if (tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
+    if (enable_qsearch_tt && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
         tt_hits++;
         return score;
     }
@@ -404,10 +405,20 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     return max_score;
 };
 
+int Search::qScore(Position &pos) {
+    setTimer(1000, 1000);
+    pv_search = false;
+    node_search = false;
+    enable_qsearch_tt = false;
+    
+    return qSearch(pos, 0, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY);
+}
+
 
 //search a fixed number of nodes
 SearchResult Search::nodeSearch(Position &pos, int max_depth, U64 num_nodes) {
     node_search = true;
+    enable_qsearch_tt = true;
     times_up = false;
     max_nodes = num_nodes;
     tt_hits = 0;

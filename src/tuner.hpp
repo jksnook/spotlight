@@ -2,11 +2,22 @@
 
 #include <vector>
 #include <array>
+#include <string>
 
+/*
+Tuning implementation from Andrew Grant's tuning paper:
+https://github.com/AndyGrant/Ethereal/blob/master/Tuning.pdf
+*/
+
+const int MAX_POSITIONS = 500000;
 const int NUM_WEIGHTS = 64 * 6 * 2;
+const int PSQ_ARRAY_SIZE = NUM_WEIGHTS / 2;
 const int K_PRECISION = 10;
-const int MAX_EPOCHS = 5000;
-const double LEARNING_RATE = 0.01;
+const int MAX_EPOCHS = 10000;
+const int REPORT_INTERVAL = 200;
+const double LEARNING_RATE = 0.1;
+const std::string TUNING_FILE = "./tune.txt";
+const std::string TUNING_PARAMS_FILE = "./piece_squares.txt";
 
 struct WeightData {
     int wcoef, bcoef;
@@ -15,7 +26,7 @@ struct WeightData {
 
 struct PositionData {
     int s_eval;
-    double eval;
+    double d_eval;
     int phase;
     double result;
     std::vector<WeightData> active_coeffs;
@@ -27,18 +38,20 @@ public:
     
     static double sigmoid(double k, double e);
 
+    double staticEvaluationError(double k);
     double evaluationError(double k);
     double computeOptimalK();
     void calculateGradient();
     void zeroGrad();
     void updateWeights(double lr);
     void printWeights();
+    void outputToFile();
 
     void forward();
     void run();
     std::vector<PositionData> t_positions;
-    std::array<std::array<double, 2>, NUM_WEIGHTS / 2> weights;
-    std::array<std::array<double, 2>, NUM_WEIGHTS / 2> gradient;
+    std::array<std::array<double, 2>, PSQ_ARRAY_SIZE> weights;
+    std::array<std::array<double, 2>, PSQ_ARRAY_SIZE> gradient;
 
     double k_param;
 private:
