@@ -10,11 +10,14 @@
 #include "search.hpp"
 #include "datagen.hpp"
 #include "tuner.hpp"
+#include "test.hpp"
 
 int main() {
     initMoves();
     initMagics();
     initZobrist();
+
+    // testSearch();
 
     UCI uci;
 

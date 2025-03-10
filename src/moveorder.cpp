@@ -1,4 +1,5 @@
 #include "moveorder.hpp"
+#include "tunables.hpp"
 
 #include <vector>
 #include <algorithm>
@@ -148,13 +149,13 @@ int scoreMove(Position &pos, move16 move) {
         return see(pos, move);
         break;
     case QUIET_MOVE:
-        return 0;
-        break;
+        return pos.history_table[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR;
     case DOUBLE_PAWN_PUSH:
-        return 0;
+        return pos.history_table[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR;
         break;
     case QUEEN_PROMOTION:
-        return 400000;
+        return (SEE_VALUES[QUEEN] - SEE_VALUES[PAWN]) * SEE_MULTIPLIER + 
+            pos.history_table[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR;
         break;
     case ROOK_PROMOTION:
         return IGNORE_MOVE;

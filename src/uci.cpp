@@ -25,6 +25,7 @@ void UCI::loop() {
             std::cout << "uciok" << std::endl;
         } else if (token == "ucinewgame") {
             search.clearTT();
+            position.clearHistory();
         } else if (token == "isready") {
             std::cout << "readyok" << std::endl;
         } else if (token == "position") {

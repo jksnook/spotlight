@@ -8,11 +8,12 @@
 #include <string>
 #include <sstream>
 
-const int MAX_HISTORY = 4000;
+const int CONTINUATION_HISTORY_MAX_PLY = 1;
 
 struct Undo {
     public:
         move16 move;
+        int piece_moved;
         int castle_rights;
         int en_passant;
         int fifty_move;
@@ -34,6 +35,11 @@ class Position {
         bool in_check;
 
         std::vector<Undo> history;
+
+        int history_table[2][64][64];
+
+        void clearHistory();
+        void updateHistory(int from, int to, int bonus);
 
         void readFen(std::string fen);
         std::string toFen();

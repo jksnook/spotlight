@@ -49,6 +49,7 @@ public:
     void clearTT();
     int tt_hits;
     int nodes_searched;
+    U64 total_nodes;
 
 private:
     void setTimer(U64 duration_in_ms, int interval);

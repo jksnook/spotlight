@@ -82,6 +82,7 @@ void Search::outputInfo(int depth, move16 best_move, int score, int nps) {
 // Iterative deepening framework
 SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     node_search = false;
+    total_nodes = 0ULL;
     enable_qsearch_tt = true;
     setTimer(time_in_ms, 3000);
     tt_hits = 0;
@@ -104,6 +105,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     bool research = false;
     for (int depth = 0; depth < max_depth; depth++) {
         std::chrono::steady_clock::time_point this_depth_start_time = std::chrono::steady_clock::now();
+        // pos.clearHistory();
         if (depth == 0) {
             pv_search = false;
         } else {
@@ -136,6 +138,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
 
         std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - this_depth_start_time;
         U64 nps = nodes_searched / time_elapsed.count();
+        total_nodes += nodes_searched;
 
         if (timesUp()) {
             if (best_score_this_search_depth > max_score) {
@@ -278,6 +281,8 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     
     int max_score = NEGATIVE_INFINITY;
 
+    MoveList bad_quiets;
+
     bool upper_bound = true;
     for (const auto &move: moves) {
         // set the following PV length to 0 in case the next node is a leaf node
@@ -295,6 +300,10 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             if (max_score >= beta) {
                 if (!((move >> 12) & CAPTURE_MOVE)) {
                     saveKiller(ply, move);
+                    pos.updateHistory(getFromSquare(move), getToSquare(move), depth * depth);
+                }
+                for (const auto &bq: bad_quiets) {
+                    pos.updateHistory(getFromSquare(bq), getToSquare(bq), -depth * depth);
                 }
                 tt.save(pos.z_key, depth, ply, move, max_score, LOWER_BOUND_NODE, pos.game_half_moves);
                 return beta;
@@ -303,6 +312,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
                 alpha = score;
                 upper_bound = false;
             }
+        }
+        if(!((move >> 12) & CAPTURE_MOVE)) {
+            bad_quiets.addMove(move);
         }
     }
 

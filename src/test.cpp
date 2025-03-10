@@ -4,9 +4,12 @@
 #include "move.hpp"
 #include "moveorder.hpp"
 #include "movegen.hpp"
+#include "search.hpp"
+#include "tunables.hpp"
 
 #include <cassert>
 #include <iostream>
+#include <chrono>
 
 void runTests() {
     testSee();
@@ -61,4 +64,29 @@ void testPerft() {
 
     pos.readFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
     assert(perft(pos, 5) == 89941194ULL);
+}
+
+void testSearch() {
+    Position pos;
+    Search search;
+
+    U64 nodes;
+
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
+    for (const auto &fen: TEST_POSITIONS) {
+        pos.clearHistory();
+        search.clearTT();
+        pos.readFen(fen);
+        SearchResult r = search.iterSearch(pos, 6, 10000);
+        nodes += search.total_nodes;
+    }
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds> (end - start);
+
+    int nps = nodes * 1000 / elapsed_time.count();
+
+    std::cout << nodes << " nodes searched at " << nps << " nps\n";
 }
