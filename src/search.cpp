@@ -190,10 +190,12 @@ SearchResult Search::rootSearch(Position &pos, MoveList &moves, int depth, int a
         if (score > result.score) {
             result.score = score;
             result.move = move;
-            if (score > alpha && score < beta) {
-                pv.updatePV(0, move);
+            if (score > alpha) {
+                alpha = score;
+                if (score < beta) {
+                    pv.updatePV(0, move);
+                }
             }
-            alpha = std::max(score, alpha);
         }
     }
 

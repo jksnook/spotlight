@@ -13,8 +13,8 @@
 const int NEGATIVE_INFINITY = (1 << 31) + 1;
 const int POSITIVE_INFINITY = ~0 ^ NEGATIVE_INFINITY;
 
-const int WINDOW_SIZE = 60;
-const int NMP_REDUCTION = 4;
+const int WINDOW_SIZE = 30;
+const int NMP_REDUCTION = 3;
 
 class PVTable {
     public:

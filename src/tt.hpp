@@ -20,11 +20,11 @@ class TTEntry {
         TTEntry(U64 _z_key, int _depth, move16 _best_move, int _score, int _node_type, int _half_moves);
 
         U64 z_key;
-        int depth;
+        int16_t depth;
         move16 best_move;
         int score;
-        int node_type;
-        int half_moves;
+        uint8_t node_type;
+        uint16_t half_moves;
     private:
 };
 
