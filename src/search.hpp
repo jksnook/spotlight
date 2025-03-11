@@ -15,6 +15,7 @@ const int POSITIVE_INFINITY = ~0 ^ NEGATIVE_INFINITY;
 
 const int WINDOW_SIZE = 30;
 const int NMP_REDUCTION = 3;
+const int FUTILITY_MARGIN = 50;
 
 class PVTable {
     public:

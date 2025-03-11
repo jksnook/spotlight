@@ -1,5 +1,13 @@
 #include "movegen.hpp"
 
+bool inCheck(Position &pos) {
+    if (pos.side_to_move == WHITE) {
+        return inCheckSided<true>(pos);
+    } else {
+        return inCheckSided<false>(pos);
+    }
+}
+
 U64 perftHelper(Position &pos, int depth) {
     if (depth == 0) {
         return 1;

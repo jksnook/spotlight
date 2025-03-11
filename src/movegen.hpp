@@ -379,7 +379,7 @@ void generateMoves(MoveList &moves, Position &pos) {
 }
 
 template <bool white_to_move>
-bool inCheck(Position &pos) {
+bool inCheckSided(Position &pos) {
 
     // set up all bitboards for easy access according to friendly vs enemy with compiletime stuff
     constexpr const int side = static_cast<int>(white_to_move) ^ 1;
@@ -435,6 +435,8 @@ bool inCheck(Position &pos) {
     }
     return false;
 }
+
+bool inCheck(Position &pos);
 
 U64 perftHelper(Position &pos, int depth);
 

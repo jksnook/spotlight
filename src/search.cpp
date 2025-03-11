@@ -209,13 +209,13 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         return 0;
     } else if (depth == 0) {
         if (pos.side_to_move == WHITE) {
-            if (inCheck<true>(pos))  {
+            if (inCheckSided<true>(pos))  {
                 depth++;
             } else {
                 return qSearch(pos, depth, ply, alpha, beta);
             } 
         } else {
-            if (inCheck<false>(pos))  {
+            if (inCheckSided<false>(pos))  {
                 depth++;
             } else {
                 return qSearch(pos, depth, ply, alpha, beta);
@@ -285,11 +285,29 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
     MoveList bad_quiets;
 
+    bool can_fprune = false;
+
+
+    // enable or disable futility pruning
+    if (depth == 1 && !pos.in_check && alpha < MATE_THRESHOLD && alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD) {
+        int s_eval = eval(pos);
+        if (s_eval + FUTILITY_MARGIN < alpha) {
+            can_fprune = true;
+        }
+    }
+
+
     bool upper_bound = true;
     for (const auto &move: moves) {
         // set the following PV length to 0 in case the next node is a leaf node
+        if (can_fprune && !((move >> 12) & CAPTURE_MOVE)) continue;
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
+        // futility pruning
+        if (can_fprune && !inCheck(pos) && (!((move >> 12) & CAPTURE_MOVE))) {
+            pos.unmakeMove();
+            continue;
+        }
         score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
         pos.unmakeMove();
         if (score > max_score) {

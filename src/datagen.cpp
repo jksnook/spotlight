@@ -68,7 +68,7 @@ void playGames(int num_games, int id) {
             if (pos.side_to_move == WHITE) {
                 generateMoves<true>(moves, pos);
                 if (moves.size() == 0) {
-                    if (inCheck<true>(pos)) {
+                    if (inCheckSided<true>(pos)) {
                         std::cout << "Black wins" << std::endl;
                         result = "0";
                     } else {
@@ -80,7 +80,7 @@ void playGames(int num_games, int id) {
             } else {
                 generateMoves<false>(moves, pos);
                 if (moves.size() == 0) {
-                    if (inCheck<false>(pos)) {
+                    if (inCheckSided<false>(pos)) {
                         std::cout << "White wins" << std::endl;
                         result = "1";
                     } else {
@@ -112,7 +112,7 @@ void playGames(int num_games, int id) {
             if (pos.side_to_move == WHITE) {
                 generateMoves<true>(moves, pos);
                 if (moves.size() == 0) {
-                    if (inCheck<true>(pos)) {
+                    if (inCheckSided<true>(pos)) {
                         std::cout << "Black wins" << std::endl;
                         result = "0";
                     } else {
@@ -124,7 +124,7 @@ void playGames(int num_games, int id) {
             } else {
                 generateMoves<false>(moves, pos);
                 if (moves.size() == 0) {
-                    if (inCheck<false>(pos)) {
+                    if (inCheckSided<false>(pos)) {
                         std::cout << "White wins" << std::endl;
                         result = "1";
                     } else {

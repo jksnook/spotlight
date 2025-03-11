@@ -14,6 +14,7 @@
 void runTests() {
     testSee();
     testPerft();
+    testCheck();
 
     std::cout << "Tests Passed" << std::endl;
 }
@@ -50,6 +51,18 @@ void testSee() {
     score = see(pos, move);
     correct_score = (SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN]) * 1000;
     assert(score == correct_score);
+}
+
+void testCheck() {
+    Position pos;
+    pos.readFen("5k2/p7/8/2B3b1/8/8/7P/5K2 w - - 0 1");
+    assert(inCheck(pos) == false);
+
+    pos.readFen("5k2/p7/8/2B3b1/8/8/7P/5K2 b - - 0 1");
+    assert(inCheck(pos) == true);
+
+    pos.readFen("5k2/p7/B7/8/8/3b4/7P/5K2 w - - 0 1");
+    assert(inCheck(pos) == true);
 }
 
 void testPerft() {

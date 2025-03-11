@@ -19,6 +19,8 @@ void runTests();
 
 void testSee();
 
+void testCheck();
+
 void testPerft();
 
 void testSearch();
