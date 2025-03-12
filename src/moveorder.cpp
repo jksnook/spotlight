@@ -136,7 +136,7 @@ int see(Position &pos, move16 move) {
         capture_scores[k - 1] = -std::max(-capture_scores[k - 1], capture_scores[k]);
     }
 
-    return capture_scores[0] * SEE_MULTIPLIER;
+    return (capture_scores[0] + SEE_MARGIN) * SEE_MULTIPLIER;
 }
 
 int scoreMove(Position &pos, move16 move) {

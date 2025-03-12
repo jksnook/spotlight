@@ -27,9 +27,9 @@ void TT::clear() {
 void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, int node_type, int half_moves) {
     TTEntry* old_entry = probe(z_key);
 
-    // if ((old_entry->depth > depth && old_entry->z_key == z_key)) {
-    //     return;
-    // }
+    if (old_entry->depth > depth && old_entry->z_key == z_key) {
+        return;
+    }
 
     if (score > MATE_THRESHOLD) {
         score += ply;

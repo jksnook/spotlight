@@ -27,7 +27,7 @@ void PVTable::zeroLength(int ply) {
     pv_length[ply] = 0;
 }
 
-Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), enable_qsearch_tt(true) {
+Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), enable_qsearch_tt(true), q_nodes(0) {
     for (int i = 0; i < MAX_DEPTH; i++) {
         killer_1[i] = 0;
         killer_2[i] = 0;
@@ -83,6 +83,7 @@ void Search::outputInfo(int depth, move16 best_move, int score, int nps) {
 SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
     node_search = false;
     total_nodes = 0ULL;
+    q_nodes = 0;
     enable_qsearch_tt = true;
     setTimer(time_in_ms, 3000);
     tt_hits = 0;
@@ -98,7 +99,11 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
         generateMoves<false>(moves, pos);
     }
 
+
+
     move16 best_move = 0;
+    // int score = 0;
+    // tt.getScore(pos.z_key, 0, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY, score, best_move);
     int max_score = NEGATIVE_INFINITY;
 
     // Perform search at increasing depths
@@ -179,6 +184,7 @@ SearchResult Search::rootSearch(Position &pos, MoveList &moves, int depth, int a
     SearchResult result;
     result.score = NEGATIVE_INFINITY;
     result.move = 0;
+    result.score = NEGATIVE_INFINITY;
     for (const auto &move: moves) {
         pv.zeroLength(1);
         pos.makeMove(move);
@@ -230,7 +236,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     move16 best_move = 0;
 
     // Probe transposition table
-    if (tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
+    if (!pv_search && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
         tt_hits++;
         pv.updateFromTT(ply, best_move);
         return score;
@@ -358,6 +364,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     nodes_searched++;
+    q_nodes++;
 
     int score = 0;
     move16 best_move = 0;
@@ -406,7 +413,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     best_move = 0;
 
     for (const auto &move: moves) {
-        if (getMoveType(move) != CAPTURE_MOVE) {
+        if (!(getMoveType(move) & CAPTURE_MOVE)) {
             continue;
         }
         pv.zeroLength(ply + 1);

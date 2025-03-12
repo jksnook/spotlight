@@ -25,31 +25,31 @@ void testSee() {
     pos.readFen("1r2k3/8/6r1/1pP5/8/8/1R6/4K3 w - b6 0 2");
     move16 move = encodeMove(C5, B6, EN_PASSANT_CAPTURE);
     int score = see(pos, move);
-    int correct_score = 0;
+    int correct_score = SEE_MARGIN * SEE_MULTIPLIER;
     assert(score == correct_score);
 
     pos.readFen("4k3/p7/6r1/1pP5/8/8/1R6/4K3 w - b6 0 2");
     move = encodeMove(C5, B6, EN_PASSANT_CAPTURE);
     score = see(pos, move);
-    correct_score = 0;
+    correct_score = SEE_MARGIN * SEE_MULTIPLIER;
     assert(score == correct_score);
 
     pos.readFen("4k3/p7/8/1pP5/8/8/1R6/4K3 w - b6 0 2");
     move = encodeMove(C5, B6, EN_PASSANT_CAPTURE);
     score = see(pos, move);
-    correct_score = SEE_VALUES[PAWN] * 1000;
+    correct_score = (SEE_VALUES[PAWN] + SEE_MARGIN) * SEE_MULTIPLIER;
     assert(score == correct_score);
 
     pos.readFen("4k3/8/8/1pP5/8/8/8/4K3 w - b6 0 2");
     move = encodeMove(C5, B6, EN_PASSANT_CAPTURE);
     score = see(pos, move);
-    correct_score = SEE_VALUES[PAWN] * 1000;
+    correct_score = (SEE_VALUES[PAWN] + SEE_MARGIN) * SEE_MULTIPLIER;
     assert(score == correct_score);
 
     pos.readFen("4k3/8/8/8/8/8/2p5/1R2K3 b - - 0 1");
     move = encodeMove(C2, B1, QUEEN_PROMOTION_CAPTURE);
     score = see(pos, move);
-    correct_score = (SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN]) * 1000;
+    correct_score = (SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN] + SEE_MARGIN) * SEE_MULTIPLIER;
     assert(score == correct_score);
 }
 
@@ -84,6 +84,7 @@ void testSearch() {
     Search search;
 
     U64 nodes;
+    U64 q_nodes;
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
@@ -91,8 +92,9 @@ void testSearch() {
         pos.clearHistory();
         search.clearTT();
         pos.readFen(fen);
-        SearchResult r = search.iterSearch(pos, 6, 10000);
+        SearchResult r = search.iterSearch(pos, 7, 10000);
         nodes += search.total_nodes;
+        q_nodes += search.q_nodes;
     }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -101,5 +103,5 @@ void testSearch() {
 
     int nps = nodes * 1000 / elapsed_time.count();
 
-    std::cout << nodes << " nodes searched at " << nps << " nps\n";
+    std::cout << nodes << " nodes searched at " << nps << " nps " << q_nodes << " quiescence nodes\n";
 }

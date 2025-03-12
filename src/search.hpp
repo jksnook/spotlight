@@ -50,6 +50,7 @@ public:
     void clearTT();
     int tt_hits;
     int nodes_searched;
+    U64 q_nodes;
     U64 total_nodes;
 
 private:

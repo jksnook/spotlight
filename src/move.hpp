@@ -68,6 +68,10 @@ static inline int getMoveType(const move16 &move) {
     return (move >> 12) & 0b1111;
 }
 
+static inline bool isQuiet(const move16 &move) {
+    return !((move >> 12) & 0b1111 & CAPTURE_MOVE);
+}
+
 std::string moveToString(move16 move);
 
 void printMove(move16 move);
