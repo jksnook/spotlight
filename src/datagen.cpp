@@ -42,11 +42,13 @@ void playGames(int num_games, int id) {
     Position pos;
 
     Search search;
+    search.make_output = false;
 
     std::random_device r;
     std::mt19937 myRandom(r());
 
     for (int i = 0; i < num_games; i++) {
+        std::cout << "starting game " << i << " of " << num_games << " on thread " << id << "\n";
         pos.readFen(STARTPOS);
 
         std::vector<std::string> fens;

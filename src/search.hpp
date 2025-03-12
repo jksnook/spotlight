@@ -52,6 +52,7 @@ public:
     int nodes_searched;
     U64 q_nodes;
     U64 total_nodes;
+    bool make_output;
 
 private:
     void setTimer(U64 duration_in_ms, int interval);

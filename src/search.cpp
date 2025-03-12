@@ -27,7 +27,7 @@ void PVTable::zeroLength(int ply) {
     pv_length[ply] = 0;
 }
 
-Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), enable_qsearch_tt(true), q_nodes(0) {
+Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), enable_qsearch_tt(true), q_nodes(0), make_output(true) {
     for (int i = 0; i < MAX_DEPTH; i++) {
         killer_1[i] = 0;
         killer_2[i] = 0;
@@ -150,7 +150,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
                 max_score = best_score_this_search_depth;
                 best_move = best_move_this_search_depth;
             }
-            outputInfo(depth, best_move, max_score, nps);
+            if (make_output) outputInfo(depth, best_move, max_score, nps);
             break;
         }
 
@@ -170,7 +170,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
         }
         best_move = best_move_this_search_depth;
         max_score = best_score_this_search_depth;
-        outputInfo(depth, best_move, max_score, nps);
+        if (make_output) outputInfo(depth, best_move, max_score, nps);
     }
 
     result.move = best_move;
@@ -518,7 +518,7 @@ SearchResult Search::nodeSearch(Position &pos, int max_depth, U64 num_nodes) {
                 max_score = best_score_this_search_depth;
                 best_move = best_move_this_search_depth;
             }
-            outputInfo(depth, best_move, max_score, nps);
+            if (make_output) outputInfo(depth, best_move, max_score, nps);
             break;
         }
 
@@ -538,7 +538,7 @@ SearchResult Search::nodeSearch(Position &pos, int max_depth, U64 num_nodes) {
         }
         best_move = best_move_this_search_depth;
         max_score = best_score_this_search_depth;
-        outputInfo(depth, best_move, max_score, nps);
+        if (make_output) outputInfo(depth, best_move, max_score, nps);
     }
 
     result.move = best_move;
