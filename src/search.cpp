@@ -79,13 +79,26 @@ void Search::outputInfo(int depth, move16 best_move, int score, int nps) {
     std::cout << " score " << score << std::endl;
 }
 
-// Iterative deepening framework
-SearchResult Search::iterSearch(Position &pos, int max_depth, U64 time_in_ms) {
+// Timed search
+SearchResult Search::timeSearch(Position &pos, int max_depth, U64 time_in_ms) {
     node_search = false;
+    setTimer(time_in_ms, 3000);
+    return iterSearch(pos, max_depth);
+}
+
+//search a fixed number of nodes
+SearchResult Search::nodeSearch(Position &pos, int max_depth, U64 num_nodes) {
+    node_search = true;
+    times_up = false;
+    max_nodes = num_nodes;
+    return iterSearch(pos, max_depth);
+};
+
+// Iterative deepening framework
+SearchResult Search::iterSearch(Position &pos, int max_depth) {
     total_nodes = 0ULL;
     q_nodes = 0;
     enable_qsearch_tt = true;
-    setTimer(time_in_ms, 3000);
     tt_hits = 0;
     MoveList moves;
     SearchResult result;
@@ -454,97 +467,3 @@ int Search::qScore(Position &pos) {
     
     return qSearch(pos, 0, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY);
 }
-
-
-//search a fixed number of nodes
-SearchResult Search::nodeSearch(Position &pos, int max_depth, U64 num_nodes) {
-    node_search = true;
-    enable_qsearch_tt = true;
-    times_up = false;
-    max_nodes = num_nodes;
-    tt_hits = 0;
-    MoveList moves;
-    SearchResult result;
-    // pos.clearHistoryTable();
-    //pv.clearPV();
-
-    // Generate moves. This is only done once for the root node.
-    if (pos.side_to_move == WHITE) {
-        generateMoves<true>(moves, pos);
-    } else {
-        generateMoves<false>(moves, pos);
-    }
-
-    move16 best_move = 0;
-    int max_score = NEGATIVE_INFINITY;
-
-    // Perform search at increasing depths
-    bool research = false;
-    for (int depth = 0; depth < max_depth; depth++) {
-        std::chrono::steady_clock::time_point this_depth_start_time = std::chrono::steady_clock::now();
-        if (depth == 0) {
-            pv_search = false;
-        } else {
-            pv_search = true;
-        }
-        nodes_searched = 1;
-        int beta;
-        int alpha;
-        int best_score_this_search_depth = NEGATIVE_INFINITY;
-        move16 best_move_this_search_depth = 0;
-        allow_nmp = true;
-
-        // if this is not a re-search we order moves and set alpha and beta to their min and max values
-        if (!research) {
-            orderMoves(pos, moves, best_move, 0, 0);
-            if (depth > 3) {
-                // set aspiration window
-                beta = max_score + WINDOW_SIZE;
-                alpha = max_score - WINDOW_SIZE;
-            } else {
-                beta = POSITIVE_INFINITY;
-                alpha = NEGATIVE_INFINITY;
-            }
-        }
-
-        // Search from the root node using our pre-generated move list
-        SearchResult result_this_depth = rootSearch(pos, moves, depth, alpha, beta);
-        best_score_this_search_depth = result_this_depth.score;
-        best_move_this_search_depth = result_this_depth.move;
-
-        std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - this_depth_start_time;
-        U64 nps = nodes_searched / time_elapsed.count();
-
-        if (timesUp()) {
-            if (best_score_this_search_depth > max_score) {
-                max_score = best_score_this_search_depth;
-                best_move = best_move_this_search_depth;
-            }
-            if (make_output) outputInfo(depth, best_move, max_score, nps);
-            break;
-        }
-
-        // check to see if our score fell outside the aspiration window. Re-search if needed.
-        if (best_score_this_search_depth <= alpha) {
-            alpha = NEGATIVE_INFINITY;
-            research = true;
-            depth--;
-            continue;
-        } else if (best_score_this_search_depth >= beta) {
-            beta = POSITIVE_INFINITY;
-            research = true;
-            depth--;
-            continue;
-        } else {
-            research = false;
-        }
-        best_move = best_move_this_search_depth;
-        max_score = best_score_this_search_depth;
-        if (make_output) outputInfo(depth, best_move, max_score, nps);
-    }
-
-    result.move = best_move;
-    result.score = max_score;
-
-    return result;
-};

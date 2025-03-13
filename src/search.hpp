@@ -45,7 +45,7 @@ class Search
 public:
     Search();
 
-    SearchResult iterSearch(Position &pos, int max_depth, U64 time_in_ms);
+    SearchResult timeSearch(Position &pos, int max_depth, U64 time_in_ms);
     SearchResult nodeSearch(Position &pos, int max_depth, U64 num_nodes);
     int qScore(Position &pos);
     void clearTT();
@@ -60,6 +60,7 @@ private:
     int negaMax(Position &pos, int depth, int ply, int alpha, int beta);
     int qSearch(Position &pos, int depth, int ply, int alpha, int beta);
     bool timesUp();
+    SearchResult iterSearch(Position &pos, int max_depth);
     SearchResult rootSearch(Position &pos, MoveList &moves, int depth, int alpha, int beta);
     void outputInfo(int depth, move16 best_move, int score, int nps);
     inline void saveKiller(int ply, move16 move) {
