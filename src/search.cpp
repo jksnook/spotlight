@@ -260,10 +260,12 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     // null move pruning
-    if (depth >= NMP_REDUCTION && allow_nmp && !pos.in_check && !pv_search) {
+    if (depth >= std::max(NMP_REDUCTION, 3) && allow_nmp && !pos.in_check && !pv_search) {
         allow_nmp = false;
+        int reduction;
+        reduction = NMP_REDUCTION + depth / (NMP_REDUCTION + 1);
         pos.makeNullMove();
-        int nmp = -negaMax(pos, depth - NMP_REDUCTION, ply + 1, -beta, -beta + 1);
+        int nmp = -negaMax(pos, depth - reduction, ply + 1, -beta, -beta + 1);
         pos.unmakeNullMove();
         allow_nmp = true;
 

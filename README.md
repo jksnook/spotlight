@@ -1,9 +1,25 @@
 # spotlight
-a chess engine written in C++
+A chess engine written in C++
 
-## Planned Features:
+## Features:
 
-* Magic bitboard move generation
+### Move generation
+* Fully legal move generation with magic bitboards
+
+### Search:
 * Transposition Table
-* NNUE evaluation
+* Iterative Deepening
+* Aspiration Windows
+* Null move pruning
+* Futility pruning
+
+### Move ordering
+* TTmove
+* captures ordered by SEE
+* Killer moves
+* History heuristic
+
+### Evaluation
+* Tuned piece square tables (Tuning implementation from Andrew Grant's tuning paper: https://github.com/AndyGrant/Ethereal/blob/master/Tuning.pdf)
+* Tuned entirely with self-generated data
 
