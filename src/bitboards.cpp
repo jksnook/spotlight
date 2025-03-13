@@ -290,7 +290,7 @@ void iterateOccupancy(U64 &occupancy, U64 mask) {
 std::mt19937_64 randomU64(42);
 
 // find a working magic number at the given index and populate the arrays
-// Currently just loads a saved number
+// Currently just loads a saved number to save startup time
 void findBishopMagic(int index) {
     U64 magic_number;
     U64 all_bits = ~0ULL >> (64 - bishop_relevant_bit_count[index]);
@@ -319,7 +319,7 @@ void findBishopMagic(int index) {
 }
 
 // find a working magic number at the given index and populate the arrays
-// Currently just loads a saved number
+// Currently just loads a saved number to save startup time
 void findRookMagic(int index) {
     U64 magic_number;
     U64 all_bits = ~0ULL >> (64 - rook_relevant_bit_count[index]);

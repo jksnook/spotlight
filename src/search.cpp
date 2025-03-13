@@ -320,15 +320,11 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
     bool upper_bound = true;
     for (const auto &move: moves) {
-        // set the following PV length to 0 in case the next node is a leaf node
+        // futility pruning
         if (can_fprune && !((move >> 12) & CAPTURE_MOVE)) continue;
+        // set the following PV length to 0 in case the next node is a leaf node
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
-        // futility pruning
-        if (can_fprune && !inCheck(pos) && (!((move >> 12) & CAPTURE_MOVE))) {
-            pos.unmakeMove();
-            continue;
-        }
         score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
         pos.unmakeMove();
         if (score > max_score) {

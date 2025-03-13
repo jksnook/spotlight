@@ -13,15 +13,7 @@ int scoreMove(Position &pos, move16 move);
 void orderMoves(Position &pos, MoveList &moves, move16 tt_move, move16 killer_1, move16 killer_2);
 
 
-/*
-Stuff to store in MovePicker for faster SEE:
-
-* 
-
-*/
-
-
-
+// MovePicker class not currently used
 class MovePicker {
 public:
     MovePicker(Position &pos, MoveList &moves, move16 tt_move, move16 killer_1, move16 killer_2);

@@ -32,6 +32,7 @@ const int BISHOP_PROMOTION_CAPTURE = 0b1101;
 const int ROOK_PROMOTION_CAPTURE = 0b1110;
 const int QUEEN_PROMOTION_CAPTURE = 0b1111;
 
+const move16 NULL_MOVE = 0;
 
 static std::map<int, std::string>  move_type_map = {
     {QUIET_MOVE, "quiet move"},

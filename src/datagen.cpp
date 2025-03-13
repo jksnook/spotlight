@@ -17,10 +17,6 @@ bool isQuiet(MoveList &moves) {
 }
 
 void selfplay(int num_games) {
-    // std::ofstream output_file;
-
-    // output_file.open("selfplay.txt");
-
     std::vector<std::thread> threads;
 
     for (int i = 0; i < NUM_THREADS; i++) {
@@ -30,8 +26,6 @@ void selfplay(int num_games) {
     for (int i = 0; i < NUM_THREADS; i++) {
         threads[i].join();
     }
-
-    // output_file.close();
 }
 
 void playGames(int num_games, int id) {
