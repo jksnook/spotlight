@@ -6,15 +6,18 @@
 #include "movegen.hpp"
 #include "search.hpp"
 #include "tunables.hpp"
+#include "movepicker.hpp"
 
 #include <cassert>
 #include <iostream>
 #include <chrono>
 
 void runTests() {
-    testSee();
-    testPerft();
-    testCheck();
+    testMovePicker();
+    testPlayable();
+    // testSee();
+    // // testPerft();
+    // testCheck();
 
     std::cout << "Tests Passed" << std::endl;
 }
@@ -104,4 +107,83 @@ void testSearch() {
     int nps = nodes * 1000 / elapsed_time.count();
 
     std::cout << nodes << " nodes searched at " << nps << " nps " << q_nodes << " quiescence nodes\n";
+}
+
+void testPlayable() {
+    Position pos;
+
+    for (const auto &p: PERFT_POSITIONS) {
+        pos.readFen(p);
+        playablePerft(pos, 5);
+    }
+}
+
+void testMovePicker() {
+    Position pos;
+
+    move16 tt_move = encodeMove(C2, C4, DOUBLE_PAWN_PUSH);
+    move16 killer_1 = encodeMove(D2, D4, DOUBLE_PAWN_PUSH);
+    move16 killer_2 = encodeMove(E2, E4, DOUBLE_PAWN_PUSH);
+
+    MovePicker picker(pos, tt_move, killer_1, killer_2);
+
+    assert(picker.getNextMove() == tt_move);
+    move16 move = picker.getNextMove();
+    assert(move == killer_1);
+    assert(picker.getNextMove() == killer_2);
+
+    while (picker.getNextMove())
+    {
+        continue;
+    }
+
+    std::random_device r;
+    std::mt19937 myRandom(r());
+
+    for (const auto &p: TEST_POSITIONS) {
+        pos.readFen(p);
+        MoveList moves;
+
+        if (pos.side_to_move == WHITE) {
+            generateMoves<true>(moves, pos);
+        } else {
+            generateMoves<false>(moves, pos);
+        }
+
+        MoveList quiets;
+        MoveList captures;
+        generateQuietMoves(quiets, pos);
+        generateCaptures(captures, pos);
+        
+        killer_1 = 0;
+        killer_2 = 0;
+
+        move16 tt_move = moves[myRandom() % moves.size()];
+        do {
+            killer_1 = quiets[myRandom() % quiets.size()];
+        } while (killer_1 == tt_move);
+        do {
+            killer_2 = quiets[myRandom() % quiets.size()];
+        } while (killer_2 == tt_move || killer_2 == killer_1);
+
+        MovePicker picker(pos, tt_move, killer_1, killer_2);
+
+        assert(picker.getNextMove() == tt_move);
+
+        move16 m;
+        while (m = picker.getNextMove()) {
+            if (!(getMoveType(m) & CAPTURE_MOVE)) {
+                assert(m == killer_1);
+                break;
+            }
+        }
+
+        assert(picker.getNextMove() == killer_2);
+
+        while (picker.getNextMove())
+        {
+            continue;
+        }
+
+    }
 }

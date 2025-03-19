@@ -24,6 +24,7 @@ void Position::readFen(std::string fen) {
     side_to_move = 0;
     en_passant = 0;
     fifty_move = 0;
+    in_check = false;
 
 
     //read piece positions
@@ -253,10 +254,13 @@ void Position::placePiece(int square, int piece_type) {
 }
 
 void Position::makeMove(move16 move) {
+    assert(move != 0);
     int start_square = getFromSquare(move);
     int end_square = getToSquare(move);
     int move_type = getMoveType(move);
     int piece = at(start_square);
+
+    assert(piece != NO_PIECE);
 
     Undo undo;
     undo.move = move;
@@ -266,6 +270,7 @@ void Position::makeMove(move16 move) {
     undo.castle_rights = castle_rights;
     undo.z_key = z_key;
     undo.captured_piece = NO_PIECE;
+    undo.in_check = in_check;
     int captured_piece = NO_PIECE;
     en_passant = 0;
 
@@ -281,6 +286,7 @@ void Position::makeMove(move16 move) {
         break;
     case CAPTURE_MOVE:
         captured_piece = at(end_square);
+        assert(captured_piece % 6 != KING);
         undo.captured_piece = captured_piece;
         removePiece(end_square, captured_piece);
         movePiece(start_square, end_square, piece);
@@ -358,12 +364,12 @@ void Position::makeMove(move16 move) {
     }
 
     if (castle_rights & WQC) {
-        if(!(setBit(a1) & bitboards[WHITE_ROOK]) || !(1ULL << e1 & bitboards[WHITE_KING])) {
+        if(!(setBit(a1) & bitboards[WHITE_ROOK]) || !(setBit(e1) & bitboards[WHITE_KING])) {
             castle_rights &= ~WQC;
         }
     }
     if (castle_rights & WKC) {
-        if(!(1ULL << h1 & bitboards[WHITE_ROOK]) || !(1ULL << e1 & bitboards[WHITE_KING])) {
+        if(!(1ULL << h1 & bitboards[WHITE_ROOK]) || !(setBit(e1) & bitboards[WHITE_KING])) {
             castle_rights &= ~WKC;
         }
     }
@@ -379,6 +385,7 @@ void Position::makeMove(move16 move) {
     }
 
     history.push_back(undo);
+    in_check = false;
     side_to_move ^= 1;
     z_key = generateZobrist();
     half_moves++;
@@ -398,6 +405,7 @@ void Position::unmakeMove() {
     fifty_move = undo.fifty_move;
     castle_rights = undo.castle_rights;
     z_key = undo.z_key;
+    in_check = undo.in_check;
     half_moves--;
 
     switch (move_type)

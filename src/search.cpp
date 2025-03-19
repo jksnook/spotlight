@@ -1,4 +1,5 @@
 #include "search.hpp"
+#include "movepicker.hpp"
 
 #include <algorithm>
 
@@ -102,8 +103,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
     tt_hits = 0;
     MoveList moves;
     SearchResult result;
-    // pos.clearHistoryTable();
-    //pv.clearPV();
+    pv.clearPV();
 
     // Generate moves. This is only done once for the root node.
     if (pos.side_to_move == WHITE) {
@@ -123,7 +123,6 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
     bool research = false;
     for (int depth = 0; depth < max_depth; depth++) {
         std::chrono::steady_clock::time_point this_depth_start_time = std::chrono::steady_clock::now();
-        // pos.clearHistory();
         if (depth == 0) {
             pv_search = false;
         } else {
@@ -138,7 +137,6 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
 
         // if this is not a re-search we order moves and set alpha and beta to their min and max values
         if (!research) {
-            orderMoves(pos, moves, best_move, 0, 0);
             if (depth > 3) {
                 // set aspiration window
                 beta = max_score + WINDOW_SIZE;
@@ -148,6 +146,8 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
                 alpha = NEGATIVE_INFINITY;
             }
         }
+
+        orderMoves(pos, moves, pv.getPVMove(0), 0, 0);
 
         // Search from the root node using our pre-generated move list
         SearchResult result_this_depth = rootSearch(pos, moves, depth, alpha, beta);
@@ -181,6 +181,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
         } else {
             research = false;
         }
+        assert(research == false);
         best_move = best_move_this_search_depth;
         max_score = best_score_this_search_depth;
         if (make_output) outputInfo(depth, best_move, max_score, nps);
@@ -197,18 +198,19 @@ SearchResult Search::rootSearch(Position &pos, MoveList &moves, int depth, int a
     SearchResult result;
     result.score = NEGATIVE_INFINITY;
     result.move = 0;
-    result.score = NEGATIVE_INFINITY;
     for (const auto &move: moves) {
         pv.zeroLength(1);
         pos.makeMove(move);
         int score = -negaMax(pos, depth, 1, -beta, -alpha);
         pos.unmakeMove();
+        pv_search = false;
         if (timesUp()) {
             return result;
         }
         if (score > result.score) {
             result.score = score;
             result.move = move;
+            // pv.updatePV(0, move);
             if (score > alpha) {
                 alpha = score;
                 if (score < beta) {
@@ -247,6 +249,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
     int score = 0;
     move16 best_move = 0;
+    move16 tt_move = 0;
 
     // Probe transposition table
     if (!pv_search && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
@@ -254,6 +257,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         pv.updateFromTT(ply, best_move);
         return score;
     }
+
+    tt_move = best_move;
+    assert(tt_move == best_move);
 
     // If we are searching the previous PV, put the PV move first
     if (pv_search) {
@@ -264,16 +270,8 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
-    MoveList moves;
-    
-    if (pos.side_to_move == WHITE) {
-        generateMoves<true>(moves, pos);
-    } else {
-        generateMoves<false>(moves, pos);
-    }
-
     // null move pruning
-    if (depth >= std::max(NMP_REDUCTION, 3) && allow_nmp && !pos.in_check && !pv_search) {
+    if (depth >= std::max(NMP_REDUCTION, 3) && allow_nmp && !pv_search && !inCheck(pos)) {
         allow_nmp = false;
         int reduction;
         reduction = NMP_REDUCTION + depth / (NMP_REDUCTION + 1);
@@ -290,17 +288,25 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
+    // MoveList moves;
+
+    // if (pos.side_to_move == WHITE) {
+    //     generateMoves<true>(moves, pos);
+    // } else {
+    //     generateMoves<false>(moves, pos);
+    // }
+
     // check for stalemate or checkmate
-    if (moves.size() == 0) {
-        if (pos.in_check) {
-            return -MATE_SCORE + ply;
-        }
-        return 0;
-    }
+    // if (moves.size() == 0) {
+    //     if (pos.in_check) {
+    //         return -MATE_SCORE + ply;
+    //     }
+    //     return 0;
+    // }
 
-    // MovePicker move_picker(pos, moves, best_move, killer_1[ply], killer_2[ply]);
+    MovePicker move_picker(pos, best_move, killer_1[ply], killer_2[ply]);
 
-    orderMoves(pos, moves, best_move, killer_1[ply], killer_2[ply]);
+    // orderMoves(pos, moves, best_move, killer_1[ply], killer_2[ply]);
     
     int max_score = NEGATIVE_INFINITY;
 
@@ -310,7 +316,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
 
     // enable or disable futility pruning
-    if (depth == 1 && !pos.in_check && alpha < MATE_THRESHOLD && alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD) {
+    if (depth == 1 && !inCheck(pos) && alpha < MATE_THRESHOLD && alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD) {
         int s_eval = eval(pos);
         if (s_eval + FUTILITY_MARGIN < alpha) {
             can_fprune = true;
@@ -319,7 +325,12 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
 
     bool upper_bound = true;
-    for (const auto &move: moves) {
+    move16 move;
+    int num_moves = 0;
+    // for (const auto &move: moves){
+    while (move = move_picker.getNextMove()) {
+        num_moves++;
+        if (num_moves > 1) pv_search = false;
         // futility pruning
         if (can_fprune && !((move >> 12) & CAPTURE_MOVE)) continue;
         // set the following PV length to 0 in case the next node is a leaf node
@@ -355,6 +366,13 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
+    if (num_moves == 0) {
+        if (inCheck(pos)) {
+            return -MATE_SCORE + ply;
+        }
+        return 0;
+    }
+
     if (timesUp()) {
         return 0;
     }
@@ -379,11 +397,17 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
 
     int score = 0;
     move16 best_move = 0;
+    move16 tt_move = 0;
 
     if (enable_qsearch_tt && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
         tt_hits++;
         return score;
     }
+
+    tt_move = best_move;
+    assert(tt_move == best_move);
+
+    if (!(getMoveType(best_move) & CAPTURE_MOVE)) best_move = 0;
 
     if (pv_search) {
         if (ply < pv.length()) {
@@ -393,21 +417,21 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
-    MoveList moves;
+    // MoveList moves;
     
-    if (pos.side_to_move == WHITE) {
-        generateMoves<true>(moves, pos);
-    } else {
-        generateMoves<false>(moves, pos);
-    }
+    // if (pos.side_to_move == WHITE) {
+    //     generateMoves<true>(moves, pos);
+    // } else {
+    //     generateMoves<false>(moves, pos);
+    // }
 
-    // check for stalemate or checkmate
-    if (moves.size() == 0) {
-        if (pos.in_check) {
-            return -MATE_SCORE + ply;
-        }
-        return 0;
-    }
+    // // check for stalemate or checkmate
+    // if (moves.size() == 0) {
+    //     if (pos.in_check) {
+    //         return -MATE_SCORE + ply;
+    //     }
+    //     return 0;
+    // }
     
     int max_score = eval(pos);
     bool upper_bound = true;
@@ -419,13 +443,20 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         upper_bound = false;
     }
 
-    orderMoves(pos, moves, best_move, 0, 0);
-    // MovePicker move_picker(pos, moves, best_move, killer_1[ply], killer_2[ply]);
-    best_move = 0;
+    // orderMoves(pos, moves, best_move, 0, 0);
+    MovePicker move_picker(pos, best_move, 0, 0);
 
-    for (const auto &move: moves) {
+    int num_moves = 0;
+
+    move16 move;
+
+    // for (const auto &move: moves){
+    while (move = move_picker.getNextCapture()) {
+        num_moves++;
+        if (num_moves > 1) pv_search = false;
         if (!(getMoveType(move) & CAPTURE_MOVE)) {
-            continue;
+            // continue;
+            break;
         }
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
@@ -445,6 +476,14 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
             alpha = score;
             upper_bound = false;
         }
+    }
+
+    if (num_moves == 0 && !move_picker.getNextMove()) {
+    // if (num_moves == 0 && moves.size() == 0) {
+        if (inCheck(pos)) {
+            return -MATE_SCORE + ply;
+        }
+        return 0;
     }
 
     if (upper_bound) {

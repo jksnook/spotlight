@@ -2,7 +2,7 @@
 #include "utils.hpp"
 
 const int SEE_VALUES[6] = {100, 300, 300, 500, 900, 100000};
-const int SEE_MARGIN = 200;
+const int SEE_MARGIN = 50;
 const int SEE_MULTIPLIER = 1000;
 const int HISTORY_DIVISOR = 1;
 

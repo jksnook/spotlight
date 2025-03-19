@@ -19,6 +19,7 @@ struct Undo {
         int fifty_move;
         U64 z_key;
         int captured_piece;
+        bool in_check;
 };
 
 class Position {

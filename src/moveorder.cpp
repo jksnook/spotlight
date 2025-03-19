@@ -209,38 +209,3 @@ void orderMoves(Position &pos, MoveList &moves, move16 tt_move, move16 killer_1,
         moves[s - i - 1] = sorted_moves[i].second;
     }
 }
-
-MovePicker::MovePicker(Position &pos, MoveList &moves, move16 tt_move, move16 killer_1, move16 killer_2): move_index(0) {
-    scored_moves.resize(moves.size());
-    int s = moves.size();
-    list_size = s;
-    for (int i = 0; i < s; i++) {
-        if (moves[i] == tt_move) {
-            scored_moves[i] = {TT_MOVE_SCORE, moves[i]};
-        } else if (moves[i] == killer_1) {
-            scored_moves[i] = {KILLER_1_SCORE, moves[i]};
-        } else if (moves[i] == killer_2) {
-            scored_moves[i] = {KILLER_2_SCORE, moves[i]};
-        } else {
-            scored_moves[i] = {scoreMove(pos, moves[i]), moves[i]};
-        }
-    }
-}
-
-move16 MovePicker::getNextMove() {
-    if (move_index >= list_size) {
-        return 0;
-    }
-    int best_score = IGNORE_MOVE - 1;
-    int k;
-    for (int i = move_index; i < list_size; i++) {
-        if (scored_moves[i].first > best_score) {
-            k = i;
-        }
-    }
-    std::pair<int, move16> temp = scored_moves[k];
-    scored_moves[k] = scored_moves[move_index];
-    scored_moves[move_index] = temp;
-    move_index++;
-    return temp.second;
-}

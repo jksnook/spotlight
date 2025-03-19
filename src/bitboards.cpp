@@ -287,7 +287,7 @@ void iterateOccupancy(U64 &occupancy, U64 mask) {
     occupancy = (occupancy & ~((least_sig_zero - 1))) | (least_sig_zero);
 }
 
-std::mt19937_64 randomU64(42);
+std::mt19937_64 randomU64(50);
 
 // find a working magic number at the given index and populate the arrays
 // Currently just loads a saved number to save startup time
