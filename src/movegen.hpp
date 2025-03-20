@@ -8,7 +8,11 @@
 #include "bitboards.hpp"
 #include "move.hpp"
 
-bool isPlayable(move16 move, Position &pos);
+bool isPseudoLegal(move16 move, Position &pos);
+
+bool isLegal(move16 move, Position &pos);
+
+U64 getEnemyAttacks(Position &pos, int sq);
 
 void generateCaptures(MoveList &moves, Position &pos);
 

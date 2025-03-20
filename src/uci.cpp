@@ -145,5 +145,17 @@ void UCI::parseGo(std::istringstream& commands) {
         U64 num_nodes = stoi(token);
         move16 best_move = search.nodeSearch(position, 30, num_nodes).move;
         std::cout << "bestmove " << moveToString(best_move) << std::endl;
+    } else if (token == "lperft") {
+        token.clear();
+        commands >> token;
+        int depth = stoi(token);
+        auto start = std::chrono::high_resolution_clock::now();
+        U64 node_count = testLegalPerft(position, depth);
+        auto end = std::chrono::high_resolution_clock::now();
+
+        std::chrono::duration<double> duration = end - start;
+        U64 nps = node_count / duration.count();
+
+        std::cout << node_count << " nodes searched in " << duration.count() << "s " << nps << " nps\n";
     }
 }

@@ -31,6 +31,8 @@ const int KNIGHT_PROMOTION_CAPTURE = 0b1100;
 const int BISHOP_PROMOTION_CAPTURE = 0b1101;
 const int ROOK_PROMOTION_CAPTURE = 0b1110;
 const int QUEEN_PROMOTION_CAPTURE = 0b1111;
+const int UNUSED_MOVE_TYPE_1 = 0b0110;
+const int UNUSED_MOVE_TYPE_2 = 0b0111;
 
 const move16 NULL_MOVE = 0;
 
@@ -52,6 +54,10 @@ static std::map<int, std::string>  move_type_map = {
 };
 
 const int PROMOTION_FLAG = 0b1000;
+
+static inline int getCastleSide(int move_type) {
+    return move_type % 2;
+};
 
 static inline move16 encodeMove(int start, int end, int move_type) {
     return (start | (end << 6) | (move_type << 12));

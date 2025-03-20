@@ -2,6 +2,8 @@
 
 #include <string>
 #include <vector>
+#include "types.hpp"
+#include "position.hpp"
 
 const std::vector<std::string> TEST_POSITIONS = {
     "r1b1kb1r/2pp1ppp/1np1q3/p3P3/2P5/1P6/PB1NQPPP/R3KB1R b KQkq - 0 1",
@@ -33,6 +35,10 @@ void testPerft();
 
 void testSearch();
 
-void testPlayable();
-
 void testMovePicker();
+
+U64 testLegalPerft(Position &pos, int depth);
+
+U64 testLegalPerftHelper(Position &pos, int depth);
+
+void testMoveVerification();

@@ -4,9 +4,7 @@
 
 MovePicker::MovePicker(Position &_pos, move16 _tt_move, move16 _killer_1, move16 _killer_2): 
     stage(TT_MOVE), tt_move(_tt_move), killer_1(_killer_1), killer_2(_killer_2), capture_index(0), quiet_index(0),
-    generated_captures(false), generated_quiets(false), tt_played(false), pos(_pos) {
-    // pos = _pos;
-}
+    generated_captures(false), generated_quiets(false), tt_played(false), pos(_pos) {}
 
 move16 MovePicker::selectMove(int start, std::vector<std::pair<int, move16>> &scored_moves) {
     int best_score = IGNORE_MOVE - 1;
@@ -85,7 +83,7 @@ move16 MovePicker::getNextMove() {
             stage = CAPTURES;
         }
         tt_played = true;
-        if (tt_move) {
+        if (tt_move && isLegal(tt_move, pos)) {
             return tt_move;
         }
     }
@@ -97,12 +95,9 @@ move16 MovePicker::getNextMove() {
             generated_captures = true;
 
             scoreCaptures(captures, scored_captures, pos, tt_move, killer_1, killer_2);
-            // std::sort(scored_captures.begin(), scored_captures.end());
         }
         if (capture_index < scored_captures.size()) {
             move16 m = selectWinningCapture(capture_index, scored_captures);
-            // move16 m = scored_captures[scored_captures.size() - capture_index - 1].second;
-            // int score = scored_captures[scored_captures.size() - capture_index - 1].first;
             if (m) {
                 capture_index++;
                 return m;
@@ -121,17 +116,13 @@ move16 MovePicker::getNextMove() {
             generated_quiets = true;
 
             scoreQuiets(quiets, scored_quiets, pos, tt_move, killer_1, killer_2);
-            // std::sort(scored_quiets.begin(), scored_quiets.end());
         }
         if (quiet_index < scored_quiets.size()) {
-            // return scored_quiets[scored_quiets.size() - quiet_index++ - 1].second;
-
             move16 m = selectMove(quiet_index, scored_quiets);
             quiet_index++;
             return m;
         } else if (capture_index < scored_captures.size()) {
             move16 m = selectMove(capture_index, scored_captures);
-            // move16 m = scored_captures[scored_captures.size() - capture_index - 1].second;
             capture_index++;
             return m;
         } else {
@@ -145,7 +136,9 @@ move16 MovePicker::getNextMove() {
 move16 MovePicker::getNextCapture() {
     if (stage == TT_MOVE) {
         stage = CAPTURES;
-        if (tt_move && getMoveType(tt_move) & CAPTURE_MOVE) {
+        if (!tt_move) {
+            tt_played = true;
+        } else if (getMoveType(tt_move) & CAPTURE_MOVE && isLegal(tt_move, pos)) {
             tt_played = true;
             return tt_move;
         }
@@ -158,11 +151,9 @@ move16 MovePicker::getNextCapture() {
             generated_captures = true;
 
             scoreCaptures(captures, scored_captures, pos, tt_move, killer_1, killer_2);
-            // std::sort(scored_captures.begin(), scored_captures.end());
         }
         if (capture_index < scored_captures.size()) {
             move16 m = selectMove(capture_index, scored_captures);
-            // move16 m = scored_captures[scored_captures.size() - capture_index - 1].second;
             capture_index++;
             return m;
         } else {

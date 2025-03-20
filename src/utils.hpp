@@ -52,11 +52,11 @@ static std::map<int, char>  PIECE_TO_LETTER_MAP = {
 };
 
 inline constexpr int getPieceID(int piece_type, int side) {
-    if (side == WHITE) {
-        return piece_type;
-    } else {
-        return piece_type + 6;
-    }
+   return piece_type + side * 6;
+}
+
+inline constexpr int getPieceColor(int piece) {
+    return static_cast<int>(piece > WHITE_KING);
 }
 
 inline constexpr int getOccupancy(int side) {
@@ -125,3 +125,23 @@ const std::string SQUARE_NAMES[64] {
 };
 
 const std::string STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+const U64 CASTLE_SQUARES[2][2] = {
+    {WKC_SQUARES, BKC_SQUARES},
+    {WQC_SQUARES, BQC_SQUARES}
+};
+
+const U64 CASTLE_KING_SQUARES[2][2] = {
+    {WKC_KING_SQUARES, BKC_KING_SQUARES},
+    {WQC_KING_SQUARES, BQC_KING_SQUARES}
+};
+
+const U64 CASTLE_END[2][2] = {
+    {G1, G8},
+    {C1, C8}
+};
+
+const U64 CASTLE_ROOK_START[2][2] = {
+    {H1, H8},
+    {A1, A8}
+};

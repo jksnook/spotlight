@@ -13,11 +13,11 @@
 #include <chrono>
 
 void runTests() {
+    // testMoveVerification();
     testMovePicker();
-    testPlayable();
-    // testSee();
-    // // testPerft();
-    // testCheck();
+    testSee();
+    testPerft();
+    testCheck();
 
     std::cout << "Tests Passed" << std::endl;
 }
@@ -109,15 +109,6 @@ void testSearch() {
     std::cout << nodes << " nodes searched at " << nps << " nps " << q_nodes << " quiescence nodes\n";
 }
 
-void testPlayable() {
-    Position pos;
-
-    for (const auto &p: PERFT_POSITIONS) {
-        pos.readFen(p);
-        playablePerft(pos, 5);
-    }
-}
-
 void testMovePicker() {
     Position pos;
 
@@ -186,4 +177,55 @@ void testMovePicker() {
         }
 
     }
+}
+
+U64 testLegalPerftHelper(Position &pos, int depth) {
+    if (depth == 0) {
+        return 1;
+    }
+
+    U64 nodes = 0;
+
+    for(move16 move = 0; move < 0xffff; move++) {
+        if (isLegal(move, pos)) {
+            pos.makeMove(move);
+            nodes += testLegalPerftHelper(pos, depth - 1);
+            pos.unmakeMove();
+        }
+    }
+
+    return nodes;
+};
+
+
+// Iterate through (almost) all possible move encodings and play the legal ones
+U64 testLegalPerft(Position &pos, int depth) {
+    if (depth == 0) {
+        return 1;
+    }
+
+    U64 nodes = 0;
+
+    for(move16 move = 0; move < 0xffff; move++) {
+        if (isLegal(move, pos)) {
+            pos.makeMove(move);
+            int nodes_this_move = testLegalPerftHelper(pos, depth - 1);
+            pos.unmakeMove();
+            nodes += nodes_this_move;
+            std::cout << moveToString(move) << ": " << nodes_this_move << std::endl;
+            // std::cout << moveToString(move) << " " << move_type_map[getMoveType(move)] << ": " << nodes_this_move << std::endl;
+        }
+    }
+
+    return nodes;
+};
+
+
+void testMoveVerification() {
+    Position pos;
+
+    pos.readFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
+    int n = testLegalPerft(pos, 1);
+    std::cout << n << " nodes\n";
+    assert(n == 48);
 }
