@@ -62,9 +62,9 @@ void playGames(int num_games, int id) {
             MoveList moves;
 
             if (pos.side_to_move == WHITE) {
-                generateMoves<true>(moves, pos);
+                generateMoves<WHITE, LEGAL>(moves, pos);
                 if (moves.size() == 0) {
-                    if (inCheckSided<true>(pos)) {
+                    if (inCheckSided<WHITE>(pos)) {
                         std::cout << "Black wins" << std::endl;
                         result = "0";
                     } else {
@@ -74,9 +74,9 @@ void playGames(int num_games, int id) {
                     break;
                 }
             } else {
-                generateMoves<false>(moves, pos);
+                generateMoves<BLACK, LEGAL>(moves, pos);
                 if (moves.size() == 0) {
-                    if (inCheckSided<false>(pos)) {
+                    if (inCheckSided<BLACK>(pos)) {
                         std::cout << "White wins" << std::endl;
                         result = "1";
                     } else {
@@ -106,9 +106,9 @@ void playGames(int num_games, int id) {
             MoveList moves;
 
             if (pos.side_to_move == WHITE) {
-                generateMoves<true>(moves, pos);
+                generateMoves<WHITE, LEGAL>(moves, pos);
                 if (moves.size() == 0) {
-                    if (inCheckSided<true>(pos)) {
+                    if (inCheckSided<WHITE>(pos)) {
                         std::cout << "Black wins" << std::endl;
                         result = "0";
                     } else {
@@ -118,9 +118,9 @@ void playGames(int num_games, int id) {
                     break;
                 }
             } else {
-                generateMoves<false>(moves, pos);
+                generateMoves<BLACK, LEGAL>(moves, pos);
                 if (moves.size() == 0) {
-                    if (inCheckSided<false>(pos)) {
+                    if (inCheckSided<BLACK>(pos)) {
                         std::cout << "White wins" << std::endl;
                         result = "1";
                     } else {

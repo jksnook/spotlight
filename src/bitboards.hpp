@@ -323,9 +323,9 @@ static inline U64 getMagicRookAttack(int index, U64 occupancy) {
   return rook_magic_attacks[index][((occupancy & rook_magic_mask[index]) * rook_magic_numbers[index]) >> (64 - rook_relevant_bit_count[index])];
 }
 
-template <bool white_to_move>
+template <Color side>
 U64 pawnAttacksFromBitboard(U64 bitboard) {
-	if constexpr(white_to_move) {
+	if constexpr(side == WHITE) {
     	return (bitboard << 7 & NOT_H_FILE) | (bitboard << 9 & NOT_A_FILE);
 	} else {
 		return (bitboard >> 7 & NOT_A_FILE) | (bitboard >> 9 & NOT_H_FILE);

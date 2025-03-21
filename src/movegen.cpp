@@ -3,17 +3,17 @@
 
 void generateCaptures(MoveList &moves, Position &pos) {
     if (pos.side_to_move == WHITE) {
-        generateCapturesSided<true>(moves, pos);
+        generateMoves<WHITE, CAPTURES>(moves, pos);
     } else {
-        generateCapturesSided<false>(moves, pos);
+        generateMoves<BLACK, CAPTURES>(moves, pos);
     }
 }
 
 void generateQuietMoves(MoveList &moves, Position &pos) {
     if (pos.side_to_move == WHITE) {
-        generateQuietMovesSided<true>(moves, pos);
+        generateMoves<WHITE, QUIET>(moves, pos);
     } else {
-        generateQuietMovesSided<false>(moves, pos);
+        generateMoves<BLACK, QUIET>(moves, pos);
     }
 }
 
@@ -151,17 +151,17 @@ bool isLegal(move16 move, Position &pos) {
 
 bool inCheck(Position &pos) {
     if (pos.side_to_move == WHITE) {
-        return inCheckSided<true>(pos);
+        return inCheckSided<WHITE>(pos);
     } else {
-        return inCheckSided<false>(pos);
+        return inCheckSided<BLACK>(pos);
     }
 }
 
 bool sideToPlayInCheck(Position &pos) {
     if (pos.side_to_move == BLACK) {
-        return inCheckSided<true>(pos);
+        return inCheckSided<WHITE>(pos);
     } else {
-        return inCheckSided<false>(pos);
+        return inCheckSided<BLACK>(pos);
     }
 }
 
@@ -174,9 +174,13 @@ U64 perftHelper(Position &pos, int depth) {
     MoveList moves;
 
     if (pos.side_to_move == WHITE) {
-        generateLegalMoves<true>(moves, pos);
+        // generateMoves<WHITE, LEGAL>(moves, pos);
+        generateMoves<WHITE, CAPTURES>(moves, pos);
+        generateMoves<WHITE, QUIET>(moves, pos);
     } else {
-        generateLegalMoves<false>(moves, pos);
+        // generateMoves<BLACK, LEGAL>(moves, pos);
+        generateMoves<BLACK, CAPTURES>(moves, pos);
+        generateMoves<BLACK, QUIET>(moves, pos);
     }
 
     if (depth == 1) {
@@ -201,9 +205,13 @@ U64 perft(Position &pos, int depth) {
     MoveList moves;
 
     if (pos.side_to_move == WHITE) {
-        generateLegalMoves<true>(moves, pos);
+        // generateMoves<WHITE, LEGAL>(moves, pos);
+        generateMoves<WHITE, CAPTURES>(moves, pos);
+        generateMoves<WHITE, QUIET>(moves, pos);
     } else {
-        generateLegalMoves<false>(moves, pos);
+        // generateMoves<BLACK, LEGAL>(moves, pos);
+        generateMoves<BLACK, CAPTURES>(moves, pos);
+        generateMoves<BLACK, QUIET>(moves, pos);
     }
 
     for(auto &move: moves) {

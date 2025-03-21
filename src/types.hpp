@@ -5,4 +5,6 @@
 #define U64 uint64_t
 #define move16 uint16_t
 
-enum GenType {TT_MOVE, CAPTURES, QUIET, END_MOVEGEN};
+enum GenType {TT_MOVE, CAPTURES, QUIET, LEGAL, END_MOVEGEN};
+
+enum Color: int {WHITE, BLACK};

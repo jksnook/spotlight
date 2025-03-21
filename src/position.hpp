@@ -10,6 +10,18 @@
 
 const int CONTINUATION_HISTORY_MAX_PLY = 1;
 
+class MoveGenData {
+    public:
+        MoveGenData();
+
+        bool generated_checkers;
+        U64 checkers;
+        bool generated_enemy_attacks;
+        U64 enemy_attacks;
+        bool generated_pinned_pieces;
+        U64 pinned_pieces;
+};
+
 struct Undo {
     public:
         move16 move;
@@ -20,6 +32,7 @@ struct Undo {
         U64 z_key;
         int captured_piece;
         bool in_check;
+        MoveGenData movegen_data;
 };
 
 class Position {
@@ -27,13 +40,15 @@ class Position {
         Position();
         U64 bitboards[15];
         int castle_rights;
-        int side_to_move;
+        Color side_to_move;
         int en_passant;
         int fifty_move;
         int half_moves;
         int game_half_moves;
         U64 z_key;
         bool in_check;
+
+        MoveGenData movegen_data;
 
         std::vector<Undo> history;
 

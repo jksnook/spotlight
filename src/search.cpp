@@ -107,16 +107,12 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
 
     // Generate moves. This is only done once for the root node.
     if (pos.side_to_move == WHITE) {
-        generateMoves<true>(moves, pos);
+        generateMoves<WHITE, LEGAL>(moves, pos);
     } else {
-        generateMoves<false>(moves, pos);
+        generateMoves<BLACK, LEGAL>(moves, pos);
     }
 
-
-
     move16 best_move = 0;
-    // int score = 0;
-    // tt.getScore(pos.z_key, 0, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY, score, best_move);
     int max_score = NEGATIVE_INFINITY;
 
     // Perform search at increasing depths
@@ -210,7 +206,6 @@ SearchResult Search::rootSearch(Position &pos, MoveList &moves, int depth, int a
         if (score > result.score) {
             result.score = score;
             result.move = move;
-            // pv.updatePV(0, move);
             if (score > alpha) {
                 alpha = score;
                 if (score < beta) {
@@ -230,13 +225,13 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         return 0;
     } else if (depth == 0) {
         if (pos.side_to_move == WHITE) {
-            if (inCheckSided<true>(pos))  {
+            if (inCheckSided<WHITE>(pos))  {
                 depth++;
             } else {
                 return qSearch(pos, depth, ply, alpha, beta);
             } 
         } else {
-            if (inCheckSided<false>(pos))  {
+            if (inCheckSided<BLACK>(pos))  {
                 depth++;
             } else {
                 return qSearch(pos, depth, ply, alpha, beta);
@@ -288,25 +283,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
-    // MoveList moves;
-
-    // if (pos.side_to_move == WHITE) {
-    //     generateMoves<true>(moves, pos);
-    // } else {
-    //     generateMoves<false>(moves, pos);
-    // }
-
-    // check for stalemate or checkmate
-    // if (moves.size() == 0) {
-    //     if (pos.in_check) {
-    //         return -MATE_SCORE + ply;
-    //     }
-    //     return 0;
-    // }
-
     MovePicker move_picker(pos, best_move, killer_1[ply], killer_2[ply]);
-
-    // orderMoves(pos, moves, best_move, killer_1[ply], killer_2[ply]);
     
     int max_score = NEGATIVE_INFINITY;
 
@@ -416,22 +393,6 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
             pv_search = false;
         }
     }
-
-    // MoveList moves;
-    
-    // if (pos.side_to_move == WHITE) {
-    //     generateMoves<true>(moves, pos);
-    // } else {
-    //     generateMoves<false>(moves, pos);
-    // }
-
-    // // check for stalemate or checkmate
-    // if (moves.size() == 0) {
-    //     if (pos.in_check) {
-    //         return -MATE_SCORE + ply;
-    //     }
-    //     return 0;
-    // }
     
     int max_score = eval(pos);
     bool upper_bound = true;
@@ -443,14 +404,12 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         upper_bound = false;
     }
 
-    // orderMoves(pos, moves, best_move, 0, 0);
     MovePicker move_picker(pos, best_move, 0, 0);
 
     int num_moves = 0;
 
     move16 move;
 
-    // for (const auto &move: moves){
     while (move = move_picker.getNextCapture()) {
         num_moves++;
         if (num_moves > 1) pv_search = false;
@@ -479,7 +438,6 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     if (num_moves == 0 && !move_picker.getNextMove()) {
-    // if (num_moves == 0 && moves.size() == 0) {
         if (inCheck(pos)) {
             return -MATE_SCORE + ply;
         }

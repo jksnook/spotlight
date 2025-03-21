@@ -8,8 +8,8 @@
 
 enum { NORTHWEST, NORTH, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST };
 
-const int WHITE = 0;
-const int BLACK = 1;
+// const int WHITE = 0;
+// const int BLACK = 1;
 const int NUM_SQUARES = 64;
 const int MG = 0;
 const int EG = 1;
@@ -50,6 +50,10 @@ static std::map<int, char>  PIECE_TO_LETTER_MAP = {
     {BLACK_QUEEN, 'q'},
     {BLACK_KING, 'k'}
 };
+
+inline constexpr Color getOtherSide(Color side) {
+    return static_cast<Color>(static_cast<int>(side) ^ 1);
+}
 
 inline constexpr int getPieceID(int piece_type, int side) {
    return piece_type + side * 6;

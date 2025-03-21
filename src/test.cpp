@@ -136,9 +136,9 @@ void testMovePicker() {
         MoveList moves;
 
         if (pos.side_to_move == WHITE) {
-            generateMoves<true>(moves, pos);
+            generateMoves<WHITE, LEGAL>(moves, pos);
         } else {
-            generateMoves<false>(moves, pos);
+            generateMoves<BLACK, LEGAL>(moves, pos);
         }
 
         MoveList quiets;

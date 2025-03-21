@@ -9,6 +9,11 @@
 #include <sstream>
 #include <algorithm>
 
+MoveGenData::MoveGenData(): generated_checkers(false), checkers(0ULL), generated_enemy_attacks(false), 
+enemy_attacks(0ULL), generated_pinned_pieces(false), pinned_pieces(0ULL) {
+
+}
+
 
 void Position::readFen(std::string fen) {
     //resetting bitboards to zero
@@ -19,9 +24,11 @@ void Position::readFen(std::string fen) {
         i = NO_PIECE;
     }
 
+    movegen_data = MoveGenData();
+
     z_key = 0ULL;
     half_moves = 0;
-    side_to_move = 0;
+    side_to_move = WHITE;
     en_passant = 0;
     fifty_move = 0;
     in_check = false;
@@ -263,6 +270,8 @@ void Position::makeMove(move16 move) {
     assert(piece != NO_PIECE);
 
     Undo undo;
+    undo.movegen_data = movegen_data;
+    movegen_data = MoveGenData();
     undo.move = move;
     undo.piece_moved = piece;
     undo.en_passant = en_passant;
@@ -386,15 +395,17 @@ void Position::makeMove(move16 move) {
 
     history.push_back(undo);
     in_check = false;
-    side_to_move ^= 1;
+    side_to_move = getOtherSide(side_to_move);
     z_key = generateZobrist();
     half_moves++;
 }
 
 void Position::unmakeMove() {
-    side_to_move ^= 1;
+    side_to_move = getOtherSide(side_to_move);
     Undo undo = history.back();
     move16 move = undo.move;
+
+    movegen_data = undo.movegen_data;
 
     int start_square = getFromSquare(move);
     int end_square = getToSquare(move);
@@ -553,7 +564,7 @@ void Position::makeNullMove() {
     undo.z_key = z_key;
     en_passant = 0;
 
-    side_to_move ^= 1;
+    side_to_move = getOtherSide(side_to_move);
     z_key = generateZobrist();
     half_moves++;
     fifty_move++;
@@ -561,7 +572,7 @@ void Position::makeNullMove() {
 }
 
 void Position::unmakeNullMove() {
-    side_to_move ^= 1;
+    side_to_move = getOtherSide(side_to_move);
     Undo undo = history.back();
 
     en_passant = undo.en_passant;
