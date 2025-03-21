@@ -4,7 +4,7 @@
 #include <vector>
 #include <algorithm>
 
-U64 getAllAttacks(Position &pos, int sq) {
+U64 getAllAttackers(Position &pos, int sq) {
     U64 attackers = 0ULL;
 
     attackers |= knight_moves[sq] & (pos.bitboards[WHITE_KNIGHT] | pos.bitboards[BLACK_KNIGHT]);
@@ -41,7 +41,7 @@ int see(Position &pos, move16 move) {
     int to_sq = getToSquare(move);
     int from_sq = getFromSquare(move);
     int move_type = getMoveType(move);
-    U64 attackers_bb = getAllAttacks(pos, to_sq);
+    U64 attackers_bb = getAllAttackers(pos, to_sq);
     U64 remaining_occupancy = pos.bitboards[OCCUPANCY];
     int capture_scores[32];
     int attacking_piece;

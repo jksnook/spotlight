@@ -556,7 +556,3 @@ U64 perftHelper(Position &pos, int depth);
 
 U64 perft(Position &pos, int depth);
 
-U64 playablePerftHelper(Position &pos, int depth);
-
-// perft function for testing the isPlayable function
-U64 playablePerft(Position &pos, int depth);

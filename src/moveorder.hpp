@@ -6,7 +6,7 @@
 
 #include <memory>
 
-U64 getAllAttacks(Position &pos, int sq);
+U64 getAllAttackers(Position &pos, int sq);
 
 int see(Position &pos, move16 move);
 
