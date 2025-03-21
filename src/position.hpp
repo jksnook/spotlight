@@ -3,6 +3,7 @@
 #include "types.hpp"
 #include "utils.hpp"
 #include "move.hpp"
+#include "zobrist.hpp"
 
 #include <vector>
 #include <string>
@@ -64,8 +65,11 @@ class Position {
         U64 generateZobrist();
         bool isTripleRepetition();
 
+        template <bool update_zobrist>
         void movePiece(int start, int end, int piece_type);
+        template <bool update_zobrist>
         void removePiece(int square, int piece_type);
+        template <bool update_zobrist>
         void placePiece(int square, int piece_type);
 
         void makeMove(move16 move);
@@ -81,3 +85,42 @@ class Position {
     private:
         int board[NUM_SQUARES];
 };
+
+template <bool update_zobrist>
+void Position::movePiece(int start, int end, int piece_type) {
+    if constexpr(update_zobrist) {
+        z_key ^= piece_keys[piece_type][start];
+        z_key ^= piece_keys[piece_type][end];
+    }
+    bitboards[piece_type] ^= setBit(start);
+    bitboards[piece_type] ^= setBit(end);
+    bitboards[OCCUPANCY] ^= setBit(start);
+    bitboards[OCCUPANCY] ^= setBit(end);
+
+    bitboards[WHITE_OCCUPANCY + side_to_move] ^= setBit(start);
+    bitboards[WHITE_OCCUPANCY + side_to_move] ^= setBit(end);
+
+    board[start] = NO_PIECE;
+    board[end] = piece_type;
+}
+
+template <bool update_zobrist>
+void Position::removePiece(int square, int piece_type) {
+    if constexpr(update_zobrist) z_key ^= piece_keys[piece_type][square];
+    bitboards[piece_type] ^= setBit(square);
+    bitboards[WHITE_OCCUPANCY] &= ~setBit(square);
+    bitboards[BLACK_OCCUPANCY] &= ~setBit(square);
+    bitboards[OCCUPANCY] &= ~setBit(square);
+
+    board[square] = NO_PIECE;
+}
+
+template <bool update_zobrist>
+void Position::placePiece(int square, int piece_type) {
+    if constexpr(update_zobrist) z_key ^= piece_keys[piece_type][square];
+    bitboards[piece_type] ^= setBit(square);
+    bitboards[WHITE_OCCUPANCY + piece_type / 6] ^= setBit(square);
+    bitboards[OCCUPANCY] ^= setBit(square);
+
+    board[square] = piece_type;
+}

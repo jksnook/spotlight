@@ -38,7 +38,6 @@ void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, int no
     }
 
     *old_entry = TTEntry(z_key, depth, best_move, score, node_type, half_moves);
-    //hash_table[z_key % NUM_ENTRIES] = TTEntry(z_key, depth, best_move, score, node_type, half_moves);
 }
 
 TTEntry* TT::probe(U64 z_key) {
@@ -47,8 +46,6 @@ TTEntry* TT::probe(U64 z_key) {
 
 bool TT::getScore(U64 z_key, int depth, int ply, int alpha, int beta, int &score, move16 &best_move) {
     TTEntry* entry = probe(z_key);
-
-    // assert(z_key != 17702964234137310127ULL || ply != 4 || alpha != 821);
 
     if (entry->z_key != z_key || entry->node_type == 0) {
         return false;

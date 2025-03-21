@@ -80,8 +80,15 @@ void generateMoves(MoveList &moves, Position &pos) {
     constexpr const int enemy_occupancy = getOccupancy(enemy_side);
 
 
-    // find all squares attacked by the opponent 
-    U64 enemy_attacks = getAllEnemyAttacks<side>(pos);
+    // find all squares attacked by the opponent
+    U64 enemy_attacks;
+    if (pos.movegen_data.generated_enemy_attacks) {
+        enemy_attacks = pos.movegen_data.enemy_attacks;
+    } else {
+        enemy_attacks = getAllEnemyAttacks<side>(pos);
+        pos.movegen_data.generated_enemy_attacks = true;
+        pos.movegen_data.enemy_attacks = enemy_attacks;
+    }
 
     // find the checks on the king and create attack and block masks
     int king_index = bitScanForward(pos.bitboards[friendly_king]);
