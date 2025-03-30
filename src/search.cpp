@@ -297,6 +297,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
+    // enable or disable late move reductions
+    bool allow_lmr = depth > 1 && !inCheck(pos);
+
 
     bool upper_bound = true;
     move16 move;
@@ -310,7 +313,12 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         // set the following PV length to 0 in case the next node is a leaf node
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
-        if (pv_node && num_moves > 1) {
+        if (allow_lmr && num_moves > 3) {
+            score = -negaMax(pos, depth - 2, ply + 1, -alpha - 1, -alpha);
+            if (score > alpha) {
+                score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
+            }
+        } else if (pv_node && num_moves > 1) {
             score = -negaMax(pos, depth - 1, ply + 1, -alpha - 1, -alpha);
             if (score > alpha) {
                 score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
