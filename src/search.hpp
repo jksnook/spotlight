@@ -13,15 +13,16 @@
 const int NEGATIVE_INFINITY = (1 << 31) + 1;
 const int POSITIVE_INFINITY = ~0 ^ NEGATIVE_INFINITY;
 
+const int WINDOW_MIN_DEPTH = 3;
 const int WINDOW_SIZE = 30;
 const int WINDOW_INCREMENT = 60;
-const int NMP_REDUCTION = 2;
+const int NMP_BASE_REDUCTION = 2;
 const int FUTILITY_MARGIN = 50;
 
 class PVTable {
     public:
         std::array<std::array<move16, MAX_DEPTH>, MAX_DEPTH> table;
-        std::array<move16, MAX_DEPTH> pv_length;
+        std::array<int, MAX_DEPTH> pv_length;
         void updatePV(int ply, move16 first_move);
         void updateFromTT(int ply, move16 first_move);
         void clearPV();
@@ -86,5 +87,7 @@ private:
 
     TT tt;
     PVTable pv;
+    std::array<move16, MAX_DEPTH> old_pv;
+    int old_pv_length;
 
 };

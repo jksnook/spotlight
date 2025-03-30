@@ -119,10 +119,14 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
     bool research = false;
     for (int depth = 0; depth < max_depth; depth++) {
         std::chrono::steady_clock::time_point this_depth_start_time = std::chrono::steady_clock::now();
+        move16 pv_move = 0;
         if (depth == 0) {
             pv_search = false;
         } else {
             pv_search = true;
+            old_pv = pv.table[0];
+            old_pv_length = pv.pv_length[0];
+            pv_move = old_pv[0];
         }
         nodes_searched = 1;
         int beta;
@@ -133,7 +137,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
 
         // if this is not a re-search we order moves and set alpha and beta to their min and max values
         if (!research) {
-            if (depth > 3) {
+            if (depth > WINDOW_MIN_DEPTH) {
                 // set aspiration window
                 beta = max_score + WINDOW_SIZE;
                 alpha = max_score - WINDOW_SIZE;
@@ -224,21 +228,12 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     } else if (pos.isTripleRepetition()) {
         return 0;
     } else if (depth == 0) {
-        if (pos.side_to_move == WHITE) {
-            if (inCheckSided<WHITE>(pos))  {
-                depth++;
-            } else {
-                return qSearch(pos, depth, ply, alpha, beta);
-            } 
+        if (inCheck(pos))  {
+            depth++;
         } else {
-            if (inCheckSided<BLACK>(pos))  {
-                depth++;
-            } else {
-                return qSearch(pos, depth, ply, alpha, beta);
-            } 
-        }
+            return qSearch(pos, depth, ply, alpha, beta);
+        } 
     }
-
 
     nodes_searched++;
 
@@ -265,11 +260,13 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
+    const bool pv_node = pv_search;
+
     // null move pruning
-    if (depth >= std::max(NMP_REDUCTION, 3) && allow_nmp && !pv_search && !inCheck(pos)) {
+    if (depth >= std::max(NMP_BASE_REDUCTION, 3) && allow_nmp && !pv_search && !inCheck(pos)) {
         allow_nmp = false;
         int reduction;
-        reduction = NMP_REDUCTION + depth / (NMP_REDUCTION + 1);
+        reduction = NMP_BASE_REDUCTION + depth / (NMP_BASE_REDUCTION + 1);
         pos.makeNullMove();
         int nmp = -negaMax(pos, depth - reduction, ply + 1, -beta, -beta + 1);
         pos.unmakeNullMove();
@@ -313,7 +310,14 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         // set the following PV length to 0 in case the next node is a leaf node
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
-        score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
+        if (pv_node && num_moves > 1) {
+            score = -negaMax(pos, depth - 1, ply + 1, -alpha - 1, -alpha);
+            if (score > alpha) {
+                score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
+            }
+        } else {
+            score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
+        }
         pos.unmakeMove();
         if (score > max_score) {
             if (timesUp()) {
@@ -393,6 +397,8 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
             pv_search = false;
         }
     }
+
+    const bool pv_node = pv_search;
     
     int max_score = eval(pos);
     bool upper_bound = true;

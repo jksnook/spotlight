@@ -6,7 +6,7 @@
 #include <map>
 #include <string>
 
-enum { NORTHWEST, NORTH, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST };
+enum : int { NORTHWEST, NORTH, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST };
 
 // const int WHITE = 0;
 // const int BLACK = 1;
@@ -14,11 +14,11 @@ const int NUM_SQUARES = 64;
 const int MG = 0;
 const int EG = 1;
 
-enum {WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
+enum : int {WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
       BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
       WHITE_OCCUPANCY, BLACK_OCCUPANCY, OCCUPANCY, NO_PIECE};
 
-enum {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
+enum : int {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
 static std::map<char, int>  LETTER_PIECE_MAP = {
     {'P', WHITE_PAWN},
@@ -95,7 +95,7 @@ static std::map<char, int>  CASTLE_RIGHTS_MAP = {
 };
 
 
-enum {
+enum : int {
     a1, b1, c1, d1, e1, f1, g1, h1,
     a2, b2, c2, d2, e2, f2, g2, h2,
     a3, b3, c3, d3, e3, f3, g3, h3,
@@ -106,7 +106,7 @@ enum {
     a8, b8, c8, d8, e8, f8, g8, h8,
 };
 
-enum {
+enum : int {
     A1, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
     A3, B3, C3, D3, E3, F3, G3, H3,
