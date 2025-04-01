@@ -3,17 +3,25 @@
 
 void generateCaptures(MoveList &moves, Position &pos) {
     if (pos.side_to_move == WHITE) {
-        generateMoves<WHITE, CAPTURES>(moves, pos);
+        generateMovesSided<WHITE, CAPTURES>(moves, pos);
     } else {
-        generateMoves<BLACK, CAPTURES>(moves, pos);
+        generateMovesSided<BLACK, CAPTURES>(moves, pos);
     }
 }
 
 void generateQuietMoves(MoveList &moves, Position &pos) {
     if (pos.side_to_move == WHITE) {
-        generateMoves<WHITE, QUIET>(moves, pos);
+        generateMovesSided<WHITE, QUIET>(moves, pos);
     } else {
-        generateMoves<BLACK, QUIET>(moves, pos);
+        generateMovesSided<BLACK, QUIET>(moves, pos);
+    }
+}
+
+void generateMoves(MoveList &moves, Position &pos) {
+    if (pos.side_to_move == WHITE) {
+        generateMovesSided<WHITE, LEGAL>(moves, pos);
+    } else {
+        generateMovesSided<BLACK, LEGAL>(moves, pos);
     }
 }
 
@@ -175,12 +183,12 @@ U64 perftHelper(Position &pos, int depth) {
 
     if (pos.side_to_move == WHITE) {
         // generateMoves<WHITE, LEGAL>(moves, pos);
-        generateMoves<WHITE, CAPTURES>(moves, pos);
-        generateMoves<WHITE, QUIET>(moves, pos);
+        generateMovesSided<WHITE, CAPTURES>(moves, pos);
+        generateMovesSided<WHITE, QUIET>(moves, pos);
     } else {
         // generateMoves<BLACK, LEGAL>(moves, pos);
-        generateMoves<BLACK, CAPTURES>(moves, pos);
-        generateMoves<BLACK, QUIET>(moves, pos);
+        generateMovesSided<BLACK, CAPTURES>(moves, pos);
+        generateMovesSided<BLACK, QUIET>(moves, pos);
     }
 
     if (depth == 1) {
@@ -206,12 +214,12 @@ U64 perft(Position &pos, int depth) {
 
     if (pos.side_to_move == WHITE) {
         // generateMoves<WHITE, LEGAL>(moves, pos);
-        generateMoves<WHITE, CAPTURES>(moves, pos);
-        generateMoves<WHITE, QUIET>(moves, pos);
+        generateMovesSided<WHITE, CAPTURES>(moves, pos);
+        generateMovesSided<WHITE, QUIET>(moves, pos);
     } else {
         // generateMoves<BLACK, LEGAL>(moves, pos);
-        generateMoves<BLACK, CAPTURES>(moves, pos);
-        generateMoves<BLACK, QUIET>(moves, pos);
+        generateMovesSided<BLACK, CAPTURES>(moves, pos);
+        generateMovesSided<BLACK, QUIET>(moves, pos);
     }
 
     for(auto &move: moves) {

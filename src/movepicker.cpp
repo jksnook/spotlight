@@ -86,6 +86,8 @@ move16 MovePicker::getNextMove() {
         if (tt_move && isLegal(tt_move, pos)) {
             return tt_move;
         }
+
+        if (tt_move) assert(false);
     }
 
     if (stage == CAPTURES) {
@@ -142,6 +144,8 @@ move16 MovePicker::getNextCapture() {
             tt_played = true;
             return tt_move;
         }
+
+        if (tt_move && getMoveType(tt_move) & CAPTURE_MOVE) assert(false);
     }
 
     if (stage == CAPTURES) {

@@ -118,7 +118,7 @@ void testSearch() {
         pos.clearHistory();
         search.clearTT();
         pos.readFen(fen);
-        SearchResult r = search.timeSearch(pos, 9, 100000);
+        SearchResult r = search.timeSearch(pos, 10, 100000);
         nodes += search.total_nodes;
         q_nodes += search.q_nodes;
     }
@@ -159,9 +159,9 @@ void testMovePicker() {
         MoveList moves;
 
         if (pos.side_to_move == WHITE) {
-            generateMoves<WHITE, LEGAL>(moves, pos);
+            generateMovesSided<WHITE, LEGAL>(moves, pos);
         } else {
-            generateMoves<BLACK, LEGAL>(moves, pos);
+            generateMovesSided<BLACK, LEGAL>(moves, pos);
         }
 
         MoveList quiets;

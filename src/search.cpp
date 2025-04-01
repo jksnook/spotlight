@@ -72,7 +72,7 @@ bool Search::timesUp() {
 
 // Output the search info in the UCI format
 void Search::outputInfo(int depth, move16 best_move, int score, int nps) {
-    std::cout << "info depth " << depth + 1 << " nodes " << nodes_searched;
+    std::cout << "info depth " << depth << " nodes " << nodes_searched;
     std::cout << " nps "<< nps << " bestmove " << moveToString(best_move) << " pv ";
     for (const auto &m: pv) {
         std::cout << moveToString(m) << " ";
@@ -101,41 +101,32 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
     q_nodes = 0;
     enable_qsearch_tt = true;
     tt_hits = 0;
-    MoveList moves;
     SearchResult result;
     pv.clearPV();
-
-    // Generate moves. This is only done once for the root node.
-    if (pos.side_to_move == WHITE) {
-        generateMoves<WHITE, LEGAL>(moves, pos);
-    } else {
-        generateMoves<BLACK, LEGAL>(moves, pos);
-    }
-
     move16 best_move = 0;
     int max_score = NEGATIVE_INFINITY;
 
     // Perform search at increasing depths
     bool research = false;
-    for (int depth = 0; depth < max_depth; depth++) {
+    for (int depth = 1; depth <= max_depth; depth++) {
         std::chrono::steady_clock::time_point this_depth_start_time = std::chrono::steady_clock::now();
-        move16 pv_move = 0;
         if (depth == 0) {
             pv_search = false;
         } else {
             pv_search = true;
-            old_pv = pv.table[0];
-            old_pv_length = pv.pv_length[0];
-            pv_move = old_pv[0];
+            if (!research) {
+                old_pv = pv.table[0];
+                old_pv_length = pv.pv_length[0];
+            }
         }
-        nodes_searched = 1;
+        nodes_searched = 0;
         int beta;
         int alpha;
         int best_score_this_search_depth = NEGATIVE_INFINITY;
         move16 best_move_this_search_depth = 0;
         allow_nmp = true;
 
-        // if this is not a re-search we order moves and set alpha and beta to their min and max values
+        // if this is not a re-search we set alpha and beta to their min and max values
         if (!research) {
             if (depth > WINDOW_MIN_DEPTH) {
                 // set aspiration window
@@ -147,33 +138,31 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
             }
         }
 
-        orderMoves(pos, moves, pv.getPVMove(0), 0, 0);
-
-        // Search from the root node using our pre-generated move list
-        SearchResult result_this_depth = rootSearch(pos, moves, depth, alpha, beta);
-        best_score_this_search_depth = result_this_depth.score;
-        best_move_this_search_depth = result_this_depth.move;
+        // Search from the root node
+        best_score_this_search_depth = negaMax(pos, depth, 0, alpha, beta);
+        best_move_this_search_depth = pv.getPVMove(0);
 
         std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - this_depth_start_time;
         U64 nps = nodes_searched / time_elapsed.count();
         total_nodes += nodes_searched;
 
         if (timesUp()) {
-            if (best_score_this_search_depth > max_score) {
-                max_score = best_score_this_search_depth;
+            if (best_move_this_search_depth != best_move) {
                 best_move = best_move_this_search_depth;
+                if (make_output) outputInfo(depth, best_move, max_score, nps);
             }
-            if (make_output) outputInfo(depth, best_move, max_score, nps);
             break;
         }
 
         // check to see if our score fell outside the aspiration window. Re-search if needed.
         if (best_score_this_search_depth <= alpha) {
+            assert(alpha != NEGATIVE_INFINITY);
             alpha = NEGATIVE_INFINITY;
             research = true;
             depth--;
             continue;
         } else if (best_score_this_search_depth >= beta) {
+            assert(beta != POSITIVE_INFINITY);
             beta = POSITIVE_INFINITY;
             research = true;
             depth--;
@@ -193,42 +182,15 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
     return result;
 }
 
-// Function that gets called to search from the root node
-SearchResult Search::rootSearch(Position &pos, MoveList &moves, int depth, int alpha, int beta) {
-    SearchResult result;
-    result.score = NEGATIVE_INFINITY;
-    result.move = 0;
-    for (const auto &move: moves) {
-        pv.zeroLength(1);
-        pos.makeMove(move);
-        int score = -negaMax(pos, depth, 1, -beta, -alpha);
-        pos.unmakeMove();
-        pv_search = false;
-        if (timesUp()) {
-            return result;
-        }
-        if (score > result.score) {
-            result.score = score;
-            result.move = move;
-            if (score > alpha) {
-                alpha = score;
-                if (score < beta) {
-                    pv.updatePV(0, move);
-                }
-            }
-        }
-    }
-
-    return result;
-}
-
 int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
+    const bool is_root = ply == 0;
+
     if (timesUp()) {
         return 0;
     } else if (pos.isTripleRepetition()) {
         return 0;
     } else if (depth == 0) {
-        if (inCheck(pos))  {
+        if (!is_root && inCheck(pos))  {
             depth++;
         } else {
             return qSearch(pos, depth, ply, alpha, beta);
@@ -248,13 +210,10 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         return score;
     }
 
-    tt_move = best_move;
-    assert(tt_move == best_move);
-
     // If we are searching the previous PV, put the PV move first
     if (pv_search) {
-        if (ply < pv.length()) {
-            best_move = pv.getPVMove(ply);
+        if (ply < old_pv_length) {
+            best_move = old_pv[ply];
         } else {
             pv_search = false;
         }
@@ -263,7 +222,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     const bool pv_node = pv_search;
 
     // null move pruning
-    if (depth >= std::max(NMP_BASE_REDUCTION, 3) && allow_nmp && !pv_search && !inCheck(pos)) {
+    if (depth >= std::max(NMP_BASE_REDUCTION, 3) && allow_nmp && !is_root && !pv_search && !inCheck(pos)) {
         allow_nmp = false;
         int reduction;
         reduction = NMP_BASE_REDUCTION + depth / (NMP_BASE_REDUCTION + 1);
@@ -290,7 +249,8 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
 
     // enable or disable futility pruning
-    if (depth == 1 && !inCheck(pos) && alpha < MATE_THRESHOLD && alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD) {
+    if (!is_root && depth == 1 && !inCheck(pos) && alpha < MATE_THRESHOLD && 
+        alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD) {
         int s_eval = eval(pos);
         if (s_eval + FUTILITY_MARGIN < alpha) {
             can_fprune = true;
@@ -298,7 +258,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     // enable or disable late move reductions
-    bool allow_lmr = depth > 1 && !inCheck(pos);
+    bool allow_lmr = !is_root && depth > 1 && !inCheck(pos);
 
 
     bool upper_bound = true;
@@ -309,7 +269,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         num_moves++;
         if (num_moves > 1) pv_search = false;
         // futility pruning
-        if (can_fprune && !((move >> 12) & CAPTURE_MOVE)) continue;
+        if (can_fprune && num_moves > 1 && !((move >> 12) & CAPTURE_MOVE)) continue;
         // set the following PV length to 0 in case the next node is a leaf node
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
@@ -371,6 +331,8 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     } else {
         tt.save(pos.z_key, depth, ply, best_move, max_score, EXACT_NODE, pos.game_half_moves);
     }
+
+    assert(max_score != NEGATIVE_INFINITY);
     
     return max_score;
 }
@@ -399,8 +361,8 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     if (!(getMoveType(best_move) & CAPTURE_MOVE)) best_move = 0;
 
     if (pv_search) {
-        if (ply < pv.length()) {
-            best_move = pv.getPVMove(ply);
+        if (ply < old_pv_length) {
+            best_move = old_pv[ply];
         } else {
             pv_search = false;
         }

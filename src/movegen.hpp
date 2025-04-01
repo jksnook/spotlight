@@ -18,6 +18,8 @@ void generateCaptures(MoveList &moves, Position &pos);
 
 void generateQuietMoves(MoveList &moves, Position &pos);
 
+void generateMoves(MoveList &moves, Position &pos);
+
 template <Color side>
 U64 getCheckers(Position &pos, int king_index) {
     constexpr const int enemy_side = getOtherSide(side);
@@ -57,7 +59,7 @@ U64 getAllEnemyAttacks(Position &pos) {
 }
 
 template <Color side, GenType gen_type>
-void generateMoves(MoveList &moves, Position &pos) {
+void generateMovesSided(MoveList &moves, Position &pos) {
 
     // set up all bitboards for easy access according to friendly vs enemy with compiletime stuff
     constexpr const int enemy_side = getOtherSide(side);
