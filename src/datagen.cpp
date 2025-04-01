@@ -49,7 +49,7 @@ void playGames(int num_games, int id) {
 
         std::string result;
 
-        int num_random = myRandom() % MAX_RANDOM_MOVES;
+        int num_random = (myRandom() % (MAX_RANDOM_MOVES - MIN_RANDOM_MOVES + 1)) + MIN_RANDOM_MOVES;
 
         // make some random moves
         for (int i = 0; i < num_random; i++) {

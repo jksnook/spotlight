@@ -8,6 +8,7 @@
 const int NUM_THREADS = 12;
 const int FIFTY_MOVE_LIMIT = 20;
 const int MAX_RANDOM_MOVES = 16;
+const int MIN_RANDOM_MOVES = 3;
 
 bool isQuiet(MoveList &moves);
 
