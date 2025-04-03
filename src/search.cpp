@@ -228,6 +228,16 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
     const bool pv_node = pv_search;
 
+    int s_eval = eval(pos);
+
+    //reverse futility pruning
+    if (depth <= 4 && !is_root && !pv_node && !inCheck(pos)) {
+        int margin = 135 * depth;
+        if (s_eval - margin >= beta) {
+            return beta;
+        }
+    }
+
     // null move pruning
     if (depth >= std::max(NMP_BASE_REDUCTION, 3) && allow_nmp && !is_root && !pv_search && beta < POSITIVE_INFINITY && !inCheck(pos)) {
         allow_nmp = false;
@@ -258,7 +268,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     // enable or disable futility pruning
     if (!is_root && depth == 1 && !inCheck(pos) && alpha < MATE_THRESHOLD && 
         alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD) {
-        int s_eval = eval(pos);
+        // int s_eval = eval(pos);
         if (s_eval + FUTILITY_MARGIN < alpha) {
             can_fprune = true;
         }

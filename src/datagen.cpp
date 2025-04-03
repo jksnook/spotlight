@@ -42,7 +42,7 @@ void playGames(int num_games, int id) {
     std::mt19937 myRandom(r());
 
     for (int i = 0; i < num_games; i++) {
-        std::cout << "starting game " << i << " of " << num_games << " on thread " << id << "\n";
+        std::cout << "starting game " << i + 1 << " of " << num_games << " on thread " << id << "\n";
         pos.readFen(STARTPOS);
 
         std::vector<std::string> fens;
@@ -50,6 +50,7 @@ void playGames(int num_games, int id) {
         std::string result;
 
         int num_random = (myRandom() % (MAX_RANDOM_MOVES - MIN_RANDOM_MOVES + 1)) + MIN_RANDOM_MOVES;
+        std::cout << num_random << "\n";
 
         // make some random moves
         for (int i = 0; i < num_random; i++) {
@@ -91,6 +92,7 @@ void playGames(int num_games, int id) {
 
             pos.makeMove(moves[random_index]);
         }
+        pos.print();
 
         while(true) {
             if (pos.fifty_move >= FIFTY_MOVE_LIMIT) {
