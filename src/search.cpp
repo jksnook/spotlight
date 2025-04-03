@@ -197,8 +197,12 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         return 0;
     } else if (pos.isTripleRepetition()) {
         return 0;
-    } else if (depth == 0) {
-        if (!is_root && inCheck(pos))  {
+    }
+
+    bool in_check = inCheck(pos);
+    
+    if (depth == 0) {
+        if (!is_root && in_check)  {
             depth++;
         } else {
             return qSearch(pos, depth, ply, alpha, beta);
@@ -230,8 +234,12 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
     int s_eval = eval(pos);
 
+    eval_stack[ply] = s_eval;
+
+    bool improving = ply < 2 || eval_stack[ply - 2] <= s_eval;
+
     //reverse futility pruning
-    if (depth <= 4 && !is_root && !pv_node && !inCheck(pos)) {
+    if (depth <= 4 && !is_root && !pv_node && !in_check) {
         int margin = 135 * depth;
         if (s_eval - margin >= beta) {
             return beta;
@@ -239,7 +247,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     // null move pruning
-    if (depth >= std::max(NMP_BASE_REDUCTION, 3) && allow_nmp && !is_root && !pv_search && beta < POSITIVE_INFINITY && !inCheck(pos)) {
+    if (depth >= std::max(NMP_BASE_REDUCTION, 3) && allow_nmp && !is_root && !pv_search && beta < POSITIVE_INFINITY && !in_check) {
         allow_nmp = false;
         int reduction;
         reduction = NMP_BASE_REDUCTION + depth / (NMP_BASE_REDUCTION + 1);
@@ -266,21 +274,20 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
 
     // enable or disable futility pruning
-    if (!is_root && depth == 1 && !inCheck(pos) && alpha < MATE_THRESHOLD && 
-        alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD) {
-        // int s_eval = eval(pos);
-        if (s_eval + FUTILITY_MARGIN < alpha) {
-            can_fprune = true;
-        }
+    if (!is_root && depth == 1 && !in_check && alpha < MATE_THRESHOLD && 
+        alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD && 
+        s_eval + FUTILITY_MARGIN < alpha) {
+        can_fprune = true;
     }
 
     // enable or disable late move reductions
-    bool allow_lmr = !is_root && depth > 1 && !inCheck(pos);
+    bool allow_lmr = !is_root && depth > 1 && !in_check;
+    // enable or disable late move pruning
+    bool allow_lmp = !is_root && depth <= 3 && !in_check && !pv_node;
 
     bool upper_bound = true;
     move16 move;
     int num_moves = 0;
-    // for (const auto &move: moves){
     while (move = move_picker.getNextMove()) {
         num_moves++;
         if (num_moves > 1) pv_search = false;
@@ -289,7 +296,14 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         // set the following PV length to 0 in case the next node is a leaf node
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
-        if (allow_lmr && num_moves > 3) {
+
+        // Late move pruning
+        if (allow_lmp && num_moves > 3 * depth + 2 * improving && !inCheck(pos)) {
+            pos.unmakeMove();
+            continue;
+        }
+
+        if (allow_lmr && (num_moves > 3 || (!improving && num_moves > 2))) {
             score = -negaMax(pos, depth - 2, ply + 1, -alpha - 1, -alpha);
             if (score > alpha) {
                 score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
@@ -333,7 +347,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     if (num_moves == 0) {
-        if (inCheck(pos)) {
+        if (in_check) {
             return -MATE_SCORE + ply;
         }
         return 0;
@@ -407,10 +421,6 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     while (move = move_picker.getNextCapture()) {
         num_moves++;
         if (num_moves > 1) pv_search = false;
-        if (!(getMoveType(move) & CAPTURE_MOVE)) {
-            // continue;
-            break;
-        }
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
         score = -qSearch(pos, depth - 1, ply + 1, -beta, -alpha);

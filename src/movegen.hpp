@@ -501,8 +501,12 @@ void generateMovesSided(MoveList &moves, Position &pos) {
 template <Color side>
 bool inCheckSided(Position &pos) {
 
-    if (pos.in_check) {
-        return true;
+    if (side == pos.side_to_move && pos.movegen_data.generated_checkers) {
+        if (pos.movegen_data.checkers) {
+            pos.in_check = true;
+            return true;
+        }
+        return false;
     }
 
     // set up all bitboards for easy access according to friendly vs enemy with compiletime stuff
@@ -540,8 +544,11 @@ bool inCheckSided(Position &pos) {
     checkers |= checking_rooks;
     // king check detection needed for pseudolegal moves
     checkers |= king_moves[king_index] & pos.bitboards[enemy_king];
-    U64 block_mask = bishopAttacksFromBitboard(checking_bishops, pos.bitboards[OCCUPANCY]) & bishop_rays_from_king;
-    block_mask |= rookAttacksFromBitboard(checking_rooks, pos.bitboards[OCCUPANCY]) & rook_rays_from_king;
+
+    if (side == pos.side_to_move) {
+        pos.movegen_data.generated_checkers = true;
+        pos.movegen_data.checkers = checkers;
+    }
 
     if (checkers) {
         pos.in_check = true;
@@ -552,7 +559,7 @@ bool inCheckSided(Position &pos) {
 
 bool inCheck(Position &pos);
 
-bool sideToPlayInCheck(Position &pos);
+bool otherSideInCheck(Position &pos);
 
 U64 perftHelper(Position &pos, int depth);
 

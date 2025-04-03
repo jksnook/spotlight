@@ -12,6 +12,9 @@ A chess engine written in C++
 * Aspiration Windows
 * Null move pruning
 * Futility pruning
+* Reverse futility pruning
+* Late move reductions
+* Late move pruning
 
 ### Move ordering
 * TTmove

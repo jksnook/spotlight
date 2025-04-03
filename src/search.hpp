@@ -85,6 +85,8 @@ private:
     move16 killer_1[MAX_DEPTH];
     move16 killer_2[MAX_DEPTH];
 
+    std::array<int, MAX_DEPTH> eval_stack;
+
     TT tt;
     PVTable pv;
     std::array<move16, MAX_DEPTH> old_pv;

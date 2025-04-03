@@ -149,7 +149,7 @@ bool isLegal(move16 move, Position &pos) {
         return false;
     }
     pos.makeMove(move);
-    if (sideToPlayInCheck(pos)) {
+    if (otherSideInCheck(pos)) {
         pos.unmakeMove();
         return false;
     }
@@ -165,7 +165,7 @@ bool inCheck(Position &pos) {
     }
 }
 
-bool sideToPlayInCheck(Position &pos) {
+bool otherSideInCheck(Position &pos) {
     if (pos.side_to_move == BLACK) {
         return inCheckSided<WHITE>(pos);
     } else {
