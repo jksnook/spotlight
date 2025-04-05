@@ -33,4 +33,5 @@ int main(int argc, char* argv[]) {
     } else if (static_cast<std::string>(argv[1]) == "datagen") {
         selfplay(150);
     }
+    // position fen 2kr1b1r/ppp2ppp/2n2q2/1B1p1b2/3Pn3/2P2N2/PP1N1PPP/R1BQR1K1 b - - 7 11
 }

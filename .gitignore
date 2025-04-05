@@ -2,7 +2,7 @@ core.*
 .vscode
 selfplay.txt
 selfplay*.txt
-tune.txt
+tune*.txt
 piece_squares.txt
 spotlight
 

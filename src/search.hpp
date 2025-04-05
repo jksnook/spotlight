@@ -8,6 +8,7 @@
 #include "moveorder.hpp"
 
 #include <chrono>
+#include <array>
 
 
 const int NEGATIVE_INFINITY = (1 << 31) + 1;
