@@ -200,31 +200,29 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     bool in_check = inCheck(pos);
+
+    if (in_check) depth++;
     
     if (depth == 0) {
-        if (!is_root && in_check)  {
-            depth++;
-        } else {
-            return qSearch(pos, depth, ply, alpha, beta);
-        } 
+        return qSearch(pos, depth, ply, alpha, beta);
     }
 
     nodes_searched++;
 
     int score = 0;
-    move16 best_move = 0;
+    move16 tt_move = 0;
 
     // Probe transposition table
-    if (!pv_search && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
+    if (!pv_search && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, tt_move)) {
         tt_hits++;
-        pv.updateFromTT(ply, best_move);
+        pv.updateFromTT(ply, tt_move);
         return score;
     }
 
     // If we are searching the previous PV, put the PV move first
     if (pv_search) {
         if (ply < old_pv_length) {
-            best_move = old_pv[ply];
+            tt_move = old_pv[ply];
         } else {
             pv_search = false;
         }
@@ -264,24 +262,24 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
-    MovePicker move_picker(pos, best_move, killer_1[ply], killer_2[ply]);
+    MovePicker move_picker(pos, tt_move, killer_1[ply], killer_2[ply]);
     
     int best_score = NEGATIVE_INFINITY;
+    move16 best_move = 0;
 
     MoveList bad_quiets;
 
     bool can_fprune = false;
 
-
     // enable or disable futility pruning
-    if (!is_root && depth == 1 && !in_check && alpha < MATE_THRESHOLD && 
+    if (!is_root && !pv_node && depth == 1 && !in_check && alpha < MATE_THRESHOLD && 
         alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD && 
         s_eval + FUTILITY_MARGIN < alpha) {
         can_fprune = true;
     }
 
     // enable or disable late move reductions
-    bool allow_lmr = !is_root && depth > 1 && !in_check;
+    bool allow_lmr = !is_root && depth > 2 && !in_check;
     // enable or disable late move pruning
     bool allow_lmp = !is_root && depth <= 3 && !in_check && !pv_node;
 
@@ -293,9 +291,11 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         if (num_moves > 1) pv_search = false;
         // futility pruning
         if (can_fprune && num_moves > 1 && !((move >> 12) & CAPTURE_MOVE)) continue;
+
         // set the following PV length to 0 in case the next node is a leaf node
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
+
 
         // Late move pruning
         if (allow_lmp && num_moves > 3 * depth + 2 * improving && !inCheck(pos)) {
@@ -304,12 +304,15 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
 
         if (allow_lmr && (num_moves > 3 || (!improving && num_moves > 2))) {
-            score = -negaMax(pos, depth - 2, ply + 1, -alpha - 1, -alpha);
+            int reduction = 2;
+            if (num_moves > 6 && depth >= 3) {
+                reduction = 3;
+            }
+            score = -negaMax(pos, depth - reduction, ply + 1, -alpha - 1, -alpha);
             if (score > alpha) {
                 score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
             }
         } else if (pv_node && num_moves > 1) {
-            pv_search = false;
             score = -negaMax(pos, depth - 1, ply + 1, -alpha - 1, -alpha);
             if (score > alpha) {
                 score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
