@@ -212,12 +212,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     int score = 0;
     move16 tt_move = 0;
 
-    // Probe transposition table
-    if (!pv_search && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, tt_move)) {
-        tt_hits++;
-        pv.updateFromTT(ply, tt_move);
-        return score;
-    }
+    const bool pv_node = beta - alpha > 1;;
 
     // If we are searching the previous PV, put the PV move first
     if (pv_search) {
@@ -228,7 +223,12 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
-    const bool pv_node = pv_search;
+    // Probe transposition table
+    if (!pv_search && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, tt_move)) {
+        tt_hits++;
+        pv.updateFromTT(ply, tt_move);
+        return score;
+    }
 
     int s_eval = eval(pos);
 
@@ -245,7 +245,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     // null move pruning
-    if (depth >= std::max(NMP_BASE_REDUCTION, 3) && allow_nmp && !is_root && !pv_search && beta < POSITIVE_INFINITY && !in_check) {
+    if (depth >= std::max(NMP_BASE_REDUCTION, 3) && allow_nmp && !pv_search && !is_root && beta < POSITIVE_INFINITY && !in_check) {
         allow_nmp = false;
         int reduction;
         reduction = NMP_BASE_REDUCTION + depth / (NMP_BASE_REDUCTION + 1);
@@ -296,7 +296,6 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         pv.zeroLength(ply + 1);
         pos.makeMove(move);
 
-
         // Late move pruning
         if (allow_lmp && num_moves > 3 * depth + 2 * improving && !inCheck(pos)) {
             pos.unmakeMove();
@@ -304,8 +303,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
 
         if (allow_lmr && (num_moves > 3 || (!improving && num_moves > 2))) {
+            assert(depth > 0);
             int reduction = 2;
-            if (num_moves > 6 && depth >= 3) {
+            if (num_moves > 6 && depth >= 4) {
                 reduction = 3;
             }
             score = -negaMax(pos, depth - reduction, ply + 1, -alpha - 1, -alpha);
@@ -329,7 +329,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             pv.updatePV(ply, move);
             best_score = score;
             if (best_score >= beta) {
-                if (!((move >> 12) & CAPTURE_MOVE)) {
+                if (!(getMoveType(move) & CAPTURE_MOVE)) {
                     saveKiller(ply, move);
                     pos.updateHistory(getFromSquare(move), getToSquare(move), depth * depth);
                 }
@@ -344,7 +344,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
                 upper_bound = false;
             }
         }
-        if(!((move >> 12) & CAPTURE_MOVE)) {
+        if(!(getMoveType(move) & CAPTURE_MOVE)) {
             bad_quiets.addMove(move);
         }
     }
@@ -382,28 +382,25 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     q_nodes++;
 
     int score = 0;
-    move16 best_move = 0;
     move16 tt_move = 0;
 
-    if (enable_qsearch_tt && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, best_move)) {
-        tt_hits++;
-        return score;
-    }
-
-    tt_move = best_move;
-    assert(tt_move == best_move);
-
-    if (!(getMoveType(best_move) & CAPTURE_MOVE)) best_move = 0;
+    const bool pv_node = beta - alpha > 1;
 
     if (pv_search) {
         if (ply < old_pv_length) {
-            best_move = old_pv[ply];
+            tt_move = old_pv[ply];
         } else {
             pv_search = false;
         }
     }
 
-    const bool pv_node = pv_search;
+    if (enable_qsearch_tt && !pv_search && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, tt_move)) {
+        tt_hits++;
+        return score;
+    }
+
+
+    if (!(getMoveType(tt_move) & CAPTURE_MOVE)) tt_move = 0;
     
     int best_score = eval(pos);
     bool upper_bound = true;
@@ -415,11 +412,12 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         upper_bound = false;
     }
 
-    MovePicker move_picker(pos, best_move, 0, 0);
+    MovePicker move_picker(pos, tt_move, 0, 0);
 
     int num_moves = 0;
 
     move16 move;
+    move16 best_move = 0;
 
     while (move = move_picker.getNextCapture()) {
         num_moves++;
