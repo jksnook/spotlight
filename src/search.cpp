@@ -381,6 +381,8 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     nodes_searched++;
     q_nodes++;
 
+    pv.zeroLength(ply);
+
     int score = 0;
     move16 tt_move = 0;
 
@@ -399,13 +401,23 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         return score;
     }
 
+    bool in_check = inCheck(pos);
 
-    if (!(getMoveType(tt_move) & CAPTURE_MOVE)) tt_move = 0;
+    if (!in_check && !(getMoveType(tt_move) & CAPTURE_MOVE)) tt_move = 0;
+
+    int s_eval = eval(pos);
+    int best_score;
     
-    int best_score = eval(pos);
+    if (!in_check) {
+        best_score = s_eval;
+    } else {
+        best_score = NEGATIVE_INFINITY;
+    }
+
     bool upper_bound = true;
 
     if (best_score >= beta) {
+        pv_search = false;
         return beta;
     } else if (best_score > alpha) {
         alpha = best_score;
@@ -419,10 +431,12 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     move16 move;
     move16 best_move = 0;
 
-    while (move = move_picker.getNextCapture()) {
+
+    while (in_check ? move = move_picker.getNextMove() : move = move_picker.getNextCapture()) {
         num_moves++;
         if (num_moves > 1) pv_search = false;
-        pv.zeroLength(ply + 1);
+        // delta pruning. Formula is kind of a kludge as SEE values and eval are not really comparable
+        if (!isQuiet(move) && see(pos, move) <= std::max((alpha - s_eval) * SEE_MULTIPLIER - SEE_MULTIPLIER * 80, 0)) continue;
         pos.makeMove(move);
         score = -qSearch(pos, depth - 1, ply + 1, -beta, -alpha);
         pos.unmakeMove();
@@ -440,6 +454,13 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
             alpha = score;
             upper_bound = false;
         }
+    }
+
+    pv_search = false;
+
+    // in case we are in check and every move is a capture
+    if (best_score == NEGATIVE_INFINITY) {
+        best_score = s_eval;
     }
 
     if (num_moves == 0 && !move_picker.getNextMove()) {
