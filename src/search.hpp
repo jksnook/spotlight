@@ -69,6 +69,7 @@ private:
         killer_2[ply] = killer_1[ply];
         killer_1[ply] = move;
     }
+    void clearKillers();
 
     bool pv_search;
     bool node_search;

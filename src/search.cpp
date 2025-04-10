@@ -39,6 +39,13 @@ void Search::clearTT() {
     tt.clear();
 }
 
+void Search::clearKillers() {
+    for (int i = 0; i < MAX_DEPTH; i++) {
+        killer_1[i] = 0;
+        killer_2[i] = 0;
+    }
+}
+
 void Search::setTimer(U64 duration_in_ms, int interval) {
     time_check_interval = interval;
     timer_duration = duration_in_ms;
@@ -105,6 +112,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
     SearchResult result;
 
     pv.clearPV();
+    clearKillers();
 
     move16 best_move = 0;
     int best_score = NEGATIVE_INFINITY;
@@ -282,6 +290,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     bool allow_lmr = !is_root && depth > 2 && !in_check;
     // enable or disable late move pruning
     bool allow_lmp = !is_root && depth <= 3 && !in_check && !pv_node;
+
+    killer_1[ply + 1] = 0;
+    killer_2[ply + 1] = 0;
 
     bool upper_bound = true;
     move16 move;
