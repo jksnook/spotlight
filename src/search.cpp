@@ -372,6 +372,8 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     if (upper_bound) {
+        // reuse tt move in fail lows
+        if (tt_move) best_move = tt_move;
         tt.save(pos.z_key, depth, ply, best_move, best_score, UPPER_BOUND_NODE, pos.game_half_moves);
     } else {
         tt.save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, pos.game_half_moves);
@@ -482,6 +484,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     if (upper_bound) {
+        if (tt_move) best_move = tt_move;
         tt.save(pos.z_key, depth, ply, best_move, best_score, UPPER_BOUND_NODE, pos.game_half_moves);
     } else {
         tt.save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, pos.game_half_moves);
