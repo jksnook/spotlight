@@ -22,8 +22,8 @@ const int FUTILITY_MARGIN = 50;
 
 class PVTable {
     public:
-        std::array<std::array<move16, MAX_DEPTH>, MAX_DEPTH> table;
-        std::array<int, MAX_DEPTH> pv_length;
+        std::array<std::array<move16, MAX_PLY>, MAX_PLY> table;
+        std::array<int, MAX_PLY> pv_length;
         void updatePV(int ply, move16 first_move);
         void updateFromTT(int ply, move16 first_move);
         void clearPV();
@@ -84,14 +84,14 @@ private:
     int time_check_interval;
     int max_nodes;
 
-    move16 killer_1[MAX_DEPTH];
-    move16 killer_2[MAX_DEPTH];
+    move16 killer_1[MAX_PLY];
+    move16 killer_2[MAX_PLY];
 
-    std::array<int, MAX_DEPTH> eval_stack;
+    std::array<int, MAX_PLY> eval_stack;
 
     TT tt;
     PVTable pv;
-    std::array<move16, MAX_DEPTH> old_pv;
+    std::array<move16, MAX_PLY> old_pv;
     int old_pv_length;
 
 };

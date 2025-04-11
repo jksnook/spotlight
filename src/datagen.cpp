@@ -133,7 +133,7 @@ void playGames(int num_games, int id) {
                 }
             }
 
-            SearchResult search_result = search.nodeSearch(pos, MAX_DEPTH, 100000);
+            SearchResult search_result = search.nodeSearch(pos, MAX_PLY, 100000);
 
             move16 move = search_result.move;
             int score = search_result.score;

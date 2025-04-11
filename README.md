@@ -26,3 +26,6 @@ A chess engine written in C++
 * Tuned piece square tables (Tuning implementation from Andrew Grant's tuning paper: https://github.com/AndyGrant/Ethereal/blob/master/Tuning.pdf)
 * Tuned entirely with self-generated data
 
+## Planned Improvements:
+* Faster move generation
+* Better eval (eventually)

@@ -41,12 +41,16 @@ Tuner::Tuner(): weights{}, gradient{} {
 
         pos.readFen(fen);
 
+        /*
+        To make things easier I just copied my eval code to here. If I make my eval more complex
+        I will have to change this.
+        */
+
         int early_eval = 0;
         int late_eval = 0;
 
-
         int game_phase = 0;
-        std::array<std::array<int, 2>, NUM_WEIGHTS / 2> coeffs{};
+        std::array<std::array<int, 2>, NUM_PARAMS / 2> coeffs{};
 
         for (int i = 0; i < 64; i++) {
             int piece = pos.at(i);
@@ -77,9 +81,9 @@ Tuner::Tuner(): weights{}, gradient{} {
         entry.d_eval = static_cast<double>(total_eval);
         entry.phase = game_phase;
 
-        for (int i = 0; i < NUM_WEIGHTS / 2; i++) {
+        for (int i = 0; i < NUM_PARAMS / 2; i++) {
             if (coeffs[i][WHITE] - coeffs[i][BLACK] != 0) {
-                WeightData data;
+                CoeffData data;
                 data.wcoef = coeffs[i][WHITE];
                 data.bcoef = coeffs[i][BLACK];
                 data.index = i;
@@ -210,11 +214,11 @@ void Tuner::run() {
         forward();
         calculateGradient();
         for (int i = 0; i < PSQ_ARRAY_SIZE; i++) {
-            ada_grad[i][0] += pow(2.0 * gradient[i][0] / NUM_WEIGHTS, 2.0);
-            ada_grad[i][1] += pow(2.0 * gradient[i][1] / NUM_WEIGHTS, 2.0);
+            ada_grad[i][0] += pow(2.0 * gradient[i][0] / NUM_PARAMS, 2.0);
+            ada_grad[i][1] += pow(2.0 * gradient[i][1] / NUM_PARAMS, 2.0);
 
-            weights[i][0] += (k_param * 2.0 / NUM_WEIGHTS) * gradient[i][0] * (LEARNING_RATE / sqrt(1e-8 + ada_grad[i][0]));
-            weights[i][1] += (k_param * 2.0 / NUM_WEIGHTS) * gradient[i][1] * (LEARNING_RATE / sqrt(1e-8 + ada_grad[i][1]));
+            weights[i][0] += (k_param * 2.0 / NUM_PARAMS) * gradient[i][0] * (LEARNING_RATE / sqrt(1e-8 + ada_grad[i][0]));
+            weights[i][1] += (k_param * 2.0 / NUM_PARAMS) * gradient[i][1] * (LEARNING_RATE / sqrt(1e-8 + ada_grad[i][1]));
         }
 
         if (epoch % REPORT_INTERVAL == 0) {

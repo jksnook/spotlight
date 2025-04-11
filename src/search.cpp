@@ -29,7 +29,7 @@ void PVTable::zeroLength(int ply) {
 }
 
 Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), enable_qsearch_tt(true), q_nodes(0), make_output(true) {
-    for (int i = 0; i < MAX_DEPTH; i++) {
+    for (int i = 0; i < MAX_PLY; i++) {
         killer_1[i] = 0;
         killer_2[i] = 0;
     }
@@ -40,7 +40,7 @@ void Search::clearTT() {
 }
 
 void Search::clearKillers() {
-    for (int i = 0; i < MAX_DEPTH; i++) {
+    for (int i = 0; i < MAX_PLY; i++) {
         killer_1[i] = 0;
         killer_2[i] = 0;
     }
