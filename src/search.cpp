@@ -447,6 +447,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
 
     while (in_check ? move = move_picker.getNextMove() : move = move_picker.getNextCapture()) {
         num_moves++;
+        // if (!in_check && !(getMoveType(move) & CAPTURE_MOVE || getMoveType(move) & PROMOTION_FLAG)) continue;
         if (num_moves > 1) pv_search = false;
         // delta pruning. Formula is kind of a kludge as SEE values and eval are not really comparable
         if (!isQuiet(move) && see(pos, move) <= std::max((alpha - s_eval) * SEE_MULTIPLIER - SEE_MULTIPLIER * 80, 0)) continue;

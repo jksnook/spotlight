@@ -142,7 +142,7 @@ void generateMovesSided(MoveList &moves, Position &pos) {
         // add quiet moves
         addMovesFromBitboard(king_index, king_moves[king_index] & ~enemy_attacks & ~pos.bitboards[OCCUPANCY], QUIET_MOVE, moves);
     }
-    if constexpr(gen_type == CAPTURES || gen_type == LEGAL) {
+    if constexpr(gen_type == CAPTURES_AND_PROMOTIONS || gen_type == LEGAL) {
         // add captures
         addMovesFromBitboard(king_index, king_moves[king_index] & ~enemy_attacks & pos.bitboards[enemy_occupancy], CAPTURE_MOVE, moves);
     }
@@ -177,7 +177,7 @@ void generateMovesSided(MoveList &moves, Position &pos) {
     // promotions first
     U64 pinned_pawns;
 
-    if constexpr(gen_type == CAPTURES || gen_type == LEGAL) {
+    if constexpr(gen_type == CAPTURES_AND_PROMOTIONS || gen_type == LEGAL) {
         if constexpr(side == WHITE) {
             pinned_pawns = pinned_pieces & pos.bitboards[friendly_pawn] & RANK_7;
         } else {
@@ -225,7 +225,7 @@ void generateMovesSided(MoveList &moves, Position &pos) {
             addMovesFromBitboard(piece_index, magic_attack & pin_rays & block_mask, QUIET_MOVE, moves);
         }
         // captures
-        if constexpr(gen_type == CAPTURES || gen_type == LEGAL) {
+        if constexpr(gen_type == CAPTURES_AND_PROMOTIONS || gen_type == LEGAL) {
             addMovesFromBitboard(piece_index, magic_attack & pinners & capture_mask, CAPTURE_MOVE, moves);
         }
     }
@@ -270,7 +270,7 @@ void generateMovesSided(MoveList &moves, Position &pos) {
             addMovesFromBitboard(piece_index, magic_attack & block_mask & pin_rays, QUIET_MOVE, moves);
         }
         // captures
-        if constexpr(gen_type == CAPTURES || gen_type == LEGAL) {
+        if constexpr(gen_type == CAPTURES_AND_PROMOTIONS || gen_type == LEGAL) {
             addMovesFromBitboard(piece_index, magic_attack & pinners & capture_mask, CAPTURE_MOVE, moves);
         }
     }
@@ -283,7 +283,7 @@ void generateMovesSided(MoveList &moves, Position &pos) {
         if constexpr(gen_type == QUIET || gen_type == LEGAL) {
             addMovesFromBitboard(piece_index, knight_moves[piece_index] & ~pos.bitboards[OCCUPANCY] & block_mask, QUIET_MOVE, moves);
         }
-        if constexpr(gen_type == CAPTURES || gen_type == LEGAL) {
+        if constexpr(gen_type == CAPTURES_AND_PROMOTIONS || gen_type == LEGAL) {
             addMovesFromBitboard(piece_index, knight_moves[piece_index] & pos.bitboards[enemy_occupancy] & 
                 capture_mask, CAPTURE_MOVE, moves);
         }
@@ -297,20 +297,20 @@ void generateMovesSided(MoveList &moves, Position &pos) {
     U64 left_attacks;
     U64 right_attacks;
     if constexpr(side == WHITE) {
+        single_pushes = pawns << 8 & block_mask & ~pos.bitboards[OCCUPANCY];
         if constexpr(gen_type == QUIET || gen_type == LEGAL) {
             double_pushes = (pawns & RANK_2) << 16 & block_mask & ~pos.bitboards[OCCUPANCY] & ~pos.bitboards[OCCUPANCY] << 8;
-            single_pushes = pawns << 8 & block_mask & ~pos.bitboards[OCCUPANCY];
         }
-        if constexpr(gen_type == CAPTURES || gen_type == LEGAL) {
+        if constexpr(gen_type == CAPTURES_AND_PROMOTIONS || gen_type == LEGAL) {
             left_attacks = pawns << 7 & pos.bitboards[enemy_occupancy] & capture_mask & ~H_FILE;
             right_attacks = pawns << 9 & pos.bitboards[enemy_occupancy] & capture_mask & ~A_FILE;
         }
     } else {
+        single_pushes = pawns >> 8 & block_mask & ~pos.bitboards[OCCUPANCY];
         if constexpr(gen_type == QUIET || gen_type == LEGAL) {
             double_pushes = (pawns & RANK_7) >> 16 & block_mask & ~pos.bitboards[OCCUPANCY] & ~pos.bitboards[OCCUPANCY] >> 8;
-            single_pushes = pawns >> 8 & block_mask & ~pos.bitboards[OCCUPANCY];
         }
-        if constexpr(gen_type == CAPTURES || gen_type == LEGAL) {
+        if constexpr(gen_type == CAPTURES_AND_PROMOTIONS || gen_type == LEGAL) {
             left_attacks = pawns >> 9 & pos.bitboards[enemy_occupancy] & capture_mask & ~H_FILE;
             right_attacks = pawns >> 7 & pos.bitboards[enemy_occupancy] & capture_mask & ~A_FILE;
         }
@@ -321,11 +321,12 @@ void generateMovesSided(MoveList &moves, Position &pos) {
     U64 left_promotion_captures;
     U64 right_promotion_captures;
 
+    promotions = single_pushes & (RANK_8 | RANK_1);
+
     if constexpr(gen_type == QUIET || gen_type == LEGAL) {
-        promotions = single_pushes & (RANK_8 | RANK_1);
         single_pushes = single_pushes & ~promotions;
     }
-    if constexpr(gen_type == CAPTURES || gen_type == LEGAL) {
+    if constexpr(gen_type == CAPTURES_AND_PROMOTIONS || gen_type == LEGAL) {
         left_promotion_captures = left_attacks & (RANK_8 | RANK_1);
         left_attacks = left_attacks & ~left_promotion_captures;
         right_promotion_captures = right_attacks & (RANK_8 | RANK_1);
@@ -337,18 +338,18 @@ void generateMovesSided(MoveList &moves, Position &pos) {
 
 
     if constexpr(gen_type == QUIET || gen_type == LEGAL) {
-        while (promotions) {
-            end_square = popLSB(promotions);
-            if constexpr(side == WHITE) {
-                start_square = end_square - 8;
-            } else {
-                start_square = end_square + 8;
-            }
-            moves.addMove(encodeMove(start_square, end_square, QUEEN_PROMOTION));
-            moves.addMove(encodeMove(start_square, end_square, KNIGHT_PROMOTION));
-            moves.addMove(encodeMove(start_square, end_square, BISHOP_PROMOTION));
-            moves.addMove(encodeMove(start_square, end_square, ROOK_PROMOTION));
-        }
+        // while (promotions) {
+        //     end_square = popLSB(promotions);
+        //     if constexpr(side == WHITE) {
+        //         start_square = end_square - 8;
+        //     } else {
+        //         start_square = end_square + 8;
+        //     }
+        //     moves.addMove(encodeMove(start_square, end_square, QUEEN_PROMOTION));
+        //     moves.addMove(encodeMove(start_square, end_square, KNIGHT_PROMOTION));
+        //     moves.addMove(encodeMove(start_square, end_square, BISHOP_PROMOTION));
+        //     moves.addMove(encodeMove(start_square, end_square, ROOK_PROMOTION));
+        // }
 
         while (double_pushes) {
             end_square = popLSB(double_pushes);
@@ -371,7 +372,20 @@ void generateMovesSided(MoveList &moves, Position &pos) {
         }
     }
 
-    if constexpr(gen_type == CAPTURES || gen_type == LEGAL) {
+    if constexpr(gen_type == CAPTURES_AND_PROMOTIONS || gen_type == LEGAL) {
+        while (promotions) {
+            end_square = popLSB(promotions);
+            if constexpr(side == WHITE) {
+                start_square = end_square - 8;
+            } else {
+                start_square = end_square + 8;
+            }
+            moves.addMove(encodeMove(start_square, end_square, QUEEN_PROMOTION));
+            moves.addMove(encodeMove(start_square, end_square, KNIGHT_PROMOTION));
+            moves.addMove(encodeMove(start_square, end_square, BISHOP_PROMOTION));
+            moves.addMove(encodeMove(start_square, end_square, ROOK_PROMOTION));
+        }
+
         while (left_promotion_captures) {
             end_square = popLSB(left_promotion_captures);
             if constexpr(side == WHITE) {
@@ -462,7 +476,7 @@ void generateMovesSided(MoveList &moves, Position &pos) {
         if constexpr(gen_type == QUIET || gen_type == LEGAL) {
             addMovesFromBitboard(piece_index, magic_attack & ~pos.bitboards[OCCUPANCY] & block_mask, QUIET_MOVE, moves);
         }
-        if constexpr(gen_type == CAPTURES|| gen_type == LEGAL) {
+        if constexpr(gen_type == CAPTURES_AND_PROMOTIONS|| gen_type == LEGAL) {
             addMovesFromBitboard(piece_index, magic_attack & pos.bitboards[enemy_occupancy] & capture_mask, CAPTURE_MOVE, moves);
         }
     }
@@ -477,7 +491,7 @@ void generateMovesSided(MoveList &moves, Position &pos) {
         if constexpr(gen_type == QUIET || gen_type == LEGAL) {
             addMovesFromBitboard(piece_index, magic_attack & ~pos.bitboards[OCCUPANCY] & block_mask, QUIET_MOVE, moves);
         }
-        if constexpr(gen_type == CAPTURES|| gen_type == LEGAL) {
+        if constexpr(gen_type == CAPTURES_AND_PROMOTIONS|| gen_type == LEGAL) {
             addMovesFromBitboard(piece_index, magic_attack & pos.bitboards[enemy_occupancy] & capture_mask, CAPTURE_MOVE, moves);
         }
     }

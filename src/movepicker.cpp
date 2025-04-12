@@ -80,7 +80,7 @@ void MovePicker::scoreCaptures(MoveList &moves, std::vector<std::pair<int, move1
 move16 MovePicker::getNextMove() {
     if (stage == TT_MOVE || !tt_played) {
         if (stage == TT_MOVE) {
-            stage = CAPTURES;
+            stage = CAPTURES_AND_PROMOTIONS;
         }
         tt_played = true;
         if (tt_move && isLegal(tt_move, pos)) {
@@ -91,7 +91,7 @@ move16 MovePicker::getNextMove() {
         assert(!tt_move);
     }
 
-    if (stage == CAPTURES) {
+    if (stage == CAPTURES_AND_PROMOTIONS) {
         if (!generated_captures) {
             MoveList captures;
             generateCaptures(captures, pos);
@@ -138,7 +138,7 @@ move16 MovePicker::getNextMove() {
 
 move16 MovePicker::getNextCapture() {
     if (stage == TT_MOVE) {
-        stage = CAPTURES;
+        stage = CAPTURES_AND_PROMOTIONS;
         if (!tt_move) {
             tt_played = true;
         } else if (getMoveType(tt_move) & CAPTURE_MOVE && isLegal(tt_move, pos)) {
@@ -150,7 +150,7 @@ move16 MovePicker::getNextCapture() {
         assert(!(tt_move && getMoveType(tt_move) & CAPTURE_MOVE));
     }
 
-    if (stage == CAPTURES) {
+    if (stage == CAPTURES_AND_PROMOTIONS) {
         if (!generated_captures) {
             MoveList captures;
             generateCaptures(captures, pos);

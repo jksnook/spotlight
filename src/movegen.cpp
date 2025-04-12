@@ -3,9 +3,9 @@
 
 void generateCaptures(MoveList &moves, Position &pos) {
     if (pos.side_to_move == WHITE) {
-        generateMovesSided<WHITE, CAPTURES>(moves, pos);
+        generateMovesSided<WHITE, CAPTURES_AND_PROMOTIONS>(moves, pos);
     } else {
-        generateMovesSided<BLACK, CAPTURES>(moves, pos);
+        generateMovesSided<BLACK, CAPTURES_AND_PROMOTIONS>(moves, pos);
     }
 }
 
@@ -185,11 +185,11 @@ U64 perftHelper(Position &pos, int depth) {
 
     if (pos.side_to_move == WHITE) {
         // generateMoves<WHITE, LEGAL>(moves, pos);
-        generateMovesSided<WHITE, CAPTURES>(moves, pos);
+        generateMovesSided<WHITE, CAPTURES_AND_PROMOTIONS>(moves, pos);
         generateMovesSided<WHITE, QUIET>(moves, pos);
     } else {
         // generateMoves<BLACK, LEGAL>(moves, pos);
-        generateMovesSided<BLACK, CAPTURES>(moves, pos);
+        generateMovesSided<BLACK, CAPTURES_AND_PROMOTIONS>(moves, pos);
         generateMovesSided<BLACK, QUIET>(moves, pos);
     }
 
@@ -217,11 +217,11 @@ U64 perft(Position &pos, int depth) {
 
     if (pos.side_to_move == WHITE) {
         // generateMoves<WHITE, LEGAL>(moves, pos);
-        generateMovesSided<WHITE, CAPTURES>(moves, pos);
+        generateMovesSided<WHITE, CAPTURES_AND_PROMOTIONS>(moves, pos);
         generateMovesSided<WHITE, QUIET>(moves, pos);
     } else {
         // generateMoves<BLACK, LEGAL>(moves, pos);
-        generateMovesSided<BLACK, CAPTURES>(moves, pos);
+        generateMovesSided<BLACK, CAPTURES_AND_PROMOTIONS>(moves, pos);
         generateMovesSided<BLACK, QUIET>(moves, pos);
     }
 
