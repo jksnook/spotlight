@@ -284,8 +284,8 @@ void generateMovesSided(MoveList &moves, Position &pos) {
             addMovesFromBitboard(piece_index, knight_moves[piece_index] & ~pos.bitboards[OCCUPANCY] & block_mask, QUIET_MOVE, moves);
         }
         if constexpr(gen_type == CAPTURES || gen_type == LEGAL) {
-        addMovesFromBitboard(piece_index, knight_moves[piece_index] & pos.bitboards[enemy_occupancy] & 
-            capture_mask, CAPTURE_MOVE, moves);
+            addMovesFromBitboard(piece_index, knight_moves[piece_index] & pos.bitboards[enemy_occupancy] & 
+                capture_mask, CAPTURE_MOVE, moves);
         }
     }
 
@@ -429,9 +429,15 @@ void generateMovesSided(MoveList &moves, Position &pos) {
                 piece_index = pos.en_passant + 8;
             }
             if ((num_checks == 0) || (pawn_attacks[enemy_side][piece_index] & pos.bitboards[friendly_king])) {
+                U64 ep_rank;
+                if constexpr(side == WHITE) {
+                    ep_rank = RANK_5;
+                } else {
+                    ep_rank = RANK_4;
+                }
                 while (en_passant_attackers) {
                     start_square = popLSB(en_passant_attackers);
-                    if (pos.bitboards[friendly_king] & (RANK_5 >> (8 * side))) { 
+                    if (pos.bitboards[friendly_king] & ep_rank) { 
                         // check to see if the move leaves the king in check
                         U64 ep_pin_rays = getMagicRookAttack(king_index, pos.bitboards[OCCUPANCY] & ~setBit(start_square) & ~setBit(piece_index));
                         if (ep_pin_rays & (pos.bitboards[enemy_rook] | pos.bitboards[enemy_queen])) {
@@ -529,7 +535,7 @@ bool inCheckSided(Position &pos) {
     constexpr const int friendly_occupancy = getOccupancy(side);
     constexpr const int enemy_occupancy = getOccupancy(enemy_side);
 
-    // find the checks on the king and create attack and block masks
+    // find the checks on the king
 
     U64 checkers = 0ULL;
     int king_index = bitScanForward(pos.bitboards[friendly_king]);

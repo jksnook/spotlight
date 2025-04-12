@@ -181,6 +181,8 @@ U64 perftHelper(Position &pos, int depth) {
     U64 nodes = 0;
     MoveList moves;
 
+    // generateMoves(moves, pos);
+
     if (pos.side_to_move == WHITE) {
         // generateMoves<WHITE, LEGAL>(moves, pos);
         generateMovesSided<WHITE, CAPTURES>(moves, pos);

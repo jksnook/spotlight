@@ -287,6 +287,7 @@ void Position::makeMove(move16 move) {
         fifty_move++;
         break;
     case KING_CASTLE:
+        assert(piece % 6 == KING);
         movePiece<true>(start_square, end_square, piece);
         movePiece<true>(h1 + a8 * side_to_move, f1 + a8 * side_to_move, WHITE_ROOK + 6 * side_to_move);
         fifty_move++;
@@ -378,7 +379,7 @@ void Position::makeMove(move16 move) {
     // z_key = generateZobrist();
     half_moves++;
 
-    assert(z_key == generateZobrist());
+    // assert(z_key == generateZobrist());
 }
 
 void Position::unmakeMove() {

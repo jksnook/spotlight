@@ -89,12 +89,12 @@ class MoveList {
     public:
         MoveList(): length(0) {}
 
-        inline void addMove(unsigned long move) { 
+        inline void addMove(move16 move) { 
             move_array[length] = move;
             length++;  
         }
 
-        inline void setMove(int index, unsigned long move) {
+        inline void setMove(int index, move16 move) {
             move_array[index] = move;
         }
 
