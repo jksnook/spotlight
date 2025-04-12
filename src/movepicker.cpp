@@ -87,7 +87,8 @@ move16 MovePicker::getNextMove() {
             return tt_move;
         }
 
-        if (tt_move) assert(false);
+        // debug so I know if I get a bad tt move
+        assert(!tt_move);
     }
 
     if (stage == CAPTURES) {
@@ -145,7 +146,8 @@ move16 MovePicker::getNextCapture() {
             return tt_move;
         }
 
-        if (tt_move && getMoveType(tt_move) & CAPTURE_MOVE) assert(false);
+        // debug so I know if I get a bad tt move
+        assert(!(tt_move && getMoveType(tt_move) & CAPTURE_MOVE));
     }
 
     if (stage == CAPTURES) {

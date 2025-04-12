@@ -301,7 +301,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         num_moves++;
         if (num_moves > 1) pv_search = false;
         // futility pruning
-        if (can_fprune && num_moves > 1 && !((move >> 12) & CAPTURE_MOVE)) continue;
+        if (can_fprune && num_moves > 1 && !(getMoveType(move) & CAPTURE_MOVE || getMoveType(move) & PROMOTION_FLAG)) continue;
 
         // set the following PV length to 0 in case the next node is a leaf node
         pv.zeroLength(ply + 1);
