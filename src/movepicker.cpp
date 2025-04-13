@@ -141,13 +141,13 @@ move16 MovePicker::getNextCapture() {
         stage = CAPTURES_AND_PROMOTIONS;
         if (!tt_move) {
             tt_played = true;
-        } else if (getMoveType(tt_move) & CAPTURE_MOVE && isLegal(tt_move, pos)) {
+        } else if ((getMoveType(tt_move) & CAPTURE_MOVE || getMoveType(tt_move) & PROMOTION_FLAG) && isLegal(tt_move, pos)) {
             tt_played = true;
             return tt_move;
         }
 
         // debug so I know if I get a bad tt move
-        assert(!(tt_move && getMoveType(tt_move) & CAPTURE_MOVE));
+        assert(!(tt_move && (getMoveType(tt_move) & CAPTURE_MOVE || getMoveType(tt_move) & PROMOTION_FLAG)));
     }
 
     if (stage == CAPTURES_AND_PROMOTIONS) {

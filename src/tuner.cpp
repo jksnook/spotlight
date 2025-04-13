@@ -154,22 +154,14 @@ double Tuner::computeOptimalK() {
             }
         }
 
-        end = start + step;
-        start = start - step;
-        step = step / 10.0;
         std::cout << start << "\n";
+        if (i < K_PRECISION) {
+            end = start + step;
+            start = start - step;
+            step = step / 10.0;
+        }
 
     }
-
-    // curr = start - step;
-    // while (curr <= end) {
-    //     curr = curr + step;
-    //     error = evaluationError(curr);
-    //     if (error < best) {
-    //         start = curr;
-    //     }
-    // }
-    // std::cout << start << "\n";
 
     return start;
 }

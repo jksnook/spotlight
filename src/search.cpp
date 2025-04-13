@@ -416,7 +416,10 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
 
     bool in_check = inCheck(pos);
 
-    if (!in_check && !(getMoveType(tt_move) & CAPTURE_MOVE)) tt_move = 0;
+    if (!in_check && !(getMoveType(tt_move) & CAPTURE_MOVE || getMoveType(tt_move) & PROMOTION_FLAG)) { 
+        tt_move = 0;
+        pv_search = false;
+    }
 
     int s_eval = eval(pos);
     int best_score;
