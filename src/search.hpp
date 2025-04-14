@@ -11,14 +11,13 @@
 #include <array>
 
 
-const int NEGATIVE_INFINITY = (1 << 31) + 1;
-const int POSITIVE_INFINITY = ~0 ^ NEGATIVE_INFINITY;
+const int POSITIVE_INFINITY = 1 << 30;
+const int NEGATIVE_INFINITY = -POSITIVE_INFINITY;
 
 const int WINDOW_MIN_DEPTH = 3;
 const int WINDOW_SIZE = 30;
 const int WINDOW_INCREMENT = 60;
-const int NMP_BASE_REDUCTION = 2;
-const int FUTILITY_MARGIN = 50;
+const int FUTILITY_MARGIN = 170;
 
 class PVTable {
     public:

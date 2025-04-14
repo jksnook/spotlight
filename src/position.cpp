@@ -593,3 +593,10 @@ void Position::clearHistory() {
 void Position::updateHistory(int from, int to, int bonus) {
     history_table[side_to_move][from][to] += bonus - abs(bonus) * history_table[side_to_move][from][to] / MAX_HISTORY;
 }
+
+bool Position::zugzwangUnlikely() {
+    for (int p = getPieceID(KNIGHT, side_to_move); p < getPieceID(KING, side_to_move); p++) {
+        if (bitboards[p]) return true;
+    }
+    return false;
+}

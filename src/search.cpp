@@ -215,6 +215,8 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         return qSearch(pos, depth, ply, alpha, beta);
     }
 
+    assert(depth > 0);
+
     nodes_searched++;
 
     int score = 0;
@@ -253,10 +255,12 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     // null move pruning
-    if (depth >= std::max(NMP_BASE_REDUCTION, 3) && allow_nmp && !pv_search && !is_root && beta < POSITIVE_INFINITY && !in_check) {
+    if (depth >= 3 && !pv_node && allow_nmp && !pv_search && beta < POSITIVE_INFINITY && s_eval > beta &&
+        !is_root && !in_check && pos.zugzwangUnlikely()) {
+        assert(beta != POSITIVE_INFINITY);
         allow_nmp = false;
-        int reduction;
-        reduction = NMP_BASE_REDUCTION + depth / (NMP_BASE_REDUCTION + 1);
+        int reduction = 3 + depth / 4;
+        reduction = std::min(reduction, depth - 1);
         pos.makeNullMove();
         int nmp = -negaMax(pos, depth - reduction, ply + 1, -beta, -beta + 1);
         pos.unmakeNullMove();

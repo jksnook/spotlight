@@ -79,6 +79,7 @@ class Position {
         void unmakeNullMove();
 
         move16 parseMove(std::string move_string);
+        bool zugzwangUnlikely();
 
         int at(int sq);
 
