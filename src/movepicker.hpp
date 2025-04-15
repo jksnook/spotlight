@@ -5,7 +5,7 @@
 #include "position.hpp"
 #include "movegen.hpp"
 #include "moveorder.hpp"
-#include "tunables.hpp"
+#include "moparams.hpp"
 
 #include <memory>
 
@@ -15,6 +15,7 @@ public:
     MovePicker(Position &_pos, move16 _tt_move, move16 _killer_1, move16 _killer_2);
     move16 getNextMove();
     move16 getNextCapture();
+    void reset();
     GenType stage;
 private:
     move16 tt_move;

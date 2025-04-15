@@ -3,7 +3,7 @@
 #include "zobrist.hpp"
 #include "bitboards.hpp"
 #include "movegen.hpp"
-#include "tunables.hpp"
+#include "moparams.hpp"
 
 #include <iostream>
 #include <sstream>

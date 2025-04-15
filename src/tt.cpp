@@ -74,13 +74,11 @@ bool TT::getScore(U64 z_key, int depth, int ply, int alpha, int beta, int &score
             score = 0;
             return false;
         } else {
-            score = alpha;
             return true;
         }
         break;
     case LOWER_BOUND_NODE:
         if (score >= beta) {
-            score = beta;
             return true;
         } else {
             score = 0;
@@ -88,12 +86,6 @@ bool TT::getScore(U64 z_key, int depth, int ply, int alpha, int beta, int &score
         }
         break;
     case EXACT_NODE:
-        if (score > beta) {
-            score = beta;
-        } 
-        else if (score < alpha) {
-            score = alpha;
-        }
         return true;
         break;
     default:

@@ -200,6 +200,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
 
 int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     const bool is_root = ply == 0;
+    pv.zeroLength(ply);
 
     if (timesUp()) {
         return 0;
@@ -234,10 +235,24 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     // Probe transposition table
-    if (!pv_search && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, tt_move)) {
-        tt_hits++;
-        pv.updateFromTT(ply, tt_move);
-        return score;
+    TTEntry* tt_entry = tt.probe(pos.z_key);
+
+    if (!pv_search && tt_entry->node_type != NULL_NODE && tt_entry->z_key == pos.z_key) {
+        tt_move = tt_entry->best_move;
+        score = tt_entry->score;
+
+        if (score > MATE_THRESHOLD) {
+            score -= ply;
+        } else if (score < -MATE_THRESHOLD) {
+            score += ply;
+        }
+
+        if (tt_entry->depth >= depth && (tt_entry->node_type == EXACT_NODE || (tt_entry->node_type == LOWER_BOUND_NODE && score >= beta)
+            || (tt_entry->node_type == UPPER_BOUND_NODE && score <= alpha))) {
+            tt_hits++;
+            pv.updateFromTT(ply, tt_move);
+            return score;
+        }
     }
 
     int s_eval = eval(pos);
@@ -284,9 +299,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     bool can_fprune = false;
 
     // enable or disable futility pruning
-    if (!is_root && !pv_node && depth == 1 && !in_check && alpha < MATE_THRESHOLD && 
+    if (!is_root && !pv_node && depth <= 2 && !in_check && alpha < MATE_THRESHOLD && 
         alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD && 
-        s_eval + FUTILITY_MARGIN < alpha) {
+        s_eval + FUTILITY_MARGIN + (depth - 1) * 70 < alpha) {
         can_fprune = true;
     }
 
@@ -306,9 +321,6 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         if (num_moves > 1) pv_search = false;
         // futility pruning
         if (can_fprune && num_moves > 1 && !(getMoveType(move) & CAPTURE_MOVE || getMoveType(move) & PROMOTION_FLAG)) continue;
-
-        // set the following PV length to 0 in case the next node is a leaf node
-        pv.zeroLength(ply + 1);
         pos.makeMove(move);
 
         // Late move pruning
@@ -413,9 +425,24 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
-    if (enable_qsearch_tt && !pv_search && tt.getScore(pos.z_key, depth, ply, alpha, beta, score, tt_move)) {
-        tt_hits++;
-        return score;
+    // Probe transposition table
+    TTEntry* tt_entry = tt.probe(pos.z_key);
+
+    if (enable_qsearch_tt && !pv_search && tt_entry->node_type != NULL_NODE && tt_entry->z_key == pos.z_key) {
+        tt_move = tt_entry->best_move;
+        score = tt_entry->score;
+
+        if (score > MATE_THRESHOLD) {
+            score -= ply;
+        } else if (score < -MATE_THRESHOLD) {
+            score += ply;
+        }
+
+        if (tt_entry->depth >= depth && (tt_entry->node_type == EXACT_NODE || (tt_entry->node_type == LOWER_BOUND_NODE && score >= beta)
+            || (tt_entry->node_type == UPPER_BOUND_NODE && score <= alpha))) {
+            tt_hits++;
+            return score;
+        }
     }
 
     bool in_check = inCheck(pos);
@@ -454,7 +481,6 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
 
     while (in_check ? move = move_picker.getNextMove() : move = move_picker.getNextCapture()) {
         num_moves++;
-        // if (!in_check && !(getMoveType(move) & CAPTURE_MOVE || getMoveType(move) & PROMOTION_FLAG)) continue;
         if (num_moves > 1) pv_search = false;
         // delta pruning. Formula is kind of a kludge as SEE values and eval are not really comparable
         if (!isQuiet(move) && see(pos, move) <= std::max((alpha - s_eval) * SEE_MULTIPLIER - SEE_MULTIPLIER * 80, 0)) continue;

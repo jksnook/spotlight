@@ -5,7 +5,7 @@
 #include "moveorder.hpp"
 #include "movegen.hpp"
 #include "search.hpp"
-#include "tunables.hpp"
+#include "moparams.hpp"
 #include "movepicker.hpp"
 
 #include <cassert>

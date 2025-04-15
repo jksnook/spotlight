@@ -170,4 +170,11 @@ move16 MovePicker::getNextCapture() {
     return 0;
 }
 
+void MovePicker::reset() {
+    stage = TT_MOVE;
+    tt_played = false;
+    capture_index = 0;
+    quiet_index = 0;
+}
+
 
