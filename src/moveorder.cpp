@@ -151,7 +151,7 @@ int scoreMove(Position &pos, move16 move) {
     case QUIET_MOVE:
         return pos.history_table[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR;
     case DOUBLE_PAWN_PUSH:
-        return pos.history_table[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR;
+        return pos.history_table[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR + 1;
         break;
     case QUEEN_PROMOTION:
         return (SEE_VALUES[QUEEN] - SEE_VALUES[PAWN]) * SEE_MULTIPLIER + 

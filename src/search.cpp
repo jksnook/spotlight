@@ -212,7 +212,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
     if (in_check) depth++;
     
-    if (depth == 0) {
+    if (depth <= 0) {
         return qSearch(pos, depth, ply, alpha, beta);
     }
 
