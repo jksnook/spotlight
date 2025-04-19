@@ -9,8 +9,6 @@
 #include <string>
 #include <sstream>
 
-const int CONTINUATION_HISTORY_MAX_PLY = 1;
-
 class MoveGenData {
     public:
         MoveGenData();
