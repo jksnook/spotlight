@@ -356,10 +356,12 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             pv.updatePV(ply, move);
             best_score = score;
             if (best_score >= beta) {
-                if (!(getMoveType(move) & CAPTURE_MOVE)) {
+                if (isQuiet(move)) {
                     saveKiller(ply, move);
                     pos.updateHistory(getFromSquare(move), getToSquare(move), depth * depth);
                 }
+                /* applying history malus even when a non-quiet move fails. I think this is
+                non-standard but this is what worked. */
                 for (const auto &bq: bad_quiets) {
                     pos.updateHistory(getFromSquare(bq), getToSquare(bq), -depth * depth);
                 }
@@ -511,7 +513,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     if (num_moves == 0 && !move_picker.getNextMove()) {
-        if (inCheck(pos)) {
+        if (in_check) {
             return -MATE_SCORE + ply;
         }
         return 0;

@@ -1,5 +1,6 @@
 core.*
 .vscode
+.tmp
 selfplay.txt
 selfplay*.txt
 tune*.txt

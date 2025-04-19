@@ -41,7 +41,7 @@ move16 MovePicker::selectWinningCapture(int start, std::vector<std::pair<int, mo
     return temp.second;
 }
 
-void MovePicker::scoreQuiets(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, Position &pos, move16 _tt_move, move16 _killer_1, move16 _killer_2) {
+void MovePicker::scoreQuiets(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, move16 _tt_move, move16 _killer_1, move16 _killer_2) {
     int s = moves.size();
 
     scored_moves.resize(s);
@@ -61,7 +61,7 @@ void MovePicker::scoreQuiets(MoveList &moves, std::vector<std::pair<int, move16>
     }
 
 }
-void MovePicker::scoreCaptures(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, Position &pos, move16 _tt_move, move16 _killer_1, move16 _killer_2) {
+void MovePicker::scoreCaptures(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, move16 _tt_move, move16 _killer_1, move16 _killer_2) {
     int s = moves.size();
 
     scored_moves.resize(s);
@@ -97,7 +97,7 @@ move16 MovePicker::getNextMove() {
             generateCaptures(captures, pos);
             generated_captures = true;
 
-            scoreCaptures(captures, scored_captures, pos, tt_move, killer_1, killer_2);
+            scoreCaptures(captures, scored_captures, tt_move, killer_1, killer_2);
         }
         if (capture_index < scored_captures.size()) {
             move16 m = selectWinningCapture(capture_index, scored_captures);
@@ -118,7 +118,7 @@ move16 MovePicker::getNextMove() {
             generateQuietMoves(quiets, pos);
             generated_quiets = true;
 
-            scoreQuiets(quiets, scored_quiets, pos, tt_move, killer_1, killer_2);
+            scoreQuiets(quiets, scored_quiets, tt_move, killer_1, killer_2);
         }
         if (quiet_index < scored_quiets.size()) {
             move16 m = selectMove(quiet_index, scored_quiets);
@@ -156,7 +156,7 @@ move16 MovePicker::getNextCapture() {
             generateCaptures(captures, pos);
             generated_captures = true;
 
-            scoreCaptures(captures, scored_captures, pos, tt_move, killer_1, killer_2);
+            scoreCaptures(captures, scored_captures, tt_move, killer_1, killer_2);
         }
         if (capture_index < scored_captures.size()) {
             move16 m = selectMove(capture_index, scored_captures);

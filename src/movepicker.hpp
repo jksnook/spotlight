@@ -30,8 +30,8 @@ private:
     int quiet_index;
     Position &pos;
 
-    static move16 selectMove(int start, std::vector<std::pair<int, move16>> &scored_moves);
-    static move16 selectWinningCapture(int start, std::vector<std::pair<int, move16>> &scored_moves);
-    static void scoreQuiets(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, Position &pos, move16 _tt_move, move16 _killer_1, move16 _killer_2);
-    static void scoreCaptures(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, Position &pos, move16 _tt_move, move16 _killer_1, move16 _killer_2);
+    move16 selectMove(int start, std::vector<std::pair<int, move16>> &scored_moves);
+    move16 selectWinningCapture(int start, std::vector<std::pair<int, move16>> &scored_moves);
+    void scoreQuiets(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, move16 _tt_move, move16 _killer_1, move16 _killer_2);
+    void scoreCaptures(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, move16 _tt_move, move16 _killer_1, move16 _killer_2);
 };
