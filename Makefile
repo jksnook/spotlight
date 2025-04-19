@@ -2,7 +2,7 @@ CXX := g++
 TARGET := spotlight
 TMPDIR := .tmp
 
-CXXFLAGS := -O3 -g
+CXXFLAGS := -O3
 NAME := spotlight
 
 SOURCES := $(wildcard src/*.cpp)
@@ -12,6 +12,8 @@ DEPENDS := $(patsubst %.cpp,$(TMPDIR)/%.d,$(SOURCES))
 all: $(TARGET)
 clean:
 	rm -rf $(TMPDIR) *.o
+debug: CXXFLAGS += -g
+debug: all
 
 $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $(NAME)
