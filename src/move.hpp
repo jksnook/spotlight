@@ -99,7 +99,7 @@ class MoveList {
         }
 
         move16& operator[](int index);
-        const move16& operator[](int index) const;
+        inline const move16& operator[](int index) const;
 
         inline move16 *begin() {return &move_array[0];}
         inline move16 *end() {return &move_array[length];}

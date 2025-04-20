@@ -1,12 +1,6 @@
 #include "bitboards.hpp"
 #include <iostream>
 
-int popLSB(U64 &bitboard) {
-  int bit = bitScanForward(bitboard);
-  bitboard &= ~(1ULL << bit);
-  return bit;
-};
-
 // Reverse Bitscan from the chess programming wiki
 /**
  * bitScanReverse

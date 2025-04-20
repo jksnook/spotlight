@@ -79,7 +79,11 @@ static inline int bitScanForward(U64 bitboard) {
   #endif
 }
 
-int popLSB(U64 &bitboard);
+static inline int popLSB(U64 &bitboard) {
+	int bit = bitScanForward(bitboard);
+	bitboard &= ~(1ULL << bit);
+	return bit;
+};
 
 static inline int countBits(U64 bitboard) {
   #if defined(__GNUC__) || defined(__GNUG__)

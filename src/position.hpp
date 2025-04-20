@@ -79,7 +79,7 @@ class Position {
         move16 parseMove(std::string move_string);
         bool zugzwangUnlikely();
 
-        int at(int sq);
+        inline int at(int sq) {return board[sq];};
 
     private:
         int board[NUM_SQUARES];

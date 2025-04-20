@@ -226,10 +226,6 @@ Position::Position(): in_check(false) {
     readFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-int Position::at(int sq) {
-    return board[sq];
-}
-
 void Position::makeMove(move16 move) {
     assert(move != 0);
     int start_square = getFromSquare(move);
