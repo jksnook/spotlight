@@ -30,6 +30,10 @@ void PVTable::zeroLength(int ply) {
 
 Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), enable_qsearch_tt(true), q_nodes(0), make_output(true) {
     for (int i = 0; i < MAX_PLY; i++) {
+        for (int k = 0; k < 256; k++) {
+            lmr_table[i][k] = log(i) * log(k) / 2.5 + 1.8;
+        } 
+
         killer_1[i] = 0;
         killer_2[i] = 0;
     }
@@ -213,7 +217,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     if (in_check) depth++;
     
     if (depth <= 0) {
-        return qSearch(pos, depth, ply, alpha, beta);
+        return qSearch(pos, 0, ply, alpha, beta);
     }
 
     assert(depth > 0);
@@ -329,12 +333,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             continue;
         }
 
-        if (allow_lmr && (num_moves > 3 || (!improving && num_moves > 2))) {
+        if (allow_lmr && (num_moves > 2 || (!improving && num_moves > 1))) {
             assert(depth > 0);
-            int reduction = 2;
-            if (num_moves > 6 && depth >= 4) {
-                reduction = 3;
-            }
+            int reduction = lmr_table[depth][num_moves] - !isQuiet(move);
             score = -negaMax(pos, depth - reduction, ply + 1, -alpha - 1, -alpha);
             if (score > alpha) {
                 score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
