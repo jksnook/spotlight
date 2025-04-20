@@ -61,6 +61,7 @@ private:
     int negaMax(Position &pos, int depth, int ply, int alpha, int beta);
     int qSearch(Position &pos, int depth, int ply, int alpha, int beta);
     bool timesUp();
+    bool softTimesUp();
     SearchResult iterSearch(Position &pos, int max_depth);
     SearchResult rootSearch(Position &pos, MoveList &moves, int depth, int alpha, int beta);
     void outputInfo(int depth, move16 best_move, int score, int nps);
@@ -78,6 +79,7 @@ private:
 
     std::chrono::steady_clock::time_point start_time;
     U64 timer_duration;
+    U64 soft_time_limit;
 
     int time_check;
     int time_check_interval;

@@ -53,6 +53,7 @@ void Search::clearKillers() {
 void Search::setTimer(U64 duration_in_ms, int interval) {
     time_check_interval = interval;
     timer_duration = duration_in_ms;
+    soft_time_limit = timer_duration * 3 / 4;
     time_check = interval;
     times_up = false;
     start_time = std::chrono::steady_clock::now();
@@ -78,6 +79,18 @@ bool Search::timesUp() {
         return true;
     }
     time_check = time_check_interval;
+    return false;
+}
+
+bool Search::softTimesUp() {
+    if (node_search) {
+        return false;
+    }
+    auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+    if (time_elapsed.count() > soft_time_limit) {
+        times_up = true;
+        return true;
+    }
     return false;
 }
 
@@ -194,6 +207,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
         best_move = best_move_this_search_depth;
         best_score = best_score_this_search_depth;
         if (make_output) outputInfo(depth, best_move, best_score, nps);
+        if (softTimesUp()) break;
     }
 
     result.move = best_move;

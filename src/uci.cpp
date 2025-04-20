@@ -117,9 +117,9 @@ void UCI::parseGo(std::istringstream& commands) {
         U64 search_time;
 
         if (position.side_to_move == WHITE) {
-            search_time = wtime / 30 + winc / 2;
+            search_time = wtime / 30 + winc * 3 / 4;
         } else {
-            search_time = btime / 30 + binc / 2;
+            search_time = btime / 30 + binc * 3 / 4;
         }
 
         move16 best_move = search.timeSearch(position, 30, search_time).move;
