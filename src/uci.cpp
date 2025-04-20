@@ -113,13 +113,30 @@ void UCI::parseGo(std::istringstream& commands) {
             token.clear();
             commands >> token;
         }
+        int movestogo = 30;
+        if (token == "movestogo") {
+            token.clear();
+            commands >> token;
+            movestogo = stoi(token);
+            token.clear();
+            commands >> token;
+        }
+        movestogo = std::min(movestogo, 30);
 
         U64 search_time;
 
-        if (position.side_to_move == WHITE) {
-            search_time = wtime / 30 + winc * 3 / 4;
+        if (movestogo == 1) {
+            if (position.side_to_move == WHITE) {
+                search_time = std::max(wtime - 2ULL, 1ULL);
+            } else {
+                search_time = std::max(btime - 2ULL, 1ULL);
+            }
         } else {
-            search_time = btime / 30 + binc * 3 / 4;
+            if (position.side_to_move == WHITE) {
+                search_time = wtime / movestogo + winc * 3 / 4;
+            } else {
+                search_time = btime / movestogo + binc * 3 / 4;
+            }
         }
 
         move16 best_move = search.timeSearch(position, 30, search_time).move;

@@ -63,7 +63,6 @@ private:
     bool timesUp();
     bool softTimesUp();
     SearchResult iterSearch(Position &pos, int max_depth);
-    SearchResult rootSearch(Position &pos, MoveList &moves, int depth, int alpha, int beta);
     void outputInfo(int depth, move16 best_move, int score, int nps);
     inline void saveKiller(int ply, move16 move) {
         killer_2[ply] = killer_1[ply];
