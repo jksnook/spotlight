@@ -2,14 +2,6 @@
 
 #include <iostream>
 
-move16& MoveList::operator[](int index){
-    return move_array[index];
-};
-
-const move16& MoveList::operator[](int index) const {
-    return move_array[index];
-};
-
 std::string moveToString(move16 move) {
     std::string s = "";
 

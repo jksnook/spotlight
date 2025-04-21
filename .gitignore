@@ -6,6 +6,7 @@ selfplay*.txt
 tune*.txt
 piece_squares.txt
 spotlight
+perf.data
 
 *.sh
 

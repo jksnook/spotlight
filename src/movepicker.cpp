@@ -16,10 +16,10 @@ move16 MovePicker::selectMove(int start, std::vector<std::pair<int, move16>> &sc
             best_score = scored_moves[i].first;
         }
     }
-    std::pair<int, move16> temp = scored_moves[k];
+    move16 temp = scored_moves[k].second;
     scored_moves[k] = scored_moves[start];
     //scored_moves[start] = temp;
-    return temp.second;
+    return temp;
 }
 
 move16 MovePicker::selectWinningCapture(int start, std::vector<std::pair<int, move16>> &scored_moves) {
@@ -35,10 +35,10 @@ move16 MovePicker::selectWinningCapture(int start, std::vector<std::pair<int, mo
     if (best_score < 0) {
         return NULL_MOVE;
     }
-    std::pair<int, move16> temp = scored_moves[k];
+    move16 temp = scored_moves[k].second;
     scored_moves[k] = scored_moves[start];
     //scored_moves[start] = temp;
-    return temp.second;
+    return temp;
 }
 
 void MovePicker::scoreQuiets(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, move16 _tt_move, move16 _killer_1, move16 _killer_2) {

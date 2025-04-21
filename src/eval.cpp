@@ -14,15 +14,17 @@ int eval(Position &pos) {
                 game_phase += phase_values[piece % 6];
                 if (piece < BLACK_PAWN) {
                     early_eval += piece_values[0][piece % 6] + piece_square_tables[piece % 6][0][i ^ 56];
-                    late_eval += piece_values[1][piece % 6] + piece_square_tables[piece % 6][0][i ^ 56];
+                    late_eval += piece_values[1][piece % 6] + piece_square_tables[piece % 6][1][i ^ 56];
                 } else {
                     early_eval -= piece_values[0][piece % 6] + piece_square_tables[piece % 6][0][i];
-                    late_eval -= piece_values[1][piece % 6] + piece_square_tables[piece % 6][0][i];
+                    late_eval -= piece_values[1][piece % 6] + piece_square_tables[piece % 6][1][i];
                 }
             }
         }
 
         int total_eval = (early_eval * game_phase + late_eval * (TOTAL_PHASE - game_phase)) / TOTAL_PHASE;
+
+        // assert(game_phase == TOTAL_PHASE || total_eval != early_eval);
 
         if (pos.side_to_move == BLACK) {
             total_eval *= -1;

@@ -62,12 +62,12 @@ Tuner::Tuner(): weights{}, gradient{} {
                     coeff_idx = (piece % 6) * 64 + (i ^ 56);
                     coeffs[coeff_idx][WHITE]++;
                     early_eval += piece_values[0][piece % 6] + piece_square_tables[piece % 6][0][i ^ 56];
-                    late_eval += piece_values[1][piece % 6] + piece_square_tables[piece % 6][0][i ^ 56];
+                    late_eval += piece_values[1][piece % 6] + piece_square_tables[piece % 6][1][i ^ 56];
                 } else {
                     coeff_idx = (piece % 6) * 64 + i;
                     coeffs[coeff_idx][BLACK]++;
                     early_eval -= piece_values[0][piece % 6] + piece_square_tables[piece % 6][0][i];
-                    late_eval -= piece_values[1][piece % 6] + piece_square_tables[piece % 6][0][i];
+                    late_eval -= piece_values[1][piece % 6] + piece_square_tables[piece % 6][1][i];
                 }
             }
         }
