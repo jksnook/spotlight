@@ -28,7 +28,8 @@ void PVTable::zeroLength(int ply) {
     pv_length[ply] = 0;
 }
 
-Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), enable_qsearch_tt(true), q_nodes(0), make_output(true) {
+Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), 
+enable_qsearch_tt(true), q_nodes(0), make_output(true), times_up(false) {
     for (int i = 0; i < MAX_PLY; i++) {
         for (int k = 0; k < 256; k++) {
             lmr_table[i][k] = log(i) * log(k) / 2.5 + 1.8;
@@ -107,7 +108,7 @@ void Search::outputInfo(int depth, move16 best_move, int score, int nps) {
 // Timed search
 SearchResult Search::timeSearch(Position &pos, int max_depth, U64 time_in_ms) {
     node_search = false;
-    setTimer(time_in_ms, 3000);
+    setTimer(time_in_ms, 1000);
     return iterSearch(pos, max_depth);
 }
 
@@ -171,6 +172,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
         }
 
         // Search from the root node
+        assert(depth <= MAX_PLY);
         best_score_this_search_depth = negaMax(pos, depth, 0, alpha, beta);
         best_move_this_search_depth = pv.getPVMove(0);
 
@@ -217,6 +219,10 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
 }
 
 int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
+    if (ply >= MAX_PLY) {
+        return eval(pos);
+    }
+
     const bool is_root = ply == 0;
     pv.zeroLength(ply);
 
@@ -299,9 +305,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         pos.unmakeNullMove();
         allow_nmp = true;
 
-        if (timesUp()) {
+        if (times_up) {
             return 0;
-        }
+        } 
         if (nmp >= beta) {
             return beta;
         }
@@ -363,10 +369,8 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             score = -negaMax(pos, depth - 1, ply + 1, -beta, -alpha);
         }
         pos.unmakeMove();
+        if (times_up) return 0; 
         if (score > best_score) {
-            if (timesUp()) {
-                return 0;
-            } 
             best_move = move;
             pv.updatePV(ply, move);
             best_score = score;
@@ -400,7 +404,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         return 0;
     }
 
-    if (timesUp()) {
+    if (times_up) {
         return 0;
     }
 
@@ -422,6 +426,10 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     if (timesUp()) {
         return 0;
+    }
+    
+    else if (ply >= MAX_PLY) {
+        return eval(pos);
     }
 
     nodes_searched++;
@@ -504,7 +512,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         pos.makeMove(move);
         score = -qSearch(pos, depth - 1, ply + 1, -beta, -alpha);
         pos.unmakeMove();
-        if (timesUp()) return 0;
+        if (times_up) return 0;
         if (score >= beta) {
             tt.save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.game_half_moves);
             return score;

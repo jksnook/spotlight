@@ -16,6 +16,7 @@ int main(int argc, char* argv[]) {
     initMoves();
     initMagics();
     initZobrist();
+    // assert(false);
 
     if (argc == 1) {
         UCI uci;
