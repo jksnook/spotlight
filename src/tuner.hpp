@@ -9,14 +9,14 @@ Tuning implementation from Andrew Grant's tuning paper:
 https://github.com/AndyGrant/Ethereal/blob/master/Tuning.pdf
 */
 
-const int MAX_POSITIONS = 1000000;
+const int MAX_POSITIONS = 2000000;
 const int NUM_PARAMS = 64 * 6 * 2;
 const int PSQ_ARRAY_SIZE = NUM_PARAMS / 2;
 const int K_PRECISION = 10;
-const int MAX_EPOCHS = 40000;
+const int MAX_EPOCHS = 10000;
 const int REPORT_INTERVAL = 200;
-const double LEARNING_RATE = 0.1;
-const std::string TUNING_FILE = "./tune2.txt";
+const double LEARNING_RATE = 0.03;
+const std::string TUNING_FILE = "./tune-data.txt";
 const std::string TUNING_PARAMS_FILE = "./piece_squares.txt";
 
 struct CoeffData {
