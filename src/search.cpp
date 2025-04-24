@@ -323,9 +323,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     bool can_fprune = false;
 
     // enable or disable futility pruning
-    if (!is_root && !pv_node && depth <= 2 && !in_check && alpha < MATE_THRESHOLD && 
-        alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && beta > -MATE_THRESHOLD && 
-        s_eval + FUTILITY_MARGIN + (depth - 1) * 70 < alpha) {
+    if (!is_root && !pv_node && depth <= 2 && !in_check && 
+        alpha > -MATE_THRESHOLD && beta < MATE_THRESHOLD && 
+        s_eval + FUTILITY_MARGIN + (depth - 1) * 70 + 25 * improving < alpha) {
         can_fprune = true;
     }
 
@@ -347,8 +347,11 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         if (can_fprune && num_moves > 1 && !(getMoveType(move) & CAPTURE_MOVE || getMoveType(move) & PROMOTION_FLAG)) continue;
         pos.makeMove(move);
 
+        // tt prefetching
+        __builtin_prefetch(tt.probe(pos.z_key));
+
         // Late move pruning
-        if (allow_lmp && num_moves > 3 * depth + 2 * improving && !inCheck(pos)) {
+        if (allow_lmp && num_moves > 3 * depth + 2 * improving + 1 && !inCheck(pos)) {
             pos.unmakeMove();
             continue;
         }
@@ -510,6 +513,8 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         // delta pruning. Formula is kind of a kludge as SEE values and eval are not really comparable
         if (!isQuiet(move) && see(pos, move) <= std::max((alpha - s_eval) * SEE_MULTIPLIER - SEE_MULTIPLIER * 80, 0)) continue;
         pos.makeMove(move);
+        // tt prefetching
+        __builtin_prefetch(tt.probe(pos.z_key));
         score = -qSearch(pos, depth - 1, ply + 1, -beta, -alpha);
         pos.unmakeMove();
         if (times_up) return 0;

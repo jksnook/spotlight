@@ -9,15 +9,15 @@ const int TT_SIZE = 1024 * 1024 * 16;
 const int MAX_PLY = 100;
 const int MATE_SCORE = 1 << 15;
 const int MATE_THRESHOLD = MATE_SCORE - MAX_PLY;
-const int NULL_NODE = 0;
-const int EXACT_NODE = 1;
-const int LOWER_BOUND_NODE = 2;
-const int UPPER_BOUND_NODE = 3;
+const uint8_t NULL_NODE = 0;
+const uint8_t EXACT_NODE = 1;
+const uint8_t LOWER_BOUND_NODE = 2;
+const uint8_t UPPER_BOUND_NODE = 3;
 
 class TTEntry {
     public:
         TTEntry();
-        TTEntry(U64 _z_key, int _depth, move16 _best_move, int _score, int _node_type, int _half_moves);
+        TTEntry(U64 _z_key, int _depth, move16 _best_move, int _score, uint8_t _node_type, int _half_moves);
 
         U64 z_key;
         int16_t depth;
@@ -36,7 +36,7 @@ class TT {
         ~TT() {};
 
         void clear();
-        void save(U64 z_key, int depth, int ply, move16 best_move, int score, int node_type, int half_moves);
+        void save(U64 z_key, int depth, int ply, move16 best_move, int score, uint8_t node_type, int half_moves);
         inline TTEntry getEntry(U64 z_key) {return hash_table[z_key % NUM_ENTRIES];};
         TTEntry* probe(U64 z_key);
         bool getScore(U64 z_key, int depth, int ply, int alpha, int beta, int &score, move16 &best_move);

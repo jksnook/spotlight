@@ -11,7 +11,7 @@
 #include <array>
 
 
-const int POSITIVE_INFINITY = 1 << 30;
+const int POSITIVE_INFINITY = 1 << 28;
 const int NEGATIVE_INFINITY = -POSITIVE_INFINITY;
 
 const int WINDOW_MIN_DEPTH = 3;
