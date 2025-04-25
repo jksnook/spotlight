@@ -12,12 +12,13 @@
 // MovePicker class
 class MovePicker {
 public:
-    MovePicker(Position &_pos, move16 _tt_move, move16 _killer_1, move16 _killer_2);
+    MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 _tt_move, move16 _killer_1, move16 _killer_2);
     move16 getNextMove();
     move16 getNextCapture();
     void reset();
     GenType stage;
 private:
+    int scoreMove(move16 move);
     move16 tt_move;
     bool tt_played;
     move16 killer_1;
@@ -29,6 +30,7 @@ private:
     std::vector<std::pair<int, move16>> scored_quiets;
     int quiet_index;
     Position &pos;
+    int (*quiet_history)[2][64][64];
 
     move16 selectMove(int start, std::vector<std::pair<int, move16>> &scored_moves);
     move16 selectWinningCapture(int start, std::vector<std::pair<int, move16>> &scored_moves);

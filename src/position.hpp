@@ -51,10 +51,10 @@ class Position {
 
         std::vector<Undo> history;
 
-        int history_table[2][64][64];
+        // int history_table[2][64][64];
 
-        void clearHistory();
-        void updateHistory(int from, int to, int bonus);
+        // void clearHistory();
+        // void updateHistory(int from, int to, int bonus);
 
         void readFen(std::string fen);
         std::string toFen();

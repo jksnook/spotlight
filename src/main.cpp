@@ -11,12 +11,22 @@
 #include "datagen.hpp"
 #include "tuner.hpp"
 #include "test.hpp"
+#include "threads.hpp"
 
 int main(int argc, char* argv[]) {
     initMoves();
     initMagics();
     initZobrist();
-    // assert(false);
+
+    // Threads t(1);
+
+    // Position pos;
+
+    // t.go(pos, 1000ULL);
+
+    // pos.makeMove(encodeMove(E2, E4, DOUBLE_PAWN_PUSH));
+
+    // t.go(pos, 1000ULL);
 
     if (argc == 1) {
         UCI uci;

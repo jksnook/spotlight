@@ -28,8 +28,10 @@ void PVTable::zeroLength(int ply) {
     pv_length[ply] = 0;
 }
 
-Search::Search(): start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), 
-enable_qsearch_tt(true), q_nodes(0), make_output(true), times_up(false) {
+Search::Search(TT* _tt, std::atomic<bool>* _is_stopped): tt(_tt), is_stopped(_is_stopped),
+start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), enable_qsearch_tt(true), 
+q_nodes(0), make_output(true), times_up(false), thread_id(0) {
+    clearHistory();
     for (int i = 0; i < MAX_PLY; i++) {
         for (int k = 0; k < 256; k++) {
             lmr_table[i][k] = log(i) * log(k) / 2.5 + 1.8;
@@ -41,7 +43,7 @@ enable_qsearch_tt(true), q_nodes(0), make_output(true), times_up(false) {
 }
 
 void Search::clearTT() {
-    tt.clear();
+    tt->clear();
 }
 
 void Search::clearKillers() {
@@ -74,8 +76,13 @@ bool Search::timesUp() {
         time_check--;
         return false;
     }
+    if (is_stopped->load()) {
+        times_up = true;
+        return true;
+    }
     auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
     if (time_elapsed.count() > timer_duration) {
+        is_stopped->store(true);
         times_up = true;
         return true;
     }
@@ -184,7 +191,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
         if (timesUp()) {
             if (best_move_this_search_depth != best_move) {
                 best_move = best_move_this_search_depth;
-                if (make_output) outputInfo(depth, best_move, best_score, nps);
+                if (make_output && thread_id == 0) outputInfo(depth, best_move, best_score, nps);
             }
             break;
         }
@@ -208,12 +215,16 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
 
         best_move = best_move_this_search_depth;
         best_score = best_score_this_search_depth;
-        if (make_output) outputInfo(depth, best_move, best_score, nps);
+        if (make_output && thread_id == 0) outputInfo(depth, best_move, best_score, nps);
         if (softTimesUp()) break;
     }
 
     result.move = best_move;
     result.score = best_score;
+
+    if (thread_id == 0 && make_output) {
+        std::cout << "bestmove " << moveToString(best_move) << std::endl;
+    }
 
     return result;
 }
@@ -259,7 +270,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     // Probe transposition table
-    TTEntry* tt_entry = tt.probe(pos.z_key);
+    TTEntry* tt_entry = tt->probe(pos.z_key);
 
     if (!pv_search && tt_entry->node_type != NULL_NODE && tt_entry->z_key == pos.z_key) {
         tt_move = tt_entry->best_move;
@@ -313,7 +324,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
-    MovePicker move_picker(pos, tt_move, killer_1[ply], killer_2[ply]);
+    MovePicker move_picker(pos, &quiet_history, tt_move, killer_1[ply], killer_2[ply]);
     
     int best_score = NEGATIVE_INFINITY;
     move16 best_move = 0;
@@ -348,7 +359,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         pos.makeMove(move);
 
         // tt prefetching
-        __builtin_prefetch(tt.probe(pos.z_key));
+        __builtin_prefetch(tt->probe(pos.z_key));
 
         // Late move pruning
         if (allow_lmp && num_moves > 3 * depth + 2 * improving + 1 && !inCheck(pos)) {
@@ -380,14 +391,14 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             if (best_score >= beta) {
                 if (isQuiet(move)) {
                     saveKiller(ply, move);
-                    pos.updateHistory(getFromSquare(move), getToSquare(move), depth * depth);
+                    updateHistory(pos.side_to_move, getFromSquare(move), getToSquare(move), depth * depth);
                 }
                 /* applying history malus even when a non-quiet move fails. I think this is
                 non-standard but this is what worked. */
                 for (const auto &bq: bad_quiets) {
-                    pos.updateHistory(getFromSquare(bq), getToSquare(bq), -depth * depth);
+                    updateHistory(pos.side_to_move, getFromSquare(bq), getToSquare(bq), -depth * depth);
                 }
-                tt.save(pos.z_key, depth, ply, move, best_score, LOWER_BOUND_NODE, pos.game_half_moves);
+                tt->save(pos.z_key, depth, ply, move, best_score, LOWER_BOUND_NODE, pos.game_half_moves);
                 return score;
             }
             if (score > alpha) {
@@ -414,9 +425,9 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     if (upper_bound) {
         // reuse tt move in fail lows
         if (tt_move) best_move = tt_move;
-        tt.save(pos.z_key, depth, ply, best_move, best_score, UPPER_BOUND_NODE, pos.game_half_moves);
+        tt->save(pos.z_key, depth, ply, best_move, best_score, UPPER_BOUND_NODE, pos.game_half_moves);
     } else {
-        tt.save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, pos.game_half_moves);
+        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, pos.game_half_moves);
     }
 
     assert(best_score != NEGATIVE_INFINITY);
@@ -454,7 +465,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     // Probe transposition table
-    TTEntry* tt_entry = tt.probe(pos.z_key);
+    TTEntry* tt_entry = tt->probe(pos.z_key);
 
     if (enable_qsearch_tt && !pv_search && tt_entry->node_type != NULL_NODE && tt_entry->z_key == pos.z_key) {
         tt_move = tt_entry->best_move;
@@ -499,7 +510,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         upper_bound = false;
     }
 
-    MovePicker move_picker(pos, tt_move, 0, 0);
+    MovePicker move_picker(pos, &quiet_history, tt_move, 0, 0);
 
     int num_moves = 0;
 
@@ -514,12 +525,12 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         if (!isQuiet(move) && see(pos, move) <= std::max((alpha - s_eval) * SEE_MULTIPLIER - SEE_MULTIPLIER * 80, 0)) continue;
         pos.makeMove(move);
         // tt prefetching
-        __builtin_prefetch(tt.probe(pos.z_key));
+        __builtin_prefetch(tt->probe(pos.z_key));
         score = -qSearch(pos, depth - 1, ply + 1, -beta, -alpha);
         pos.unmakeMove();
         if (times_up) return 0;
         if (score >= beta) {
-            tt.save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.game_half_moves);
+            tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.game_half_moves);
             return score;
         }
         if (score > best_score) {
@@ -549,9 +560,9 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
 
     if (upper_bound) {
         if (tt_move) best_move = tt_move;
-        tt.save(pos.z_key, depth, ply, best_move, best_score, UPPER_BOUND_NODE, pos.game_half_moves);
+        tt->save(pos.z_key, depth, ply, best_move, best_score, UPPER_BOUND_NODE, pos.game_half_moves);
     } else {
-        tt.save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, pos.game_half_moves);
+        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, pos.game_half_moves);
     }
     return best_score;
 };
@@ -564,3 +575,18 @@ int Search::qScore(Position &pos) {
     
     return qSearch(pos, 0, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY);
 }
+
+void Search::updateHistory(Color side, int from, int to, int bonus) {
+    quiet_history[side][from][to] += bonus - abs(bonus) * quiet_history[side][from][to] / MAX_HISTORY;
+}
+
+void Search::clearHistory() {
+    for (auto &side: quiet_history) {
+        for (auto &start: side) {
+            for (auto &end: start) {
+                end = 0;
+            }
+        }
+    }
+}
+

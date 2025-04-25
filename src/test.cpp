@@ -107,7 +107,10 @@ void testPerft() {
 
 void testSearch() {
     Position pos;
-    Search search;
+    TT tt;
+    std::atomic<bool> is_stopped(false);
+
+    Search search(&tt, &is_stopped);
 
     U64 nodes;
     U64 q_nodes;
@@ -115,7 +118,7 @@ void testSearch() {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     for (const auto &fen: TEST_POSITIONS) {
-        pos.clearHistory();
+        search.clearHistory();
         search.clearTT();
         pos.readFen(fen);
         SearchResult r = search.timeSearch(pos, 12, 100000);
@@ -134,12 +137,21 @@ void testSearch() {
 
 void testMovePicker() {
     Position pos;
+    int hist[2][64][64];
+
+    for (auto &side: hist) {
+        for (auto &start: side) {
+            for (auto &end: start) {
+                end = 0;
+            }
+        }
+    }
 
     move16 tt_move = encodeMove(C2, C4, DOUBLE_PAWN_PUSH);
     move16 killer_1 = encodeMove(D2, D4, DOUBLE_PAWN_PUSH);
     move16 killer_2 = encodeMove(E2, E4, DOUBLE_PAWN_PUSH);
 
-    MovePicker picker(pos, tt_move, killer_1, killer_2);
+    MovePicker picker(pos, &hist, tt_move, killer_1, killer_2);
 
     assert(picker.getNextMove() == tt_move);
     move16 move = picker.getNextMove();
@@ -180,7 +192,7 @@ void testMovePicker() {
             killer_2 = quiets[myRandom() % quiets.size()];
         } while (killer_2 == tt_move || killer_2 == killer_1);
 
-        MovePicker picker(pos, tt_move, killer_1, killer_2);
+        MovePicker picker(pos, &hist, tt_move, killer_1, killer_2);
 
         assert(picker.getNextMove() == tt_move);
 

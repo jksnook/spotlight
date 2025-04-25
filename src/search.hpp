@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <array>
+#include <atomic>
 
 
 const int POSITIVE_INFINITY = 1 << 28;
@@ -44,17 +45,21 @@ struct SearchResult {
 class Search
 {
 public:
-    Search();
+    Search(TT* _tt, std::atomic<bool>* _is_stopped);
 
     SearchResult timeSearch(Position &pos, int max_depth, U64 time_in_ms);
     SearchResult nodeSearch(Position &pos, int max_depth, U64 num_nodes);
     int qScore(Position &pos);
     void clearTT();
+    void clearHistory();
     int tt_hits;
     int nodes_searched;
     U64 q_nodes;
     U64 total_nodes;
     bool make_output;
+
+    int thread_id;
+    std::atomic<bool>* is_stopped;
 
 private:
     void setTimer(U64 duration_in_ms, int interval);
@@ -91,7 +96,10 @@ private:
 
     std::array<int, MAX_PLY> eval_stack;
 
-    TT tt;
+    int quiet_history[2][64][64];
+    void updateHistory(Color side, int from, int to, int bonus);
+
+    TT* tt;
     PVTable pv;
     std::array<move16, MAX_PLY> old_pv;
     int old_pv_length;

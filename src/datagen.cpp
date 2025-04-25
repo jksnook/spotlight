@@ -6,6 +6,7 @@
 #include <random>
 #include <chrono>
 #include <string>
+#include <atomic>
 
 bool isQuiet(MoveList &moves) {
     for (const auto &m: moves) {
@@ -35,7 +36,10 @@ void playGames(int num_games, int id) {
 
     Position pos;
 
-    Search search;
+    TT tt;
+    std::atomic<bool> is_stopped(false);
+
+    Search search(&tt, &is_stopped);
     search.make_output = false;
 
     std::random_device r;
@@ -44,6 +48,8 @@ void playGames(int num_games, int id) {
     for (int i = 0; i < num_games; i++) {
         std::cout << "starting game " << i + 1 << " of " << num_games << " on thread " << id << "\n";
         pos.readFen(STARTPOS);
+        tt.clear();
+        search.clearHistory();
 
         std::vector<std::string> fens;
 
@@ -133,6 +139,7 @@ void playGames(int num_games, int id) {
                 }
             }
 
+            is_stopped.store(false);
             SearchResult search_result = search.nodeSearch(pos, MAX_PLY, 90000 + myRandom() % 30000);
 
             move16 move = search_result.move;

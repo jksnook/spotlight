@@ -3,9 +3,11 @@
 #include "position.hpp"
 #include "movegen.hpp"
 #include "search.hpp"
+#include "threads.hpp"
 
 #include <sstream>
 #include <chrono>
+#include <atomic>
 
 
 class UCI {
@@ -20,6 +22,6 @@ public:
 private:
   Position position;
 
-  Search search;
+  Threads search_threads;
 
 };

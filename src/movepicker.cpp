@@ -2,9 +2,9 @@
 
 #include <algorithm>
 
-MovePicker::MovePicker(Position &_pos, move16 _tt_move, move16 _killer_1, move16 _killer_2): 
+MovePicker::MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 _tt_move, move16 _killer_1, move16 _killer_2): 
     stage(TT_MOVE), tt_move(_tt_move), killer_1(_killer_1), killer_2(_killer_2), capture_index(0), quiet_index(0),
-    generated_captures(false), generated_quiets(false), tt_played(false), pos(_pos) {}
+    generated_captures(false), generated_quiets(false), tt_played(false), pos(_pos), quiet_history(_quiet_history) {}
 
 move16 MovePicker::selectMove(int start, std::vector<std::pair<int, move16>> &scored_moves) {
     int best_score = IGNORE_MOVE - 1;
@@ -41,6 +41,54 @@ move16 MovePicker::selectWinningCapture(int start, std::vector<std::pair<int, mo
     return temp;
 }
 
+int MovePicker::scoreMove(move16 move) {
+    int move_type = getMoveType(move);
+    int piece;
+    int from;
+    switch (move_type)
+    {
+    case CAPTURE_MOVE:
+        return see(pos, move);
+        break;
+    case QUIET_MOVE:
+        return (*quiet_history)[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR;
+    case DOUBLE_PAWN_PUSH:
+        return (*quiet_history)[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR + 1;
+        break;
+    case QUEEN_PROMOTION:
+        return (SEE_VALUES[QUEEN] - SEE_VALUES[PAWN]) * SEE_MULTIPLIER + 
+            (*quiet_history)[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR;
+        break;
+    case ROOK_PROMOTION:
+        return IGNORE_MOVE;
+        break;
+    case BISHOP_PROMOTION:
+        return IGNORE_MOVE;
+        break;
+    case KNIGHT_PROMOTION:
+        return 0;
+        break;
+    case QUEEN_PROMOTION_CAPTURE:
+        return see(pos, move);
+        break;
+    case ROOK_PROMOTION_CAPTURE:
+        return IGNORE_MOVE;
+        break;
+    case BISHOP_PROMOTION_CAPTURE:
+        return IGNORE_MOVE;
+        break;
+    case KNIGHT_PROMOTION_CAPTURE:
+        return see(pos, move);
+        break;
+    case EN_PASSANT_CAPTURE:
+        return see(pos, move);
+        break;
+    default:
+        return 0;
+        break;
+    }
+}
+
 void MovePicker::scoreQuiets(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, move16 _tt_move, move16 _killer_1, move16 _killer_2) {
     int s = moves.size();
 
@@ -56,7 +104,7 @@ void MovePicker::scoreQuiets(MoveList &moves, std::vector<std::pair<int, move16>
         } else if (moves[i] == _killer_2) {
             scored_moves[k] = {KILLER_2_SCORE, moves[i]};
         } else {
-            scored_moves[k] = {scoreMove(pos, moves[i]), moves[i]};
+            scored_moves[k] = {scoreMove(moves[i]), moves[i]};
         }
     }
 
@@ -72,7 +120,7 @@ void MovePicker::scoreCaptures(MoveList &moves, std::vector<std::pair<int, move1
             scored_moves.resize(s - 1);
             continue;
         } else {
-            scored_moves[k] = {scoreMove(pos, moves[i]), moves[i]};
+            scored_moves[k] = {scoreMove(moves[i]), moves[i]};
         }
     }
 }
@@ -88,7 +136,7 @@ move16 MovePicker::getNextMove() {
         }
 
         // debug so I know if I get a bad tt move
-        assert(!tt_move);
+        // assert(!tt_move);
     }
 
     if (stage == CAPTURES_AND_PROMOTIONS) {
@@ -147,7 +195,7 @@ move16 MovePicker::getNextCapture() {
         }
 
         // debug so I know if I get a bad tt move
-        assert(!(tt_move && (getMoveType(tt_move) & CAPTURE_MOVE || getMoveType(tt_move) & PROMOTION_FLAG)));
+        // assert(!(tt_move && (getMoveType(tt_move) & CAPTURE_MOVE || getMoveType(tt_move) & PROMOTION_FLAG)));
     }
 
     if (stage == CAPTURES_AND_PROMOTIONS) {

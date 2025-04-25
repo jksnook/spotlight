@@ -219,7 +219,7 @@ U64 Position::generateZobrist() {
 }
 
 Position::Position(): in_check(false) {
-    clearHistory();
+    // clearHistory();
     for (auto &i: board) {
         i = NO_PIECE;
     }
@@ -576,19 +576,19 @@ bool Position::isTripleRepetition() {
     return repetitions >= 2;
 }
 
-void Position::clearHistory() {
-    for (auto &side: history_table) {
-        for (auto &start: side) {
-            for (auto &end: start) {
-                end = 0;
-            }
-        }
-    }
-}
+// void Position::clearHistory() {
+//     for (auto &side: history_table) {
+//         for (auto &start: side) {
+//             for (auto &end: start) {
+//                 end = 0;
+//             }
+//         }
+//     }
+// }
 
-void Position::updateHistory(int from, int to, int bonus) {
-    history_table[side_to_move][from][to] += bonus - abs(bonus) * history_table[side_to_move][from][to] / MAX_HISTORY;
-}
+// void Position::updateHistory(int from, int to, int bonus) {
+//     history_table[side_to_move][from][to] += bonus - abs(bonus) * history_table[side_to_move][from][to] / MAX_HISTORY;
+// }
 
 bool Position::zugzwangUnlikely() {
     for (int p = getPieceID(KNIGHT, side_to_move); p < getPieceID(KING, side_to_move); p++) {

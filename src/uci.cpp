@@ -4,8 +4,7 @@
 #include <iostream>
 #include <chrono>
 
-UCI::UCI() {
-  Position position;
+UCI::UCI(): search_threads(1), position() {
 }
 
 void UCI::loop() {
@@ -24,8 +23,7 @@ void UCI::loop() {
             std::cout << "id name Spotlight" << std::endl;
             std::cout << "uciok" << std::endl;
         } else if (token == "ucinewgame") {
-            search.clearTT();
-            position.clearHistory();
+            search_threads.newGame();
         } else if (token == "isready") {
             std::cout << "readyok" << std::endl;
         } else if (token == "position") {
@@ -139,9 +137,11 @@ void UCI::parseGo(std::istringstream& commands) {
             }
         }
 
-        move16 best_move = search.timeSearch(position, 30, search_time).move;
-        // printMove(best_move);
-        std::cout << "bestmove " << moveToString(best_move) << std::endl;
+        search_threads.go(position, search_time);
+
+        // move16 best_move = search.timeSearch(position, 30, search_time).move;
+        // // printMove(best_move);
+        // std::cout << "bestmove " << moveToString(best_move) << std::endl;
         // std::cout << " tt hits: " << search.tt_hits << std::endl;
     } else if (token == "perft") {
         token.clear();
@@ -156,13 +156,18 @@ void UCI::parseGo(std::istringstream& commands) {
 
         std::cout << node_count << " nodes searched in " << duration.count() << "s " << nps << " nps\n";
 
-    } else if (token == "nodes") {
-        token.clear();
-        commands >> token;
-        U64 num_nodes = stoi(token);
-        move16 best_move = search.nodeSearch(position, 30, num_nodes).move;
-        std::cout << "bestmove " << moveToString(best_move) << std::endl;
-    } else if (token == "lperft") {
+    } 
+    
+    // else if (token == "nodes") {
+    //     token.clear();
+    //     commands >> token;
+    //     U64 num_nodes = stoi(token);
+
+    //     move16 best_move = search.nodeSearch(position, 30, num_nodes).move;
+    //     std::cout << "bestmove " << moveToString(best_move) << std::endl;
+    // } 
+    
+    else if (token == "lperft") {
         token.clear();
         commands >> token;
         int depth = stoi(token);
