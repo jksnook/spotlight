@@ -18,6 +18,7 @@ public:
 
   void parsePosition(std::istringstream& commands);
   void parseGo(std::istringstream& commands);
+  void parseSetOption(std::istringstream& commands);
 
 private:
   Position position;

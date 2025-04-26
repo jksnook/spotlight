@@ -20,8 +20,11 @@ void UCI::loop() {
         commands >> token;
 
         if (token == "uci") {
-            std::cout << "id name Spotlight" << std::endl;
-            std::cout << "uciok" << std::endl;
+            std::cout << "id name Spotlight\n";
+            std::cout << "id author github.com/jksnook\n";
+            std::cout << "option name Threads type spin default 1 min 1 max 64\n";
+            // std::cout << "option name Hash type spin default 16 min 1 max 4096\n";
+            std::cout << "uciok\n";
         } else if (token == "ucinewgame") {
             search_threads.newGame();
         } else if (token == "isready") {
@@ -41,6 +44,10 @@ void UCI::loop() {
             std::cout << position.fifty_move << std::endl;
         } else if (token == "runtest") {
             runTests();
+        } else if (token == "setoption") {
+            parseSetOption(commands);
+        } else if (token == "stop") {
+            search_threads.stop();
         }
     }
 }
@@ -81,6 +88,7 @@ void UCI::parsePosition(std::istringstream& commands) {
 
 }
 void UCI::parseGo(std::istringstream& commands) {
+    search_threads.stop();
     std::string token;
 
     commands >> token;
@@ -137,7 +145,7 @@ void UCI::parseGo(std::istringstream& commands) {
             }
         }
 
-        search_threads.go(position, search_time);
+        search_threads.timeSearch(position, search_time);
 
         // move16 best_move = search.timeSearch(position, 30, search_time).move;
         // // printMove(best_move);
@@ -156,18 +164,13 @@ void UCI::parseGo(std::istringstream& commands) {
 
         std::cout << node_count << " nodes searched in " << duration.count() << "s " << nps << " nps\n";
 
-    } 
-    
-    // else if (token == "nodes") {
-    //     token.clear();
-    //     commands >> token;
-    //     U64 num_nodes = stoi(token);
+    } else if (token == "nodes") {
+        token.clear();
+        commands >> token;
+        U64 num_nodes = stoi(token);
 
-    //     move16 best_move = search.nodeSearch(position, 30, num_nodes).move;
-    //     std::cout << "bestmove " << moveToString(best_move) << std::endl;
-    // } 
-    
-    else if (token == "lperft") {
+        search_threads.nodeSearch(position, num_nodes);
+    } else if (token == "lperft") {
         token.clear();
         commands >> token;
         int depth = stoi(token);
@@ -179,5 +182,29 @@ void UCI::parseGo(std::istringstream& commands) {
         U64 nps = node_count / duration.count();
 
         std::cout << node_count << " nodes searched in " << duration.count() << "s " << nps << " nps\n";
+    } else if (token == "infinite") {
+        search_threads.infiniteSearch(position);
+    }
+}
+
+void UCI::parseSetOption(std::istringstream& commands) {
+    std::string token;
+    commands >> token;
+    if (token != "name") {
+        return;
+    }
+    token.clear();
+    commands >> token;
+    if (token == "Threads") {
+        token.clear();
+        commands >> token;
+        if (token != "value") return;
+        token.clear();
+        commands >> token;
+        int num_threads = stoi(token);
+        if (num_threads > 64 || num_threads < 1) return;
+        search_threads.resize(num_threads);
+    } else if (token == "Hash") {
+
     }
 }
