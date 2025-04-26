@@ -97,6 +97,7 @@ bool Search::softTimesUp() {
     auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
     if (time_elapsed.count() > soft_time_limit) {
         times_up = true;
+        is_stopped->store(true);
         return true;
     }
     return false;
@@ -216,7 +217,7 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
         best_move = best_move_this_search_depth;
         best_score = best_score_this_search_depth;
         if (make_output && thread_id == 0) outputInfo(depth, best_move, best_score, nps);
-        if (softTimesUp()) break;
+        if (thread_id == 0 && softTimesUp()) break;
     }
 
     result.move = best_move;

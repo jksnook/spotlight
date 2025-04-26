@@ -18,15 +18,21 @@ int main(int argc, char* argv[]) {
     initMagics();
     initZobrist();
 
-    // Threads t(1);
+    // Threads t(4);
 
     // Position pos;
 
-    // t.go(pos, 1000ULL);
+    // t.timeSearch(pos, 1000ULL);
+
+    // t.finishSearch();
 
     // pos.makeMove(encodeMove(E2, E4, DOUBLE_PAWN_PUSH));
 
-    // t.go(pos, 1000ULL);
+    // t.timeSearch(pos, 1000ULL);
+
+    // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
+    // t.exitThreads();
 
     if (argc == 1) {
         UCI uci;
