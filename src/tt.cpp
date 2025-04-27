@@ -12,13 +12,24 @@ z_key(_z_key), depth(_depth), best_move(_best_move), score(_score), node_type(_n
 
 }
 
-TT::TT() {
+TT::TT(): num_entries(NUM_ENTRIES), hash_size(TT_SIZE) {
     hash_table.resize(NUM_ENTRIES);
     clear();
 }
 
+TT::TT(size_t size): hash_size(size), num_entries(size / sizeof(TTEntry)) {
+    hash_table.resize(num_entries);
+    clear();
+}
+
+void TT::resize(size_t size) {
+    hash_size = size;
+    num_entries = size / sizeof(TTEntry);
+    hash_table.resize(num_entries);
+}
+
 void TT::clear() {
-    for (int i = 0; i < NUM_ENTRIES; i++) {
+    for (int i = 0; i < num_entries; i++) {
         hash_table[i] = TTEntry();
     }
 }
@@ -41,7 +52,7 @@ void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, uint8_
 }
 
 TTEntry* TT::probe(U64 z_key) {
-    return &hash_table[z_key % NUM_ENTRIES];
+    return &hash_table[z_key % num_entries];
 }
 
 bool TT::getScore(U64 z_key, int depth, int ply, int alpha, int beta, int &score, move16 &best_move) {

@@ -5,7 +5,7 @@
 
 #include <vector>
 
-const int TT_SIZE = 1024 * 1024 * 16;
+const size_t TT_SIZE = 1024 * 1024 * 16;
 const int MAX_PLY = 100;
 const int MATE_SCORE = 1 << 15;
 const int MATE_THRESHOLD = MATE_SCORE - MAX_PLY;
@@ -33,14 +33,18 @@ const int NUM_ENTRIES = TT_SIZE / sizeof(TTEntry);
 class TT {
     public:
         TT();
+        TT(size_t size);
         ~TT() {};
 
+        void resize(size_t size);
         void clear();
         void save(U64 z_key, int depth, int ply, move16 best_move, int score, uint8_t node_type, int half_moves);
         inline TTEntry getEntry(U64 z_key) {return hash_table[z_key % NUM_ENTRIES];};
         TTEntry* probe(U64 z_key);
         bool getScore(U64 z_key, int depth, int ply, int alpha, int beta, int &score, move16 &best_move);
     private:
+        U64 num_entries;
+        size_t hash_size;
         std::vector<TTEntry> hash_table;
 
 };

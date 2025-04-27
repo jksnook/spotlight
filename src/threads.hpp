@@ -11,15 +11,14 @@
 
 class SearchWrapper {
 public:
-
     SearchWrapper(TT* _tt, std::atomic<bool>* _is_stopped);
     ~SearchWrapper() {};
 
     Search search;
     Position pos;
-
     std::mutex mx;
     std::condition_variable cv;
+
     bool node_search;
     U64 max_nodes;
     int max_depth;
@@ -28,7 +27,6 @@ public:
     bool is_waiting;
     bool exit_thread;
     void wait();
-
 private:
 };
 
@@ -45,11 +43,12 @@ public:
     void stop();
     void finishSearch();
     void exitThreads();
+
+    std::atomic<bool> is_stopped;
+    TT tt;
+
+private:
     std::vector<SearchWrapper*> workers;
     std::vector<std::thread> threads;
-    std::atomic<bool> is_stopped;
-    
-    TT tt;
-public:
 };
 

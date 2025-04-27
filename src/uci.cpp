@@ -23,7 +23,7 @@ void UCI::loop() {
             std::cout << "id name Spotlight\n";
             std::cout << "id author github.com/jksnook\n";
             std::cout << "option name Threads type spin default 1 min 1 max 64\n";
-            // std::cout << "option name Hash type spin default 16 min 1 max 4096\n";
+            std::cout << "option name Hash type spin default 16 min 1 max 4096\n";
             std::cout << "uciok\n";
         } else if (token == "ucinewgame") {
             search_threads.newGame();
@@ -80,10 +80,8 @@ void UCI::parsePosition(std::istringstream& commands) {
     token.clear();
 
     while (commands >> token) {
-        // printMoveLong(position.parseMove(token));
         position.makeMove(position.parseMove(token));
         position.game_half_moves++;
-        // position.print();
     }
 
 }
@@ -146,11 +144,6 @@ void UCI::parseGo(std::istringstream& commands) {
         }
 
         search_threads.timeSearch(position, search_time);
-
-        // move16 best_move = search.timeSearch(position, 30, search_time).move;
-        // // printMove(best_move);
-        // std::cout << "bestmove " << moveToString(best_move) << std::endl;
-        // std::cout << " tt hits: " << search.tt_hits << std::endl;
     } else if (token == "perft") {
         token.clear();
         commands >> token;
@@ -205,6 +198,14 @@ void UCI::parseSetOption(std::istringstream& commands) {
         if (num_threads > 64 || num_threads < 1) return;
         search_threads.resize(num_threads);
     } else if (token == "Hash") {
-
+        token.clear();
+        commands >> token;
+        if (token != "value") return;
+        token.clear();
+        commands >> token;
+        size_t size = stoi(token);
+        if (size > 4096 || size < 1) return;
+        size *= 1024 * 1024;
+        search_threads.tt.resize(size);
     }
 }
