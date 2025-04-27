@@ -21,20 +21,20 @@ const int WINDOW_INCREMENT = 60;
 const int FUTILITY_MARGIN = 120;
 
 class PVTable {
-    public:
-        std::array<std::array<move16, MAX_PLY>, MAX_PLY> table;
-        std::array<int, MAX_PLY> pv_length;
-        void updatePV(int ply, move16 first_move);
-        void updateFromTT(int ply, move16 first_move);
-        void clearPV();
-        void zeroLength(int ply);
+public:
+    std::array<std::array<move16, MAX_PLY>, MAX_PLY> table;
+    std::array<int, MAX_PLY> pv_length;
+    void updatePV(int ply, move16 first_move);
+    void updateFromTT(int ply, move16 first_move);
+    void clearPV();
+    void zeroLength(int ply);
 
-        inline int length() {return pv_length[0];}
-        inline move16 getPVMove(int ply) {return table[0][ply];}
+    inline int length() {return pv_length[0];}
+    inline move16 getPVMove(int ply) {return table[0][ply];}
 
-        inline auto begin() { return table[0].begin();}
-        inline auto end() { return  table[0].begin() + pv_length[0];}
-    private:
+    inline auto begin() { return table[0].begin();}
+    inline auto end() { return  table[0].begin() + pv_length[0];}
+private:
 };
 
 struct SearchResult {
