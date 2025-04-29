@@ -241,7 +241,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
     if (timesUp()) {
         return 0;
-    } else if (pos.isTripleRepetition() || pos.fifty_move >= 50) {
+    } else if (pos.isTripleRepetition() || (!is_root && pos.fifty_move >= 50)) {
         return 0;
     }
 

@@ -15,7 +15,7 @@ const int PSQ_ARRAY_SIZE = NUM_PARAMS / 2;
 const int K_PRECISION = 10;
 const int MAX_EPOCHS = 10000;
 const int REPORT_INTERVAL = 200;
-const double LEARNING_RATE = 0.03;
+const double LEARNING_RATE = 0.05;
 const std::string TUNING_FILE = "./tune-data.txt";
 const std::string TUNING_PARAMS_FILE = "./piece_squares.txt";
 
