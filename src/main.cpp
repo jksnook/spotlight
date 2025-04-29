@@ -32,6 +32,6 @@ int main(int argc, char* argv[]) {
         tuner.printWeights();
         tuner.outputToFile();
     } else if (static_cast<std::string>(argv[1]) == "datagen") {
-        selfplay(50);
+        selfplay(5000);
     }
 }

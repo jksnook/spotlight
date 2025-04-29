@@ -112,11 +112,18 @@ void playGames(int num_games, int id, int &games_played, std::mutex &mx) {
 
         while(true) {
             if (pos.fifty_move >= FIFTY_MOVE_LIMIT) {
-                std::cout << "Draw by fifty moves rule" << std::endl;
+                std::cout << "Draw by fifty moves rule\n";
+                pos.print();
                 result = "0.5";
                 break;
             } else if (pos.isTripleRepetition()) {
-                std::cout << "Draw by triple repetition" << std::endl;
+                std::cout << "Draw by triple repetition\n";
+                pos.print();
+                result = "0.5";
+                break;
+            } else if (countBits(pos.bitboards[OCCUPANCY]) == 2) {
+                std::cout << "Draw by insufficient material\n";
+                pos.print();
                 result = "0.5";
                 break;
             }

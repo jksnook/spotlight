@@ -234,13 +234,14 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     if (ply >= MAX_PLY) {
         return eval(pos);
     }
+    assert(depth <= MAX_PLY);
 
     const bool is_root = ply == 0;
     pv.zeroLength(ply);
 
     if (timesUp()) {
         return 0;
-    } else if (pos.isTripleRepetition()) {
+    } else if (pos.isTripleRepetition() || pos.fifty_move >= 50) {
         return 0;
     }
 
@@ -443,7 +444,7 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
         return 0;
     }
     
-    else if (ply >= MAX_PLY) {
+    else if (ply >= MAX_PLY || pos.fifty_move >= 50) {
         return eval(pos);
     }
 
