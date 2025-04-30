@@ -10,6 +10,8 @@ using move16 = std::uint16_t;
 
 enum Color : uint8_t { WHITE, BLACK };
 
+enum GenType : int {TT_MOVE, CAPTURES_AND_PROMOTIONS, QUIET, LEGAL, END_MOVEGEN};
+
 enum Piece : uint8_t {
     WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
     BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
@@ -29,4 +31,4 @@ enum Square : uint16_t {
     A8, B8, C8, D8, E8, F8, G8, H8,
 };
 
-}
+} // namespace Spotlight

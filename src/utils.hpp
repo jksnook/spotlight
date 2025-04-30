@@ -101,7 +101,7 @@ inline constexpr Square getRelativeSquare(Square sq, Color side) {
 }
 
 inline constexpr Square prevPawnSquare(Square sq, Color side) {
-    return static_cast<Square>(sq + 8 * side - 8 * side);
+    return static_cast<Square>(sq + 8 * side - 8 * getOtherSide(side));
 }
 
 constexpr std::string_view STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

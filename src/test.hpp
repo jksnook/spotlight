@@ -8,6 +8,8 @@
 #include <vector>
 #include <array>
 
+namespace Spotlight {
+
 constexpr std::array TEST_POSITIONS = {
     "r1b1kb1r/2pp1ppp/1np1q3/p3P3/2P5/1P6/PB1NQPPP/R3KB1R b KQkq - 0 1",
     "r2q1rk1/1ppnbppp/p2p1nb1/3Pp3/2P1P1P1/2N2N1P/PPB1QP2/R1B2RK1 b - -",
@@ -30,3 +32,5 @@ constexpr std::array PERFT_POSITIONS = {
 };
 
 void testPerft();
+
+} // namespace Spotlight

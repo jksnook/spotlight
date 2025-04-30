@@ -43,6 +43,10 @@ inline constexpr BitBoard setBit(int bit) {
 	return 1ULL << bit;
 }
 
+inline constexpr BitBoard setBit(Square bit) {
+	return 1ULL << bit;
+}
+
 const int index64[64] = {
     0,  1, 48,  2, 57, 49, 28,  3,
    61, 58, 50, 42, 38, 29, 17,  4,

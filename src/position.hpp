@@ -71,7 +71,7 @@ public:
     move16 parseMove(std::string move_string);
     bool zugzwangUnlikely();
 
-    inline Piece at(int sq) {return board[sq];};
+    inline Piece at(Square sq) {return board[sq];};
 
 private:
     Piece board[64];

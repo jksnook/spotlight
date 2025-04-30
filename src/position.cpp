@@ -11,7 +11,7 @@ namespace Spotlight {
 
 template <bool update_zobrist>
 void Position::movePiece(Square start, Square end, Piece piece) {
-    if constexpr(update_zobrist) {
+    if constexpr (update_zobrist) {
         z_key ^= piece_keys[piece][start];
         z_key ^= piece_keys[piece][end];
     }
@@ -29,7 +29,7 @@ void Position::movePiece(Square start, Square end, Piece piece) {
 
 template <bool update_zobrist>
 void Position::removePiece(Square square, Piece piece) {
-    if constexpr(update_zobrist) z_key ^= piece_keys[piece][square];
+    if constexpr (update_zobrist) z_key ^= piece_keys[piece][square];
     bitboards[piece] ^= setBit(square);
     bitboards[WHITE_OCCUPANCY] &= ~setBit(square);
     bitboards[BLACK_OCCUPANCY] &= ~setBit(square);
@@ -40,7 +40,7 @@ void Position::removePiece(Square square, Piece piece) {
 
 template <bool update_zobrist>
 void Position::placePiece(Square square, Piece piece) {
-    if constexpr(update_zobrist) z_key ^= piece_keys[piece][square];
+    if constexpr (update_zobrist) z_key ^= piece_keys[piece][square];
     bitboards[piece] ^= setBit(square);
     bitboards[WHITE_OCCUPANCY + piece / 6] ^= setBit(square);
     bitboards[OCCUPANCY] ^= setBit(square);
@@ -211,7 +211,7 @@ void Position::print() {
     std::cout << "+---+---+---+---+---+---+---+---+\n";
     for (int rank = 7; rank >= 0; rank--) {
         for (int file = 0; file < 8; file++) {
-            int sq = (rank * 8 + file);
+            Square sq = static_cast<Square>(rank * 8 + file);
             int piece = at(sq);
             if (piece != NO_PIECE) {
                 std::cout << "| " << PIECE_TO_LETTER_MAP[piece] << ' ';
@@ -247,7 +247,7 @@ U64 Position::generateZobrist() {
     U64 zobrist = 0ULL;
 
     for (int i = 0; i < 64; i++) {
-        int piece = at(i);
+        Piece piece = at(static_cast<Square>(i));
         zobrist ^= piece_keys[piece][i];
     }
 
@@ -302,7 +302,7 @@ void Position::makeMove(move16 move) {
         break;
     case CAPTURE_MOVE:
         captured_piece = at(end_square);
-        assert(captured_piece % 6 != KING);
+        assert(getPieceType(captured_piece) != KING);
         undo.captured_piece = captured_piece;
         removePiece<true>(end_square, captured_piece);
         movePiece<true>(start_square, end_square, piece);
@@ -311,7 +311,7 @@ void Position::makeMove(move16 move) {
     case DOUBLE_PAWN_PUSH:
         movePiece<true>(start_square, end_square, piece);
         en_passant = prevPawnSquare(end_square, side_to_move);
-        if (!(pawn_attacks[side_to_move][en_passant] & bitboards[WHITE_PAWN + BLACK_PAWN * (side_to_move ^ 1)])) {
+        if (!(pawn_attacks[side_to_move][en_passant] & bitboards[getPieceID(PAWN, getOtherSide(side_to_move))])) {
             en_passant = A1;
         } else {
             z_key ^= en_passant_keys[en_passant];
@@ -506,8 +506,8 @@ void Position::unmakeMove() {
 
 move16 Position::parseMove(std::string move_string) {
     move16 move = 0;
-    int start = (move_string[0] - 'a') + (move_string[1] - '1') * 8;
-    int end = (move_string[2] - 'a') + (move_string[3] - '1') * 8;
+    Square start = static_cast<Square>((move_string[0] - 'a') + (move_string[1] - '1') * 8);
+    Square end = static_cast<Square>((move_string[2] - 'a') + (move_string[3] - '1') * 8);
 
     move16 piece = 0UL;
     move16 move_type = 0UL;
