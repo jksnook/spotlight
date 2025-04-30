@@ -5,12 +5,15 @@
 namespace Spotlight {
 
 using U64 = std::uint64_t;
+using BitBoard = std::uint64_t;
 using move16 = std::uint16_t;
+
+enum class Color : uint8_t { WHITE, BLACK };
 
 enum class Piece : uint8_t {
     WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
     BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
-    WHITE_OCCUPANCY, BLACK_OCCUPANCY, OCCUPANCY, NO_PIECE
+    NO_PIECE
 };
 
 enum class PieceType : uint8_t { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING };
