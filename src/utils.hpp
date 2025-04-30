@@ -29,6 +29,10 @@ inline constexpr Piece getPieceID(PieceType piece_type, Color side) {
     return static_cast<Piece>( static_cast<int>(piece_type) + static_cast<int>(side) * 6 );
 }
 
+inline constexpr PieceType getPieceType(Piece piece) {
+    return static_cast<PieceType>(static_cast<int>(piece) % 6);
+}
+
 inline constexpr Color getPieceColor(Piece piece) {
     return static_cast<Color>(piece > Piece::WHITE_KING);
 }
@@ -46,6 +50,30 @@ const int WQC = 1;
 const int WKC = 2;
 const int BQC = 4;
 const int BKC = 8;
+
+constexpr int charToCastleRights(char c) {
+    switch (c)
+    {
+    case 'Q':
+        return WQC;
+        break;
+    case 'K':
+        return WKC;
+        break;
+    case 'q':
+        return BQC;
+        break;
+    case 'k':
+        return BKC;
+        break;
+    case '-':
+        return 0;
+        break;
+    default:
+        return 0;
+        break;
+    }
+}
 
 // castle squares needed for move generation and validation
 const BitBoard WQC_SQUARES = 0b1110ULL;
@@ -68,6 +96,14 @@ constexpr std::string_view SQUARE_NAMES[64] {
     "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8" 
 };
 
+inline constexpr Square getRelativeSquare(Square sq, Color side) {
+    return static_cast<Square>(static_cast<int>(sq) ^ (56 * static_cast<int>(side)));
+}
+
+inline constexpr Square prevPawnSquare(Square sq, Color side) {
+    return static_cast<Square>(sq + 8 * side - 8 * side);
+}
+
 constexpr std::string_view STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-}
+} // namespace Spotlight
