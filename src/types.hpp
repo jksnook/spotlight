@@ -31,4 +31,6 @@ enum Square : uint16_t {
     A8, B8, C8, D8, E8, F8, G8, H8,
 };
 
+enum NodeType { PV_NODE, CUT_NODE, ALL_NODE };
+
 } // namespace Spotlight

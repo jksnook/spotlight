@@ -12,7 +12,7 @@ U64 side_key;
 
 void initZobrist() {
 
-    std::mt19937_64 randomU64(10);
+    std::mt19937_64 randomU64(15);
 
 
     for (int i = 0; i < 64; i++) {

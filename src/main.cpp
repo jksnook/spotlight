@@ -3,6 +3,7 @@
 #include "zobrist.hpp"
 #include "move.hpp"
 #include "test.hpp"
+#include "eval.hpp"
 
 using namespace Spotlight;
 
@@ -25,6 +26,12 @@ int main(int argc, char* argv[]) {
 
     // perft()
 
-    testPerft();
+    // testPerft();
+
+    testSee();
+    testCheck();
+    testMovePicker();
+
+    testSearch();
 
 }
