@@ -180,8 +180,9 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
 
         total_nodes += nodes_searched;
 
-
+        // check for search timeout
         if (times_up) {
+            // if the best move has changed we use it even if the search timed out
             if (pv.getPVMove(0) != best_move) {
                 best_move = pv.getPVMove(0);
                 best_score = score;
@@ -231,6 +232,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         return 0;
     }
 
+    bool in_check = inCheck(pos);
+
     // If we are at depth 0 then drop into the quiescence search
     if (depth <= 0) {
         return qSearch(pos, 0, ply, alpha, beta);
@@ -257,6 +260,14 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
+    // get static evaluation for use in pruning heuristics
+    int s_eval = eval(pos);
+
+    // reverse futility pruning
+    if (!pv_node && !in_check && depth <= 3 && s_eval >= beta + 120 * depth) {
+        return s_eval;
+    }
+
     // initialize move picker with appropriate data for move ordering
     MovePicker move_picker(pos, &quiet_history, tt_move, 0, 0);
 
@@ -276,6 +287,9 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         int score = 0;
 
         pos.makeMove(move);
+
+        // TT prefetching. avoids cache misses that cause slow TT lookups
+        __builtin_prefetch(tt->probe(pos.z_key));
 
         // Principal variation search
         // template parameters are <pv_node, cut_node, is_root>
@@ -327,7 +341,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // check for checkmate and stalemate
     if (num_moves == 0) {
         if (inCheck(pos)) {
-            return -MATE_SCORE;
+            // subtract our current ply from the mate score to encourage faster checkmates
+            return -MATE_SCORE + ply;
         }
         return 0;
     }
@@ -343,6 +358,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     return best_score;
 }
 
+// quiescence search 
 int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     if (timesUp()) {
         return 0;
@@ -352,8 +368,22 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     nodes_searched++;
     q_nodes++;
 
+    bool in_check = inCheck(pos);
+
+    // tt disabled in qsearch for now
+    move16 tt_move = NULL_MOVE;
+
     // get static eval;
-    int stand_pat = eval(pos);
+    int stand_pat;
+    
+    // don't use standing pat when in check. (we need to search evasions)
+    if (!in_check) {
+        stand_pat = eval(pos);
+    } else {
+        stand_pat = NEGATIVE_INFINITY;
+    }
+
+    bool is_upper_bound = true;
 
     if (stand_pat >= beta) {
         // standing pat beta cutoff
@@ -365,15 +395,18 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
         This is sound because in chess making a move is usually better than doing nothing
         */
         alpha = stand_pat;
+        is_upper_bound = false;
     }
 
-    MovePicker move_picker(pos, &quiet_history, 0, 0, 0);
+    MovePicker move_picker(pos, &quiet_history, tt_move, 0, 0);
 
     move16 move = NULL_MOVE;
+    move16 best_move = NULL_MOVE;
     int best_score = stand_pat;
     int num_moves = 0;
 
-    while (move = move_picker.getNextCapture()) {
+    // if in check search all legal moves, otherwise search captures
+    while (in_check ? move = move_picker.getNextMove() : move = move_picker.getNextCapture()) {
         num_moves++;
         pos.makeMove(move);
         int score = -qSearch(pos, depth - 1, ply + 1, -beta, -alpha);
@@ -381,10 +414,12 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
 
         if (score > best_score) {
             best_score = score;
+            best_move = move;
             if (score >= beta) {
                 return score;
             } else if (score > alpha) {
                 alpha = score;
+                is_upper_bound = false;
             }
         }
 
@@ -393,7 +428,8 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     // check for checkmate and stalemate
     if (num_moves == 0 && !move_picker.getNextMove()) {
         if (inCheck(pos)) {
-            return -MATE_SCORE;
+            // subtract our current ply from the mate score to encourage faster checkmates
+            return -MATE_SCORE + ply;
         }
         return 0;
     }
