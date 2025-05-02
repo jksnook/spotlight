@@ -124,7 +124,7 @@ void testSearch() {
         search.clearHistory();
         search.clearTT();
         pos.readFen(fen);
-        SearchResult r = search.timeSearch(pos, 8, 100000);
+        SearchResult r = search.timeSearch(pos, 12, 100000);
         nodes += search.total_nodes;
         q_nodes += search.q_nodes;
     }

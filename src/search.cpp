@@ -171,10 +171,10 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
 
         // set aspiration windows
         // aspiration windows aren't gaining right now. I will reenable them once I add some more features.
-        // if (depth > WINDOW_MIN_DEPTH && !research) {
-        //     alpha = best_score - WINDOW_SIZE;
-        //     beta = best_score + WINDOW_SIZE;
-        // }
+        if (depth > WINDOW_MIN_DEPTH && !research) {
+            alpha = best_score - WINDOW_SIZE;
+            beta = best_score + WINDOW_SIZE;
+        }
 
         int score = negaMax<true, false, true>(pos, depth, 0, alpha, beta);
 
@@ -192,17 +192,17 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
         }
 
         // re-search if our score is outside the aspiration window
-        // if (score <= alpha) {
-        //     alpha = NEGATIVE_INFINITY;
-        //     research = true;
-        //     depth--;
-        //     continue;
-        // } else if (score >= beta) {
-        //     beta = POSITIVE_INFINITY;
-        //     research = true;
-        //     depth--;
-        //     continue;
-        // }
+        if (score <= alpha) {
+            alpha = NEGATIVE_INFINITY;
+            research = true;
+            depth--;
+            continue;
+        } else if (score >= beta) {
+            beta = POSITIVE_INFINITY;
+            research = true;
+            depth--;
+            continue;
+        }
 
         best_move = pv.getPVMove(0);
         best_score = score;
@@ -277,7 +277,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     always better than doing nothing. We disable it in positions where 
     zugzwang is likely
     */
-    if (!pv_node && allow_nmp && depth > 3 && !in_check && pos.zugzwangUnlikely()) {
+    if (!pv_node && allow_nmp && depth > 3 && !in_check &&
+        s_eval >= beta && pos.zugzwangUnlikely()) {
         // calculate depth reduction
         int reduction = 3 + depth / 4;
         // don't drop directly into quiescence search
@@ -322,12 +323,50 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         // TT prefetching. avoids cache misses that cause slow TT lookups
         __builtin_prefetch(tt->probe(pos.z_key));
 
-        // Principal variation search
-        // template parameters are <pv_node, cut_node, is_root>
+        /*
+        Late Move Reductions
+
+        Search later moves with a reduced depth. If they raise alpha then we
+        search again with full depth. This is based on the assumption that
+        moves ordered later by our move ordering scheme are less likely to
+        be good
+        */
+        bool do_full_search = true;
+        if (num_moves > 1 && depth > 2 && !in_check && isQuiet(move) && !inCheck(pos)) {
+            int lmr_reduction = lmr_table[depth][num_moves];
+            // don't drop directly into qsearch
+            lmr_reduction = std::min(lmr_reduction, depth - 1);
+
+            // don't bother unless we have an actual reduction
+            if (lmr_reduction > 1) {
+                score = -negaMax<false, true, false>(pos, depth - lmr_reduction, ply + 1, -alpha - 1, -alpha);
+
+                // re-search when we raise alpha
+                if (score > alpha) {
+                    do_full_search = true;
+                } else {
+                    do_full_search = false;
+                }
+            }
+        }
+
+        /*
+        Principal Variation Search
+
+        The root node is a PV node and from there we search the first child
+        of a PV node as a PV with a full window and subsequent children as non-PV
+        nodes with a zero window. If a move raises alpha in a pv node then we re-search
+        that child as a pv node with a full window.
+
+        The idea is that by searching most nodes with a zero window we increase cutoffs
+        and search fewer total nodes even if re-searches are sometimes necessary.
+
+        template parameters are <pv_node, cut_node, is_root>
+        */
         if (pv_node && num_moves == 1) {
             // always search the first move of a pv node with a full window
             score = -negaMax<pv_node, false, false>(pos, depth - 1, ply + 1, -beta, -alpha);
-        } else {
+        } else if (do_full_search) {
             // search with a zero window
             score = -negaMax<false, !cut_node, false>(pos, depth - 1, ply + 1, -alpha - 1, -alpha);
             if (pv_node && score > alpha) {
