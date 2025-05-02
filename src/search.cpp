@@ -263,9 +263,40 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // get static evaluation for use in pruning heuristics
     int s_eval = eval(pos);
 
-    // reverse futility pruning
+    /*
+    Reverse Futility Pruning
+    If our eval is above beta + some margin we consider this a beta cutoff
+    */
     if (!pv_node && !in_check && depth <= 3 && s_eval >= beta + 120 * depth) {
         return s_eval;
+    }
+
+    /*
+    Null Move Pruning
+    This takes advantage of the observation that playing a move is nearly
+    always better than doing nothing. We disable it in positions where 
+    zugzwang is likely
+    */
+    if (!pv_node && allow_nmp && depth > 3 && !in_check && pos.zugzwangUnlikely()) {
+        // calculate depth reduction
+        int reduction = 3 + depth / 4;
+        // don't drop directly into quiescence search
+        reduction = std::min(reduction, depth - 1);
+        // apply a null move
+        pos.makeNullMove();
+        // disable null move pruning in our reduced search
+        allow_nmp = false;
+        // search with a reduced depth and null window
+        int nmp = -negaMax<false, true, false>(pos, depth - reduction, ply + 1, -beta, -beta + 1);
+        pos.unmakeNullMove();
+        allow_nmp = true;
+
+        // check for timeout
+        if (times_up) return 0;
+
+        // if our score is still above beta even after a null move we consider this a beta cutoff
+        if (nmp >= beta) return beta;
+
     }
 
     // initialize move picker with appropriate data for move ordering
@@ -316,12 +347,14 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
             pv.updatePV(ply, move);
             // check for a beta cutoff
             if (score >= beta) {
-                // update butterfly history
-                int bonus = depth * depth;
-                updateHistory(pos.side_to_move, getFromSquare(move), getToSquare(move), bonus);
-                // apply malus to the previous quiet moves
-                for (auto& bq : bad_quiets) {
-                    updateHistory(pos.side_to_move, getFromSquare(bq), getToSquare(bq), -bonus);
+                if (isQuiet(move)) {
+                    // update butterfly history
+                    int bonus = depth * depth;
+                    updateHistory(pos.side_to_move, getFromSquare(move), getToSquare(move), bonus);
+                    // apply malus to the previous quiet moves
+                    for (auto& bq : bad_quiets) {
+                        updateHistory(pos.side_to_move, getFromSquare(bq), getToSquare(bq), -bonus);
+                    }
                 }
                 // Store to TT as a fail high
                 tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.half_moves);
