@@ -169,6 +169,8 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
     for (int depth = 1; depth <= max_depth; depth++) {
         nodes_searched = 0ULL;
 
+        std::chrono::time_point start_time = std::chrono::steady_clock::now();
+
         // set aspiration windows
         // aspiration windows aren't gaining right now. I will reenable them once I add some more features.
         if (depth > WINDOW_MIN_DEPTH && !research) {
@@ -179,6 +181,8 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
         int score = negaMax<true, false, true>(pos, depth, 0, alpha, beta);
 
         total_nodes += nodes_searched;
+        std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - start_time;
+        U64 nps = nodes_searched / time_elapsed.count();
 
         // check for search timeout
         if (times_up) {
@@ -186,7 +190,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
             if (pv.getPVMove(0) != best_move) {
                 best_move = pv.getPVMove(0);
                 best_score = score;
-                if (make_output) outputInfo(depth, best_move, best_score, 0);
+                if (make_output) outputInfo(depth, best_move, best_score, nps);
             }
             break;
         }
@@ -207,7 +211,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
         best_move = pv.getPVMove(0);
         best_score = score;
 
-        if (make_output) outputInfo(depth, best_move, best_score, 0);
+        if (make_output) outputInfo(depth, best_move, best_score, nps);
 
         if (softTimesUp()) break;
     }
@@ -328,6 +332,17 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
         // TT prefetching. avoids cache misses that cause slow TT lookups
         __builtin_prefetch(tt->probe(pos.z_key));
+
+        /*
+        Late Move Pruning
+
+        prune late-ordered quiet moves in non-PV nodes at low depth
+        */
+        if (!pv_node && !in_check && bad_quiets.size() > 2 + depth * 2 && depth <= 2 && isQuiet(move) && !inCheck(pos)) {
+            pos.unmakeMove();
+            continue;
+        }
+
 
         /*
         Late Move Reductions
