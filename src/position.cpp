@@ -129,7 +129,7 @@ void Position::readFen(std::string fen) {
     fen = fen.substr(space_pos + 1);
     space_pos = fen.find(' ');
     if (isdigit(fen[0])) {
-        fifty_move = std::stoi(fen.substr(0, space_pos));
+        fifty_move = std::stoi(fen.substr(0, space_pos)) * 2;
     } else {
         fifty_move = 0;
     }
@@ -608,7 +608,7 @@ bool Position::isTripleRepetition() {
     const int s = static_cast<int>(history.size());
     if (s == 0) return false;
     int repetitions = 0;
-    for (int i = s - 1; i >= s - fifty_move; i--) {
+    for (int i = s - 1; i >= s - fifty_move && i >= 0; i--) {
         if (z_key == history[i].z_key) {
             repetitions++;
         }

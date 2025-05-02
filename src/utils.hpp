@@ -75,16 +75,6 @@ constexpr int charToCastleRights(char c) {
     }
 }
 
-// castle squares needed for move generation and validation
-const BitBoard WQC_SQUARES = 0b1110ULL;
-const BitBoard WQC_KING_SQUARES = 0b1100ULL;
-const BitBoard WKC_SQUARES = 0b1100000ULL;
-const BitBoard WKC_KING_SQUARES = 0b1100000ULL;
-const BitBoard BQC_SQUARES = 0b1110ULL << (8 * 7);
-const BitBoard BQC_KING_SQUARES = WQC_KING_SQUARES << (8 * 7);
-const BitBoard BKC_SQUARES = 0b1100000ULL << (8 * 7);
-const BitBoard BKC_KING_SQUARES = WKC_KING_SQUARES << (8 * 7);
-
 constexpr std::string_view SQUARE_NAMES[64] {
     "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", 
     "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", 

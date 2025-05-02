@@ -738,9 +738,9 @@ U64 perftHelper(Position &pos, int depth) {
         generateMovesSided<BLACK, QUIET>(moves, pos);
     }
 
-    // if (depth == 1) {
-    //     return moves.size();
-    // }
+    if (depth == 1) {
+        return moves.size();
+    }
 
     for (auto& move : moves) {
         pos.makeMove(move);
@@ -752,7 +752,7 @@ U64 perftHelper(Position &pos, int depth) {
 };
 
 U64 perft(Position &pos, int depth) {
-    std::cout << "Bulk counting disabled\n";
+    // std::cout << "Bulk counting disabled\n";
     if (depth == 0) {
         return 1;
     }

@@ -4,6 +4,9 @@
 #include "move.hpp"
 #include "test.hpp"
 #include "eval.hpp"
+#include "uci.hpp"
+#include "datagen.hpp"
+#include "tuner.hpp"
 
 using namespace Spotlight;
 
@@ -12,26 +15,21 @@ int main(int argc, char* argv[]) {
     initMagics();
     initZobrist();
 
-    // Position pos;
+    if (argc == 1) {
+        UCI uci;
+        uci.loop();
+    } else if (static_cast<std::string>(argv[1]) == "searchtest") {
+        testSearch();
+    } else if (static_cast<std::string>(argv[1]) == "fulltest") {
+        runTests();
+    } else if (static_cast<std::string>(argv[1]) == "tune") {
+        Tuner tuner;
 
-    // pos.readFen("rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR b KQkq - 0 1");
-
-    // pos.makeMove(encodeMove(B7, B5, DOUBLE_PAWN_PUSH));
-    // pos.print();
-    // pos.printFromBitboard();
-    // pos.unmakeMove();
-    // pos.print();
-    // pos.printFromBitboard();
-
-
-    // perft()
-
-    // testPerft();
-
-    testSee();
-    testCheck();
-    testMovePicker();
-
-    testSearch();
+        tuner.run();
+        tuner.printWeights();
+        tuner.outputToFile();
+    } else if (static_cast<std::string>(argv[1]) == "datagen") {
+        selfplay(600);
+    }
 
 }
