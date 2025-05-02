@@ -234,6 +234,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     bool in_check = inCheck(pos);
 
+    // check extension not gaining much. Will try again later
+
     // If we are at depth 0 then drop into the quiescence search
     if (depth <= 0) {
         return qSearch(pos, 0, ply, alpha, beta);
@@ -301,7 +303,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     }
 
     // initialize move picker with appropriate data for move ordering
-    MovePicker move_picker(pos, &quiet_history, tt_move, 0, 0);
+    MovePicker move_picker(pos, &quiet_history, tt_move, killer_1[ply], killer_2[ply]);
 
     move16 move = NULL_MOVE;
     int best_score = NEGATIVE_INFINITY;
@@ -311,6 +313,10 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     // List of all the quiet moves that didn't cause a beta cutoff. used for updating history
     MoveList bad_quiets;
+
+    // reset the killer moves for the child nodes
+    killer_1[ply + 1] = NULL_MOVE;
+    killer_2[ply + 1] = NULL_MOVE;
 
     // Loop through all legal moves in the position and recursively call the search function
     while (move = move_picker.getNextMove()) {
@@ -387,6 +393,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
             // check for a beta cutoff
             if (score >= beta) {
                 if (isQuiet(move)) {
+                    // save this move as a killer move
+                    saveKiller(ply, move);
                     // update butterfly history
                     int bonus = depth * depth;
                     updateHistory(pos.side_to_move, getFromSquare(move), getToSquare(move), bonus);
