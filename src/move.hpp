@@ -98,6 +98,10 @@ static inline bool isQuiet(const move16 &move) {
     return !((move >> 12) & 0b1111 & CAPTURE_MOVE);
 }
 
+static inline bool isCaptureOrPromotion(const move16 &move) {
+    return getMoveType(move) & CAPTURE_MOVE || getMoveType(move) & PROMOTION_FLAG;
+}
+
 std::string moveToString(move16 move);
 
 void printMove(move16 move);

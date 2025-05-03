@@ -239,6 +239,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     bool in_check = inCheck(pos);
 
     // check extension not gaining much. Will try again later
+    // if (in_check) depth++;
 
     // If we are at depth 0 then drop into the quiescence search
     if (depth <= 0) {
@@ -256,13 +257,22 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         // grab the tt move for move ordering if the hash key matches
         tt_move = entry->best_move;
 
+        int tt_score = entry->score;
+
+        // adjust checkmate scores according to our ply
+        if (tt_score > MATE_THRESHOLD) {
+            tt_score -= ply;
+        } else if (tt_score < -MATE_THRESHOLD) {
+            tt_score += ply;
+        }
+
         // return the score from the TT if the bounds and depth allow it
         if (!pv_node && !is_root && entry->depth >= depth && (
             entry->node_type == EXACT_NODE ||
             (entry->node_type == LOWER_BOUND_NODE && entry->score >= beta) ||
             (entry->node_type == UPPER_BOUND_NODE && entry->score <= alpha)
             )) {
-            return entry->score;
+            return tt_score;
         }
     }
 
@@ -271,6 +281,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     /*
     Reverse Futility Pruning
+
     If our eval is above beta + some margin we consider this a beta cutoff
     */
     if (!pv_node && !in_check && depth <= 3 && s_eval >= beta + 120 * depth) {
@@ -279,6 +290,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     /*
     Null Move Pruning
+
     This takes advantage of the observation that playing a move is nearly
     always better than doing nothing. We disable it in positions where 
     zugzwang is likely
@@ -306,6 +318,14 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     }
 
+    /*
+    Internal Iteritive Reductions
+
+    We reduce when the position is not in the transposition table,
+    assuming that must mean the position is not very important.
+    */
+    if (depth >= 5 && tt_move == NULL_MOVE && !in_check) depth--;
+
     // initialize move picker with appropriate data for move ordering
     MovePicker move_picker(pos, &quiet_history, tt_move, killer_1[ply], killer_2[ply]);
 
@@ -322,11 +342,23 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     killer_1[ply + 1] = NULL_MOVE;
     killer_2[ply + 1] = NULL_MOVE;
 
+    // enable or disable futility pruning
+    bool allow_fprune = !pv_node && depth <= 1 && !in_check && s_eval < alpha - 100 * depth;
+
     // Loop through all legal moves in the position and recursively call the search function
     while (move = move_picker.getNextMove()) {
         num_moves++;
 
         int score = 0;
+
+        /*
+        Futility pruning
+
+        If our eval is far below alpha at a low depth, then after the first move search only 
+        moves with a decent chance of raising alpha. (in this case only captures and promotions)
+        */
+        if (allow_fprune && num_moves > 1 && !isCaptureOrPromotion(move))
+            continue;
 
         pos.makeMove(move);
 
@@ -354,6 +386,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         */
         bool do_full_search = true;
         if (num_moves > 1 && depth > 2 && !in_check && isQuiet(move) && !inCheck(pos)) {
+            // get pre-calculated reduction from the table
             int lmr_reduction = lmr_table[depth][num_moves];
             // don't drop directly into qsearch
             lmr_reduction = std::min(lmr_reduction, depth - 1);
@@ -400,7 +433,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
         // check for timeout to avoid storing bad values in the TT
         if (times_up) return 0;
-
+        
         if (score > best_score) {
             best_score = score;
             best_move = move;
