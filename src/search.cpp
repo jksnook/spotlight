@@ -73,6 +73,7 @@ void Search::clearHistory() {
     }
 }
 
+// Update butterfly history using the history gravity formula
 void Search::updateHistory(Color side, int from, int to, int bonus) {
     quiet_history[side][from][to] += bonus - abs(bonus) * quiet_history[side][from][to] / MAX_HISTORY;
 }
@@ -178,13 +179,18 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
 
         std::chrono::time_point start_time = std::chrono::steady_clock::now();
 
-        // set aspiration windows
-        // aspiration windows aren't gaining right now. I will reenable them once I add some more features.
+        /*
+        Aspiration Windows
+
+        at first search with a narrow window to increase beta cutoffs.
+        If we fail high or low we re-search with a wider window.
+        */
         if (depth > WINDOW_MIN_DEPTH && !research) {
             alpha = best_score - WINDOW_SIZE;
             beta = best_score + WINDOW_SIZE;
         }
 
+        // call negaMax as a PV-node and root node at ply 0
         int score = negaMax<true, false, true>(pos, depth, 0, alpha, beta);
 
         total_nodes += nodes_searched;
@@ -220,6 +226,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
 
         if (make_output) outputInfo(depth, best_move, best_score, nps);
 
+        // If our soft time limit has expired we don't start another search iteration
         if (softTimesUp()) break;
     }
 
@@ -233,9 +240,16 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
     return result;
 }
 
+/*
+The Main Search Function
+
+Alpha-beta pruning in a negamax framework
+*/
 template <bool pv_node, bool cut_node, bool is_root>
 int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // check ply limit
+    // we use MAX_PLY - 1 because some arrays are accessed with
+    // index ply + 1
     if (ply >= MAX_PLY - 1) return eval(pos);
 
 
@@ -250,7 +264,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     bool in_check = inCheck(pos);
 
     // check extension not gaining much. Will try again later
-    // if (in_check) depth++;
 
     // If we are at depth 0 then drop into the quiescence search
     if (depth <= 0) {
@@ -289,7 +302,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     // get static evaluation for use in pruning heuristics
     int s_eval = eval(pos);
-
     eval_stack[ply] = s_eval;
 
     /*
@@ -564,6 +576,17 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     // if in check search all legal moves, otherwise search captures
     while (in_check ? move = move_picker.getNextMove() : move = move_picker.getNextCapture()) {
         num_moves++;
+
+        /*
+        Delta Pruning / SEE pruning
+
+        use SEE to determine good/bad captures and skip the ones with little chance
+        of raising alpha
+        */
+        if (!in_check && !isQuiet(move) && 
+            see(pos, move) <= (alpha - stand_pat) * SEE_MULTIPLIER) 
+            continue;
+
         pos.makeMove(move);
         int score = -qSearch(pos, depth - 1, ply + 1, -beta, -alpha);
         pos.unmakeMove();
