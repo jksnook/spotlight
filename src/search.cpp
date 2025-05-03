@@ -224,7 +224,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
         best_move = pv.getPVMove(0);
         best_score = score;
 
-        if (make_output) outputInfo(depth, best_move, best_score, nps);
+        if (make_output && thread_id == 0) outputInfo(depth, best_move, best_score, nps);
 
         // If our soft time limit has expired we don't start another search iteration
         if (softTimesUp()) break;
@@ -235,7 +235,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
     result.move = best_move;
     result.score = best_score;
 
-    if (thread_id == 0) std::cout << "bestmove " << moveToString(best_move) << std::endl;
+    if (thread_id == 0 && make_output) std::cout << "bestmove " << moveToString(best_move) << std::endl;
 
     return result;
 }
