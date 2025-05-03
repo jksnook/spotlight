@@ -94,7 +94,7 @@ private:
     move16 killer_1[MAX_PLY];
     move16 killer_2[MAX_PLY];
 
-    int lmr_table[MAX_PLY][256];
+    int lmr_table[2][MAX_PLY][256];
 
     std::array<int, MAX_PLY> eval_stack;
 

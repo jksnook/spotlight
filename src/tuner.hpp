@@ -9,8 +9,7 @@ Tuning implementation from Andrew Grant's tuning paper:
 https://github.com/AndyGrant/Ethereal/blob/master/Tuning.pdf
 */
 
-namespace Spotlight
-{
+namespace Spotlight {
 
 const int MAX_POSITIONS = 2000000;
 const int NUM_PARAMS = 64 * 6 * 2;

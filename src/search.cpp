@@ -36,9 +36,16 @@ q_nodes(0), make_output(true), times_up(false), thread_id(0) {
     clearHistory();
     for (int i = 0; i < MAX_PLY; i++) {
         for (int k = 0; k < 256; k++) {
-            lmr_table[i][k] = log(i) * log(k) / 2.5 + 1.8;
+            /*
+            Late move reductions calculated here
+
+            indices are [improving][depth][num_moves]
+            */
+            lmr_table[0][i][k] = log(i) * log(k) / 2.5 + 2.86;
+            lmr_table[1][i][k] = log(i) * log(k) / 2.52 + 1.6;
         } 
 
+        // clear the killer moves
         killer_1[i] = 0;
         killer_2[i] = 0;
     }
@@ -228,6 +235,10 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
 
 template <bool pv_node, bool cut_node, bool is_root>
 int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
+    // check ply limit
+    if (ply >= MAX_PLY - 1) return eval(pos);
+
+
     // clear the pv at this ply
     pv.zeroLength(ply);
 
@@ -279,6 +290,15 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // get static evaluation for use in pruning heuristics
     int s_eval = eval(pos);
 
+    eval_stack[ply] = s_eval;
+
+    /*
+    Improving Heuristic
+
+    We prune less when our static eval is improved from 2 plies ago
+    */
+    bool improving = ply < 2 || s_eval >= eval_stack[ply - 2];
+
     /*
     Reverse Futility Pruning
 
@@ -293,7 +313,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     This takes advantage of the observation that playing a move is nearly
     always better than doing nothing. We disable it in positions where 
-    zugzwang is likely
+    zugzwang is likely (in this case king pawn endgames)
     */
     if (!pv_node && allow_nmp && depth > 3 && !in_check &&
         s_eval >= beta && pos.zugzwangUnlikely()) {
@@ -345,7 +365,12 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // enable or disable futility pruning
     bool allow_fprune = !pv_node && depth <= 1 && !in_check && s_eval < alpha - 100 * depth;
 
-    // Loop through all legal moves in the position and recursively call the search function
+
+    /*
+    Main Move Loop
+
+    Loop through all the legal moves.
+    */
     while (move = move_picker.getNextMove()) {
         num_moves++;
 
@@ -370,7 +395,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
         prune late-ordered quiet moves in non-PV nodes at low depth
         */
-        if (!pv_node && !in_check && bad_quiets.size() > 2 + depth * 2 && depth <= 2 && isQuiet(move) && !inCheck(pos)) {
+        if (!pv_node && !in_check && bad_quiets.size() > 2 + depth * 2 && 
+            depth <= 2 && isQuiet(move) && !inCheck(pos)) {
             pos.unmakeMove();
             continue;
         }
@@ -387,7 +413,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         bool do_full_search = true;
         if (num_moves > 1 && depth > 2 && !in_check && isQuiet(move) && !inCheck(pos)) {
             // get pre-calculated reduction from the table
-            int lmr_reduction = lmr_table[depth][num_moves];
+            int lmr_reduction = lmr_table[improving][depth][num_moves];
             // don't drop directly into qsearch
             lmr_reduction = std::min(lmr_reduction, depth - 1);
 
@@ -491,6 +517,8 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     if (timesUp()) {
         return 0;
     }
+    // check ply limit
+    if (ply >= MAX_PLY - 1) return eval(pos);
 
     pv.zeroLength(ply);
     nodes_searched++;
