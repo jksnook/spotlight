@@ -2,10 +2,9 @@
 #include "utils.hpp"
 #include "position.hpp"
 #include "move.hpp"
-#include "moveorder.hpp"
+#include "see.hpp"
 #include "movegen.hpp"
 #include "search.hpp"
-#include "moparams.hpp"
 #include "movepicker.hpp"
 
 #include <cassert>

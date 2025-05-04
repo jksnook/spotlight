@@ -4,12 +4,18 @@
 #include "utils.hpp"
 #include "position.hpp"
 #include "movegen.hpp"
-#include "moveorder.hpp"
-#include "moparams.hpp"
+#include "see.hpp"
 
 #include <memory>
 
 namespace Spotlight {
+
+const int HISTORY_DIVISOR = 1;
+const int TT_MOVE_SCORE = (1 << 30);
+const int MAX_HISTORY = 50000;
+const int KILLER_1_SCORE = MAX_HISTORY * 2 + 1;
+const int KILLER_2_SCORE = MAX_HISTORY * 2;
+const int IGNORE_MOVE = -(1 << 30);
 
 class MovePicker {
 public:
