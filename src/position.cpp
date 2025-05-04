@@ -64,6 +64,7 @@ void Position::readFen(std::string fen) {
     }
 
     movegen_data = MoveGenData();
+    history.clear();
 
     z_key = 0ULL;
     half_moves = 0;

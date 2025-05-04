@@ -351,7 +351,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     }
 
     /*
-    Internal Iteritive Reductions
+    Internal Iterative Reductions
 
     We reduce when the position is not in the transposition table,
     assuming that must mean the position is not very important.
@@ -375,7 +375,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     killer_2[ply + 1] = NULL_MOVE;
 
     // enable or disable futility pruning
-    bool allow_fprune = !pv_node && depth <= 1 && !in_check && s_eval < alpha - 100 * depth;
+    bool allow_fprune = !pv_node && depth <= 4 && !in_check && s_eval < alpha - 50 - 50 * depth;
 
 
     /*

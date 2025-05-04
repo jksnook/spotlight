@@ -30,6 +30,7 @@ void UCI::loop() {
             std::cout << "uciok\n";
         } else if (token == "ucinewgame") {
             search_threads.newGame();
+            position = Position();
         } else if (token == "isready") {
             std::cout << "readyok" << std::endl;
         } else if (token == "position") {
