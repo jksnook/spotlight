@@ -181,7 +181,7 @@ void testMovePicker() {
         MoveList quiets;
         MoveList captures;
         generateQuietMoves(quiets, pos);
-        generateCaptures(captures, pos);
+        generateNoisyMoves(captures, pos);
         
         killer_1 = 0;
         killer_2 = 0;

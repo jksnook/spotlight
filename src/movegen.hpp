@@ -21,7 +21,7 @@ U64 getAllEnemyAttacks(Position& pos);
 template <Color side, GenType gen_type>
 void generateMovesSided(MoveList& moves, Position& pos);
 
-void generateCaptures(MoveList &moves, Position &pos);
+void generateNoisyMoves(MoveList &moves, Position &pos);
 
 void generateQuietMoves(MoveList &moves, Position &pos);
 

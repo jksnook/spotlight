@@ -10,7 +10,7 @@ using move16 = std::uint16_t;
 
 enum Color : uint8_t { WHITE, BLACK };
 
-enum GenType : int {TT_MOVE, CAPTURES_AND_PROMOTIONS, QUIET, LEGAL, END_MOVEGEN};
+enum GenType : int {CAPTURES_AND_PROMOTIONS, QUIET, LEGAL };
 
 enum Piece : uint8_t {
     WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,

@@ -5,9 +5,10 @@
 namespace Spotlight {
 
 MovePicker::MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 _tt_move, move16 _killer_1, move16 _killer_2): 
-stage(TT_MOVE), tt_move(_tt_move), killer_1(_killer_1), killer_2(_killer_2), capture_index(0), quiet_index(0),
+stage(PickerStage::TT_MOVE), tt_move(_tt_move), killer_1(_killer_1), killer_2(_killer_2), capture_index(0), quiet_index(0),
 generated_captures(false), generated_quiets(false), tt_played(false), pos(_pos), quiet_history(_quiet_history) {}
 
+// Selection sort for getting the highest scored move
 move16 MovePicker::selectMove(int start, MoveList &scored_moves) {
     int best_score = IGNORE_MOVE - 1;
     int k;
@@ -24,6 +25,7 @@ move16 MovePicker::selectMove(int start, MoveList &scored_moves) {
     return temp;
 }
 
+// Select a move with score > 0, otherwise return null move
 move16 MovePicker::selectWinningCapture(int start, MoveList &scored_moves) {
     int best_score = IGNORE_MOVE - 1;
     int k;
@@ -50,6 +52,8 @@ int MovePicker::scoreMove(move16 move) {
     switch (move_type)
     {
     case CAPTURE_MOVE:
+        // currently using the SEE value alone for scoring captures. I think SEE to determine good/bad
+        // plus MVV/LVA to determine ranking is a bit more standard. It didn't make much difference for me.
         return see(pos, move);
         break;
     case QUIET_MOVE:
@@ -110,9 +114,12 @@ void MovePicker::scoreQuiets(MoveList &moves, move16 _tt_move, move16 _killer_1,
     }
 
 }
-void MovePicker::scoreCaptures(MoveList &moves, move16 _tt_move, move16 _killer_1, move16 _killer_2) {
+
+void MovePicker::scoreNoisy(MoveList &moves, move16 _tt_move, move16 _killer_1, move16 _killer_2) {
     int s = moves.size();
 
+    // Ignoring killer moves is OK here since I don't
+    // use them in quiescence search.
     for (int i = 0; i < s; i++) {
         if (moves[i].move == _tt_move) {
             moves.removeMove(i);
@@ -126,9 +133,9 @@ void MovePicker::scoreCaptures(MoveList &moves, move16 _tt_move, move16 _killer_
 }
 
 move16 MovePicker::getNextMove() {
-    if (stage == TT_MOVE || !tt_played) {
-        if (stage == TT_MOVE) {
-            stage = CAPTURES_AND_PROMOTIONS;
+    if (stage == PickerStage::TT_MOVE || !tt_played) {
+        if (stage == PickerStage::TT_MOVE) {
+            stage = PickerStage::GOOD_NOISY;
         }
         tt_played = true;
         if (tt_move && isLegal(tt_move, pos)) {
@@ -139,12 +146,12 @@ move16 MovePicker::getNextMove() {
         // assert(!tt_move);
     }
 
-    if (stage == CAPTURES_AND_PROMOTIONS) {
+    if (stage == PickerStage::GOOD_NOISY) {
         if (!generated_captures) {
-            generateCaptures(captures, pos);
+            generateNoisyMoves(captures, pos);
             generated_captures = true;
 
-            scoreCaptures(captures, tt_move, killer_1, killer_2);
+            scoreNoisy(captures, tt_move, killer_1, killer_2);
         }
         if (capture_index < captures.size()) {
             move16 m = selectWinningCapture(capture_index, captures);
@@ -152,14 +159,14 @@ move16 MovePicker::getNextMove() {
                 capture_index++;
                 return m;
             } else {
-                stage = QUIET;
+                stage = PickerStage::QUIET_AND_BAD_NOISY;
             }
         } else {
-            stage = QUIET;
+            stage = PickerStage::QUIET_AND_BAD_NOISY;
         }
     }
 
-    if (stage == QUIET) {
+    if (stage == PickerStage::QUIET_AND_BAD_NOISY) {
         if (!generated_quiets) {
             generateQuietMoves(quiets, pos);
             generated_quiets = true;
@@ -175,7 +182,7 @@ move16 MovePicker::getNextMove() {
             capture_index++;
             return m;
         } else {
-            stage == END_MOVEGEN;
+            stage == PickerStage::END;
         }
     }
 
@@ -183,11 +190,11 @@ move16 MovePicker::getNextMove() {
 }
 
 move16 MovePicker::getNextCapture() {
-    if (stage == TT_MOVE) {
-        stage = CAPTURES_AND_PROMOTIONS;
+    if (stage == PickerStage::TT_MOVE) {
+        stage = PickerStage::GOOD_NOISY;
         if (!tt_move) {
             tt_played = true;
-        } else if ((getMoveType(tt_move) & CAPTURE_MOVE || getMoveType(tt_move) & PROMOTION_FLAG) && isLegal(tt_move, pos)) {
+        } else if (isCaptureOrPromotion(tt_move) && isLegal(tt_move, pos)) {
             tt_played = true;
             return tt_move;
         }
@@ -196,30 +203,23 @@ move16 MovePicker::getNextCapture() {
         // assert(!(tt_move && (getMoveType(tt_move) & CAPTURE_MOVE || getMoveType(tt_move) & PROMOTION_FLAG)));
     }
 
-    if (stage == CAPTURES_AND_PROMOTIONS) {
+    if (stage == PickerStage::GOOD_NOISY) {
         if (!generated_captures) {
-            generateCaptures(captures, pos);
+            generateNoisyMoves(captures, pos);
             generated_captures = true;
 
-            scoreCaptures(captures, tt_move, killer_1, killer_2);
+            scoreNoisy(captures, tt_move, killer_1, killer_2);
         }
         if (capture_index < captures.size()) {
             move16 m = selectMove(capture_index, captures);
             capture_index++;
             return m;
         } else {
-            stage = QUIET;
+            stage = PickerStage::QUIET_AND_BAD_NOISY;
         }
     }
 
     return 0;
 }
 
-void MovePicker::reset() {
-    stage = TT_MOVE;
-    tt_played = false;
-    capture_index = 0;
-    quiet_index = 0;
-}
-
-} // namespace Spotligh 
+} // namespace Spotlight

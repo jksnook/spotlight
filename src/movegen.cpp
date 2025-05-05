@@ -504,7 +504,7 @@ void generateMovesSided(MoveList &moves, Position &pos) {
     }
 }
 
-void generateCaptures(MoveList &moves, Position &pos) {
+void generateNoisyMoves(MoveList &moves, Position &pos) {
     if (pos.side_to_move == WHITE) {
         generateMovesSided<WHITE, CAPTURES_AND_PROMOTIONS>(moves, pos);
     } else {

@@ -28,3 +28,4 @@ A partial rewrite and cleanup of my C++ chess engine
 
 ## Planned Improvements:
 * Better eval (eventually)
+* refactor movegen and move ordering
