@@ -257,7 +257,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     pv.zeroLength(ply);
 
     // check for exit conditions
-    if (timesUp() || (!is_root && pos.isTripleRepetition())) {
+    if (timesUp() || (!is_root && (pos.isTripleRepetition() || pos.fifty_move >= 100))) {
         return 0;
     }
 
@@ -486,7 +486,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
                     updateHistory(pos.side_to_move, getFromSquare(move), getToSquare(move), bonus);
                     // apply malus to the previous quiet moves
                     for (auto& bq : bad_quiets) {
-                        updateHistory(pos.side_to_move, getFromSquare(bq), getToSquare(bq), -bonus);
+                        updateHistory(pos.side_to_move, getFromSquare(bq.move), getToSquare(bq.move), -bonus);
                     }
                 }
                 // Store to TT as a fail high
@@ -526,7 +526,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
 // quiescence search 
 int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
-    if (timesUp()) {
+    if (timesUp() || pos.fifty_move >= 100 || pos.isTripleRepetition()) {
         return 0;
     }
     // check ply limit
@@ -560,7 +560,8 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     else if (stand_pat > alpha) {
         /*
         Use the static eval as a lower bound for our score.
-        This is sound because in chess making a move is usually better than doing nothing
+        This is sound because in chess making a move is 
+        usually better than doing nothing.
         */
         alpha = stand_pat;
         is_upper_bound = false;
@@ -573,7 +574,7 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     int best_score = stand_pat;
     int num_moves = 0;
 
-    // if in check search all legal moves, otherwise search captures
+    // if in check search all legal moves, otherwise search captures and promotions
     while (in_check ? move = move_picker.getNextMove() : move = move_picker.getNextCapture()) {
         num_moves++;
 

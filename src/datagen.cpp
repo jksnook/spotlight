@@ -13,7 +13,7 @@ namespace Spotlight
 
 bool isQuiet(MoveList &moves) {
     for (const auto &m: moves) {
-        if (getMoveType(m) & CAPTURE_MOVE) {
+        if (getMoveType(m.move) & CAPTURE_MOVE) {
             return false;
         }
     }
@@ -112,7 +112,7 @@ void playGames(int num_games, int id, int& games_played, std::mutex& mx) {
 
             int random_index = myRandom() % moves.size();
 
-            pos.makeMove(moves[random_index]);
+            pos.makeMove(moves[random_index].move);
         }
         pos.print();
 

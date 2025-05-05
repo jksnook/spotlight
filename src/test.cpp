@@ -123,7 +123,7 @@ void testSearch() {
         search.clearHistory();
         search.clearTT();
         pos.readFen(fen);
-        SearchResult r = search.timeSearch(pos, 12, 100000);
+        SearchResult r = search.timeSearch(pos, 15, 100000);
         nodes += search.total_nodes;
         q_nodes += search.q_nodes;
     }
@@ -186,12 +186,12 @@ void testMovePicker() {
         killer_1 = 0;
         killer_2 = 0;
 
-        move16 tt_move = moves[myRandom() % moves.size()];
+        move16 tt_move = moves[myRandom() % moves.size()].move;
         do {
-            killer_1 = quiets[myRandom() % quiets.size()];
+            killer_1 = quiets[myRandom() % quiets.size()].move;
         } while (killer_1 == tt_move);
         do {
-            killer_2 = quiets[myRandom() % quiets.size()];
+            killer_2 = quiets[myRandom() % quiets.size()].move;
         } while (killer_2 == tt_move || killer_2 == killer_1);
 
         MovePicker picker(pos, &hist, tt_move, killer_1, killer_2);

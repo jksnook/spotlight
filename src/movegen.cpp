@@ -742,8 +742,8 @@ U64 perftHelper(Position &pos, int depth) {
         return moves.size();
     }
 
-    for (auto& move : moves) {
-        pos.makeMove(move);
+    for (auto& sm : moves) {
+        pos.makeMove(sm.move);
         nodes += perftHelper(pos, depth - 1);
         pos.unmakeMove();
     }
@@ -770,12 +770,12 @@ U64 perft(Position &pos, int depth) {
         generateMovesSided<BLACK, QUIET>(moves, pos);
     }
 
-    for(auto &move: moves) {
-        pos.makeMove(move);
+    for(auto &sm: moves) {
+        pos.makeMove(sm.move);
         int nodes_this_move = perftHelper(pos, depth - 1);
         pos.unmakeMove();
         nodes += nodes_this_move;
-        std::cout << moveToString(move) << ": " << nodes_this_move << std::endl;
+        std::cout << moveToString(sm.move) << ": " << nodes_this_move << std::endl;
     }
 
     return nodes;

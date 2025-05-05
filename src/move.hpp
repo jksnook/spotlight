@@ -108,33 +108,42 @@ void printMove(move16 move);
 
 void printMoveLong(move16 move);
 
+struct ScoredMove {
+    int score;
+    move16 move;
+};
+
 class MoveList {
 public:
     MoveList(): length(0) {}
 
     inline void addMove(move16 move) { 
-        move_array[length] = move;
+        move_array[length].move = move;
         length++;  
     }
 
     inline void setMove(int index, move16 move) {
-        move_array[index] = move;
+        move_array[index].move = move;
     }
 
-    inline move16& operator[](int index) {
+    inline void removeMove(int index) {
+        move_array[index] = move_array[--length];
+    }
+
+    inline ScoredMove& operator[](int index) {
         return move_array[index];
     };
-    inline const move16& operator[](int index) const {
+    inline const ScoredMove& operator[](int index) const {
         return move_array[index];
     };
 
-    inline move16 *begin() {return &move_array[0];}
-    inline move16 *end() {return &move_array[length];}
+    inline ScoredMove *begin() {return &move_array[0];}
+    inline ScoredMove *end() {return &move_array[length];}
 
     inline size_t size() {return length;}
 
 private:
-    move16 move_array[256];
+    ScoredMove move_array[256];
     int length;
 };
 

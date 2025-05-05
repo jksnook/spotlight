@@ -5,16 +5,16 @@
 
 namespace Spotlight {
 
-U64 getAllAttackers(Position &pos, int sq) {
-    U64 attackers = 0ULL;
+BitBoard getAllAttackers(Position &pos, int sq) {
+    BitBoard attackers = 0ULL;
 
     attackers |= knight_moves[sq] & (pos.bitboards[WHITE_KNIGHT] | pos.bitboards[BLACK_KNIGHT]);
     attackers |= pawn_attacks[BLACK][sq] & pos.bitboards[WHITE_PAWN];
     attackers |= pawn_attacks[WHITE][sq] & pos.bitboards[BLACK_PAWN];
-    U64 bishop_rays_from_sq = getMagicBishopAttack(sq, pos.bitboards[OCCUPANCY]);
+    BitBoard bishop_rays_from_sq = getMagicBishopAttack(sq, pos.bitboards[OCCUPANCY]);
     attackers |= bishop_rays_from_sq & (pos.bitboards[WHITE_BISHOP] | pos.bitboards[WHITE_QUEEN]);
     attackers |= bishop_rays_from_sq & (pos.bitboards[BLACK_BISHOP] | pos.bitboards[BLACK_QUEEN]);
-    U64 rook_rays_from_sq = getMagicRookAttack(sq, pos.bitboards[OCCUPANCY]);
+    BitBoard rook_rays_from_sq = getMagicRookAttack(sq, pos.bitboards[OCCUPANCY]);
     attackers |= rook_rays_from_sq & (pos.bitboards[WHITE_ROOK] | pos.bitboards[WHITE_QUEEN]);
     attackers |= rook_rays_from_sq & (pos.bitboards[BLACK_ROOK] | pos.bitboards[BLACK_QUEEN]);
     attackers |= king_moves[sq] & (pos.bitboards[WHITE_KING] | pos.bitboards[BLACK_KING]);
@@ -22,15 +22,15 @@ U64 getAllAttackers(Position &pos, int sq) {
     return attackers;
 }
 
-void refreshXraysDiagonal(Position &pos, int sq, U64 remaining_occupancy, U64 &attackers_bb) {
-    U64 bishop_rays_from_to_sq = getMagicBishopAttack(sq, remaining_occupancy);
+void refreshXraysDiagonal(Position &pos, int sq, BitBoard remaining_occupancy, BitBoard &attackers_bb) {
+    BitBoard bishop_rays_from_to_sq = getMagicBishopAttack(sq, remaining_occupancy);
     attackers_bb |= bishop_rays_from_to_sq & (pos.bitboards[BLACK_BISHOP] | pos.bitboards[BLACK_QUEEN]);
     attackers_bb |= bishop_rays_from_to_sq & (pos.bitboards[WHITE_BISHOP] | pos.bitboards[WHITE_QUEEN]);
     attackers_bb &= remaining_occupancy;
 }
 
-void refreshXraysRanksFiles(Position &pos, int sq, U64 remaining_occupancy, U64 &attackers_bb) {
-    U64 rook_rays_from_to_sq = getMagicRookAttack(sq, remaining_occupancy);
+void refreshXraysRanksFiles(Position &pos, int sq, BitBoard remaining_occupancy, BitBoard &attackers_bb) {
+    BitBoard rook_rays_from_to_sq = getMagicRookAttack(sq, remaining_occupancy);
     attackers_bb |= rook_rays_from_to_sq & (pos.bitboards[BLACK_ROOK] | pos.bitboards[BLACK_QUEEN]);
     attackers_bb |= rook_rays_from_to_sq & (pos.bitboards[WHITE_ROOK] | pos.bitboards[WHITE_QUEEN]);
     attackers_bb &= remaining_occupancy;
@@ -42,8 +42,8 @@ int see(Position &pos, move16 move) {
     Square to_sq = getToSquare(move);
     Square from_sq = getFromSquare(move);
     move16 move_type = getMoveType(move);
-    U64 attackers_bb = getAllAttackers(pos, to_sq);
-    U64 remaining_occupancy = pos.bitboards[OCCUPANCY];
+    BitBoard attackers_bb = getAllAttackers(pos, to_sq);
+    BitBoard remaining_occupancy = pos.bitboards[OCCUPANCY];
     int capture_scores[32];
     Piece attacking_piece;
     if (move_type == EN_PASSANT_CAPTURE) {
@@ -83,12 +83,12 @@ int see(Position &pos, move16 move) {
 
 
     // simulate the initial capture
-    U64 current_attacker_bb = 1ULL << from_sq;
+    BitBoard current_attacker_bb = 1ULL << from_sq;
     attackers_bb &= ~current_attacker_bb;
     remaining_occupancy &= ~current_attacker_bb;
-    U64 diagonal_xray_pieces = pos.bitboards[WHITE_PAWN] | pos.bitboards[BLACK_PAWN] | pos.bitboards[WHITE_BISHOP] | 
+    BitBoard diagonal_xray_pieces = pos.bitboards[WHITE_PAWN] | pos.bitboards[BLACK_PAWN] | pos.bitboards[WHITE_BISHOP] | 
         pos.bitboards[BLACK_BISHOP] | pos.bitboards[WHITE_QUEEN] | pos.bitboards[BLACK_QUEEN];
-    U64 vertical_xray_pieces = pos.bitboards[WHITE_ROOK] | pos.bitboards[BLACK_ROOK] | pos.bitboards[WHITE_QUEEN] | 
+    BitBoard vertical_xray_pieces = pos.bitboards[WHITE_ROOK] | pos.bitboards[BLACK_ROOK] | pos.bitboards[WHITE_QUEEN] | 
         pos.bitboards[BLACK_QUEEN];
 
     capture_scores[1] = SEE_VALUES[attacking_piece % BLACK_PAWN] - capture_scores[0];

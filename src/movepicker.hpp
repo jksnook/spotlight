@@ -32,17 +32,17 @@ private:
     move16 killer_2;
     bool generated_captures;
     bool generated_quiets;
-    std::vector<std::pair<int, move16>> scored_captures;
+    MoveList captures;
     int capture_index;
-    std::vector<std::pair<int, move16>> scored_quiets;
+    MoveList quiets;
     int quiet_index;
     Position &pos;
     int (*quiet_history)[2][64][64];
 
-    move16 selectMove(int start, std::vector<std::pair<int, move16>> &scored_moves);
-    move16 selectWinningCapture(int start, std::vector<std::pair<int, move16>> &scored_moves);
-    void scoreQuiets(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, move16 _tt_move, move16 _killer_1, move16 _killer_2);
-    void scoreCaptures(MoveList &moves, std::vector<std::pair<int, move16>> &scored_moves, move16 _tt_move, move16 _killer_1, move16 _killer_2);
+    move16 selectMove(int start, MoveList &scored_moves);
+    move16 selectWinningCapture(int start, MoveList &scored_moves);
+    void scoreQuiets(MoveList &moves, move16 _tt_move, move16 _killer_1, move16 _killer_2);
+    void scoreCaptures(MoveList &moves, move16 _tt_move, move16 _killer_1, move16 _killer_2);
 };
 
 } // namespace Spotlight
