@@ -264,6 +264,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     bool in_check = inCheck(pos);
 
     // check extension not gaining much. Will try again later
+    if (pv_node && in_check && depth <= 3 && ply > 2) depth++;
 
     // If we are at depth 0 then drop into the quiescence search
     if (depth <= 0) {
