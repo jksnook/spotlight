@@ -475,7 +475,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         if (score > best_score) {
             best_score = score;
             best_move = move;
-            pv.updatePV(ply, move);
+            if constexpr(pv_node) pv.updatePV(ply, move);
             // check for a beta cutoff
             if (score >= beta) {
                 if (isQuiet(move)) {
