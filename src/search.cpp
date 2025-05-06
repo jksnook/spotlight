@@ -293,8 +293,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         // return the score from the TT if the bounds and depth allow it
         if (!pv_node && !is_root && entry->depth >= depth && (
             entry->node_type == EXACT_NODE ||
-            (entry->node_type == LOWER_BOUND_NODE && entry->score >= beta) ||
-            (entry->node_type == UPPER_BOUND_NODE && entry->score <= alpha)
+            (entry->node_type == LOWER_BOUND_NODE && tt_score >= beta) ||
+            (entry->node_type == UPPER_BOUND_NODE && tt_score <= alpha)
             )) {
             return tt_score;
         }
