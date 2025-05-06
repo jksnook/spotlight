@@ -35,9 +35,9 @@ private:
     bool generated_captures;
     bool generated_quiets;
     MoveList captures;
-    int capture_index;
+    uint16_t capture_index;
     MoveList quiets;
-    int quiet_index;
+    uint16_t quiet_index;
     Position &pos;
     int (*quiet_history)[2][64][64];
 

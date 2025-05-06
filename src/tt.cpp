@@ -53,8 +53,4 @@ void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, uint8_
     *old_entry = TTEntry(z_key, depth, best_move, score, node_type, half_moves);
 }
 
-TTEntry* TT::probe(U64 z_key) {
-    return &hash_table[z_key % num_entries];
-}
-
 } // namespace Spotlight

@@ -30,8 +30,8 @@ void PVTable::zeroLength(int ply) {
     pv_length[ply] = 0;
 }
 
-Search::Search(TT* _tt, std::atomic<bool>* _is_stopped): tt(_tt), is_stopped(_is_stopped),
-start_time(std::chrono::steady_clock::now()), tt_hits(0), allow_nmp(true), enable_qsearch_tt(true), 
+Search::Search(TT* _tt, std::atomic<bool>* _is_stopped): start_time(std::chrono::steady_clock::now()), 
+tt_hits(0), allow_nmp(true), enable_qsearch_tt(true),  tt(_tt), is_stopped(_is_stopped),
 q_nodes(0), make_output(true), times_up(false), thread_id(0) {
     clearHistory();
     for (int i = 0; i < MAX_PLY; i++) {
@@ -349,6 +349,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         if (nmp >= beta) return beta;
 
     }
+    // recursive null move pruning disabled
 
     /*
     Internal Iterative Reductions

@@ -684,7 +684,7 @@ bool isPseudoLegal(move16 move, Position &pos) {
             rook_sq_bb = setBit(H1) << 56 * pos.side_to_move;
             rook_bb = pos.bitboards[getPieceID(ROOK, pos.side_to_move)];
             temp = (setBit(E1) | setBit(F1)) << 56 * pos.side_to_move;
-        } else if (move_type == QUEEN_CASTLE) {
+        } else {
             if (!(pos.castle_rights & (WQC <<( 2 * pos.side_to_move)))) return false;
             if (from_sq != E1 + 56 * pos.side_to_move || to_sq != C1 + 56 * pos.side_to_move) {
                 return false;

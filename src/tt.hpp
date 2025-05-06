@@ -42,8 +42,7 @@ public:
     void clear();
     void save(U64 z_key, int depth, int ply, move16 best_move, int score, uint8_t node_type, int half_moves);
     inline TTEntry getEntry(U64 z_key) {return hash_table[z_key % num_entries];};
-    TTEntry* probe(U64 z_key);
-    bool getScore(U64 z_key, int depth, int ply, int alpha, int beta, int &score, move16 &best_move);
+    inline TTEntry* probe(U64 z_key) {return &hash_table[z_key % num_entries];};
 private:
     U64 num_entries;
     size_t hash_size;
