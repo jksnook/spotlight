@@ -281,8 +281,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     if (entry->node_type != NULL_NODE && entry->z_key == pos.z_key) {
         // grab the tt move for move ordering if the hash key matches
         tt_move = entry->best_move;
-        // get the eval from the TT
-        s_eval = entry->s_eval;
 
         int tt_score = entry->score;
 
@@ -302,6 +300,9 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
             return tt_score;
         }
 
+        // get the eval from the TT
+        s_eval = entry->s_eval;
+
         // adjust eval with TT score
         if (entry->node_type == EXACT_NODE) {
             s_eval = entry->score;
@@ -313,6 +314,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     }
 
     // get static evaluation for use in pruning heuristics
+    // using tt_move as the condition here is wrong (TODO fix this)
     if (!tt_move) {
         s_eval = eval(pos);
     }
@@ -370,6 +372,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     We reduce when the position is not in the transposition table,
     assuming that must mean the position is not very important.
+
+    TODO switch to tt_hit
     */
     if (depth >= 5 && tt_move == NULL_MOVE && !in_check) depth--;
 
