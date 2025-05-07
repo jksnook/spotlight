@@ -276,10 +276,13 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // Probe the transposition table
     move16 tt_move = NULL_MOVE;
     TTEntry* entry = tt->probe(pos.z_key);
+    int s_eval;
 
     if (entry->node_type != NULL_NODE && entry->z_key == pos.z_key) {
         // grab the tt move for move ordering if the hash key matches
         tt_move = entry->best_move;
+        // get the eval from the TT
+        s_eval = entry->s_eval;
 
         int tt_score = entry->score;
 
@@ -298,10 +301,21 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
             )) {
             return tt_score;
         }
+
+        // adjust eval with TT score
+        if (entry->node_type == EXACT_NODE) {
+            s_eval = entry->score;
+        } else if (entry->node_type == LOWER_BOUND_NODE) {
+            s_eval = std::max(s_eval, entry->score);
+        } else {
+            s_eval = std::min(s_eval, entry->score);
+        }
     }
 
     // get static evaluation for use in pruning heuristics
-    int s_eval = eval(pos);
+    if (!tt_move) {
+        s_eval = eval(pos);
+    }
     eval_stack[ply] = s_eval;
 
     /*
@@ -316,7 +330,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     If our eval is above beta + some margin we consider this a beta cutoff
     */
-    if (!pv_node && !in_check && depth <= 3 && s_eval >= beta + 120 * depth) {
+    if (!pv_node && !in_check && depth <= 6 && s_eval >= beta + 120 * depth) {
         return s_eval;
     }
 
@@ -376,7 +390,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     killer_2[ply + 1] = NULL_MOVE;
 
     // enable or disable futility pruning
-    bool allow_fprune = !pv_node && depth <= 4 && !in_check && s_eval < alpha - 50 - 50 * depth;
+    bool allow_fprune = !pv_node && depth <= 4 && !in_check && s_eval < alpha - 50 - 80 * depth;
 
 
     /*
@@ -491,7 +505,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
                     }
                 }
                 // Store to TT as a fail high
-                tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.half_moves);
+                tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.half_moves, s_eval);
                 // beta cutoff
                 return score;
             }
@@ -517,9 +531,9 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // save to TT as an upper bound node or an exact node depending on if we raised alpha
     if (is_upper_bound) {
         // re-use the old TT move in fail lows
-        tt->save(pos.z_key, depth, ply, tt_move, best_score, UPPER_BOUND_NODE, pos.half_moves);
+        tt->save(pos.z_key, depth, ply, tt_move, best_score, UPPER_BOUND_NODE, pos.half_moves, s_eval);
     } else {
-        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, pos.half_moves);
+        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, pos.half_moves, s_eval);
     }
 
     return best_score;

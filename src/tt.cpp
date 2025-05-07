@@ -8,8 +8,9 @@ z_key(0ULL), depth(0), best_move(0), score(0), node_type(NULL_NODE), half_moves(
     
 }
 
-TTEntry::TTEntry(U64 _z_key, int _depth, move16 _best_move, int _score, uint8_t _node_type, int _half_moves) : 
-z_key(_z_key), depth(_depth), best_move(_best_move), score(_score), node_type(_node_type), half_moves(_half_moves)
+TTEntry::TTEntry(U64 _z_key, int _depth, move16 _best_move, int _score, uint8_t _node_type, int _half_moves, int _s_eval) : 
+z_key(_z_key), depth(_depth), best_move(_best_move), score(_score), node_type(_node_type), half_moves(_half_moves),
+s_eval(_s_eval)
 {
 
 }
@@ -37,7 +38,7 @@ void TT::clear() {
 }
 
 
-void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, uint8_t node_type, int half_moves) {
+void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, uint8_t node_type, int half_moves, int s_eval) {
     TTEntry* old_entry = probe(z_key);
 
     if (old_entry->depth > depth && old_entry->z_key == z_key) {
@@ -50,7 +51,7 @@ void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, uint8_
         score -= ply;
     }
 
-    *old_entry = TTEntry(z_key, depth, best_move, score, node_type, half_moves);
+    *old_entry = TTEntry(z_key, depth, best_move, score, node_type, half_moves, s_eval);
 }
 
 } // namespace Spotlight

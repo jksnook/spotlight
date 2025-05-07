@@ -19,7 +19,7 @@ const uint8_t UPPER_BOUND_NODE = 3;
 class TTEntry {
 public:
     TTEntry();
-    TTEntry(U64 _z_key, int _depth, move16 _best_move, int _score, uint8_t _node_type, int _half_moves);
+    TTEntry(U64 _z_key, int _depth, move16 _best_move, int _score, uint8_t _node_type, int _half_moves, int _s_eval);
 
     U64 z_key;
     int16_t depth;
@@ -27,6 +27,7 @@ public:
     int score;
     uint8_t node_type;
     uint16_t half_moves;
+    int32_t s_eval;
 private:
 };
 
@@ -40,7 +41,7 @@ public:
 
     void resize(size_t size);
     void clear();
-    void save(U64 z_key, int depth, int ply, move16 best_move, int score, uint8_t node_type, int half_moves);
+    void save(U64 z_key, int depth, int ply, move16 best_move, int score, uint8_t node_type, int half_moves, int s_eval);
     inline TTEntry getEntry(U64 z_key) {return hash_table[z_key % num_entries];};
     inline TTEntry* probe(U64 z_key) {return &hash_table[z_key % num_entries];};
 private:

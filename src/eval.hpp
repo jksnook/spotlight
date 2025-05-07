@@ -284,4 +284,5 @@ constexpr int piece_square_tables[6][2][64] = {
 };
 
 int eval(Position &pos);
-}
+
+} // namespace Spotlight
