@@ -409,7 +409,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         pos.makeMove(move);
 
         // TT prefetching. avoids cache misses that cause slow TT lookups
-        // __builtin_prefetch(tt->probe(pos.z_key));
+        tt->prefetch(pos.z_key);
 
         /*
         Late Move Pruning

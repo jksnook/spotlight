@@ -63,7 +63,7 @@ bool TT::probe(U64 z_key, move16 &tt_move, NodeType &node_type, int &depth, int 
     return false;
 }
 
-
+// saves data to the TT
 void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, NodeType node_type, int s_eval) {
     int16_t worst_score = 32000;
     uint16_t hash16 = static_cast<uint16_t>(z_key >> 48);
@@ -93,6 +93,8 @@ void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, NodeTy
         }
     }
 
+    // only replace a matching entry if the new depth is greater or
+    // the new node type is exact
     if (to_replace->hash16 == hash16) {
         if (depth >= to_replace->depth || node_type == EXACT_NODE) {
             *to_replace = TTEntry(z_key, depth, best_move, score, node_type, s_eval, generation);
@@ -101,6 +103,10 @@ void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, NodeTy
     }
 
     *to_replace = TTEntry(z_key, depth, best_move, score, node_type, s_eval, generation);
+}
+
+void TT::prefetch(U64 z_key) {
+    __builtin_prefetch(&hash_table[z_key % num_entries]);
 }
 
 } // namespace Spotlight
