@@ -91,6 +91,7 @@ void UCI::parsePosition(std::istringstream& commands) {
 }
 void UCI::parseGo(std::istringstream& commands) {
     search_threads.stop();
+    search_threads.tt.nextGeneration();
     std::string token;
 
     commands >> token;

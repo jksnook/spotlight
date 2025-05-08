@@ -181,6 +181,7 @@ void playGames(int num_games, int id, int& games_played, std::mutex& mx) {
             }
 
             pos.makeMove(move);
+            tt.nextGeneration();
         }
 
         if (output_file.is_open()) {

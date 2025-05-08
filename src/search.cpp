@@ -275,16 +275,13 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     move16 tt_move = NULL_MOVE;
     int s_eval;
+    bool tt_hit = false;
+    NodeType node_type;
+    int tt_depth;
+    int tt_score;
     
     // Probe the transposition table
-    TTEntry* entry = tt->probe(pos.z_key);
-
-    if (entry->node_type != NULL_NODE && entry->z_key == pos.z_key) {
-        // grab the tt move for move ordering if the hash key matches
-        tt_move = entry->best_move;
-        // get the eval from the TT
-        s_eval = entry->s_eval;
-        int tt_score = entry->score;
+    if (tt_hit = tt->probe(pos.z_key, tt_move, node_type, tt_depth, tt_score, s_eval)) {
 
         // adjust checkmate scores according to our ply
         if (tt_score > MATE_THRESHOLD) {
@@ -294,29 +291,20 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         }
 
         // return the score from the TT if the bounds and depth allow it
-        if (!pv_node && !is_root && entry->depth >= depth && (
-            entry->node_type == EXACT_NODE ||
-            (entry->node_type == LOWER_BOUND_NODE && tt_score >= beta) ||
-            (entry->node_type == UPPER_BOUND_NODE && tt_score <= alpha)
+        if (!pv_node && !is_root && tt_depth >= depth && (
+            node_type == EXACT_NODE ||
+            (node_type == LOWER_BOUND_NODE && tt_score >= beta) ||
+            (node_type == UPPER_BOUND_NODE && tt_score <= alpha)
             )) {
             return tt_score;
         }
-
-        // adjust eval with TT score
-        if (entry->node_type == EXACT_NODE) {
-            s_eval = entry->score;
-        } else if (entry->node_type == LOWER_BOUND_NODE) {
-            s_eval = std::max(s_eval, entry->score);
-        } else {
-            s_eval = std::min(s_eval, entry->score);
-        }
     }
 
-    // get static evaluation for use in pruning heuristics
-    // using tt_move as the condition here is wrong (TODO fix this)
-    if (!tt_move) {
+    // get static evaluation for use in pruning heuristics if we didn't get it from the tt
+    if (!tt_hit) {
         s_eval = eval(pos);
     }
+    // update the stack (used for the improving heuristic)
     eval_stack[ply] = s_eval;
 
     /*
@@ -418,7 +406,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         pos.makeMove(move);
 
         // TT prefetching. avoids cache misses that cause slow TT lookups
-        __builtin_prefetch(tt->probe(pos.z_key));
+        // __builtin_prefetch(tt->probe(pos.z_key));
 
         /*
         Late Move Pruning
@@ -508,7 +496,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
                     }
                 }
                 // Store to TT as a fail high
-                tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, pos.half_moves, s_eval);
+                tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, s_eval);
                 // beta cutoff
                 return score;
             }
@@ -534,9 +522,9 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // save to TT as an upper bound node or an exact node depending on if we raised alpha
     if (is_upper_bound) {
         // re-use the old TT move in fail lows
-        tt->save(pos.z_key, depth, ply, tt_move, best_score, UPPER_BOUND_NODE, pos.half_moves, s_eval);
+        tt->save(pos.z_key, depth, ply, tt_move, best_score, UPPER_BOUND_NODE, s_eval);
     } else {
-        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, pos.half_moves, s_eval);
+        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, s_eval);
     }
 
     return best_score;

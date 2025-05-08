@@ -13,7 +13,7 @@
 
 namespace Spotlight {
 
-const int POSITIVE_INFINITY = 1 << 28;
+const int POSITIVE_INFINITY = 32000;
 const int NEGATIVE_INFINITY = -POSITIVE_INFINITY;
 
 const int WINDOW_MIN_DEPTH = 3;
