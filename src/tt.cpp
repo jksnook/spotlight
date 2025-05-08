@@ -44,6 +44,7 @@ void TT::nextGeneration() {
     generation++;
 }
 
+// Fetches data from the TT. Returns true if there is a matching hash.
 bool TT::probe(U64 z_key, move16 &tt_move, NodeType &node_type, int &depth, int &score, int &s_eval) {
     uint16_t hash16 = static_cast<uint16_t>(z_key >> 48);
 
@@ -69,12 +70,17 @@ void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, NodeTy
     TTBucket* bucket = &hash_table[z_key % num_entries];
     TTEntry* to_replace = &bucket->entries[0];
 
+    // adjust checkmate scores
     if (score > MATE_THRESHOLD) {
         score += ply;
     } else if (score < -MATE_THRESHOLD) {
         score -= ply;
     }
 
+    // look for a matching hash, if not then get the one with the
+    // lowest replacement score
+    //
+    // replacement score is depth - relative age * 8
     for (auto &entry: bucket->entries) {
         if (entry.hash16 == hash16) {
             to_replace = &entry;

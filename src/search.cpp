@@ -360,7 +360,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     We reduce when the position is not in the transposition table,
     assuming that must mean the position is not very important.
 
-    TODO switch to tt_hit
+    Using tt_move instead of tt_hit is a bit weird but it's what
+    worked for me. Maybe I will change this at some point.
     */
     if (depth >= 5 && tt_move == NULL_MOVE && !in_check) depth--;
 
