@@ -273,15 +273,17 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // Increase node count only after checking for exit conditions
     nodes_searched++;
 
-    // Probe the transposition table
     move16 tt_move = NULL_MOVE;
-    TTEntry* entry = tt->probe(pos.z_key);
     int s_eval;
+    
+    // Probe the transposition table
+    TTEntry* entry = tt->probe(pos.z_key);
 
     if (entry->node_type != NULL_NODE && entry->z_key == pos.z_key) {
         // grab the tt move for move ordering if the hash key matches
         tt_move = entry->best_move;
-
+        // get the eval from the TT
+        s_eval = entry->s_eval;
         int tt_score = entry->score;
 
         // adjust checkmate scores according to our ply
@@ -299,9 +301,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
             )) {
             return tt_score;
         }
-
-        // get the eval from the TT
-        s_eval = entry->s_eval;
 
         // adjust eval with TT score
         if (entry->node_type == EXACT_NODE) {
