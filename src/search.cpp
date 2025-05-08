@@ -200,7 +200,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
         // check for search timeout
         if (times_up) {
             // if the best move has changed we use it even if the search timed out
-            if (pv.getPVMove(0) != best_move) {
+            if (pv.getPVMove(0) && pv.getPVMove(0) != best_move) {
                 best_move = pv.getPVMove(0);
                 best_score = score;
                 if (make_output) outputInfo(depth, best_move, best_score, nps);
@@ -234,6 +234,8 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
 
     result.move = best_move;
     result.score = best_score;
+
+    // assert(best_move);
 
     if (thread_id == 0 && make_output) std::cout << "bestmove " << moveToString(best_move) << std::endl;
 
@@ -545,17 +547,39 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
 
     bool in_check = inCheck(pos);
 
-    // tt disabled in qsearch for now
     move16 tt_move = NULL_MOVE;
-
-    // get static eval;
+    bool tt_hit = false;
+    NodeType node_type;
+    int tt_depth;
+    int tt_score;
+    // our quiescence search static eval. used as a lower bound for our score
     int stand_pat;
     
+    // Probe the transposition table
+    if (tt_hit = tt->probe(pos.z_key, tt_move, node_type, tt_depth, tt_score, stand_pat)) {
+
+        // adjust checkmate scores according to our ply
+        if (tt_score > MATE_THRESHOLD) {
+            tt_score -= ply;
+        } else if (tt_score < -MATE_THRESHOLD) {
+            tt_score += ply;
+        }
+
+        // return the score from the TT if the bounds and depth allow it
+        if (enable_qsearch_tt && tt_depth >= depth && (
+            node_type == EXACT_NODE ||
+            (node_type == LOWER_BOUND_NODE && tt_score >= beta) ||
+            (node_type == UPPER_BOUND_NODE && tt_score <= alpha)
+            )) {
+            return tt_score;
+        }
+    }
+    
     // don't use standing pat when in check. (we need to search evasions)
-    if (!in_check) {
-        stand_pat = eval(pos);
-    } else {
+    if (in_check) {
         stand_pat = NEGATIVE_INFINITY;
+    } else if (!tt_hit) {
+        stand_pat = eval(pos);
     }
 
     bool is_upper_bound = true;
@@ -603,6 +627,7 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
             best_score = score;
             best_move = move;
             if (score >= beta) {
+                tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, stand_pat);
                 return score;
             } else if (score > alpha) {
                 alpha = score;
@@ -619,6 +644,12 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
             return -MATE_SCORE + ply;
         }
         return 0;
+    }
+
+    if (is_upper_bound) {
+        tt->save(pos.z_key, depth, ply, tt_move, best_score, UPPER_BOUND_NODE, stand_pat);
+    } else {
+        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, stand_pat);
     }
 
     return best_score;

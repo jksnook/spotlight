@@ -168,7 +168,7 @@ void playGames(int num_games, int id, int& games_played, std::mutex& mx) {
             }
 
             is_stopped.store(false);
-            SearchResult search_result = search.nodeSearch(pos, MAX_PLY, BASE_NODE_COUNT + myRandom() % 30000);
+            SearchResult search_result = search.nodeSearch(pos, MAX_PLY, BASE_NODE_COUNT + myRandom() % (BASE_NODE_COUNT / 5));
 
             move16 move = search_result.move;
             int score = search_result.score;
