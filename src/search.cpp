@@ -171,14 +171,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
     int beta = POSITIVE_INFINITY;
     int alpha = NEGATIVE_INFINITY;
 
-    // tells us if we are re-searching due to falling outside the aspiration window
-    bool research = false;
-    int delta = WINDOW_SIZE;
-
     for (int depth = 1; depth <= max_depth; depth++) {
-        nodes_searched = 0ULL;
-
-        std::chrono::time_point start_time = std::chrono::steady_clock::now();
 
         /*
         Aspiration Windows
@@ -186,47 +179,54 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
         at first search with a narrow window to increase beta cutoffs.
         If we fail high or low we re-search with a wider window.
         */
-        if (depth > WINDOW_MIN_DEPTH && !research) {
+        if (depth > WINDOW_MIN_DEPTH) {
             alpha = best_score - WINDOW_SIZE;
             beta = best_score + WINDOW_SIZE;
         }
 
-        // call negaMax as a PV-node and root node at ply 0
-        int score = negaMax<true, false, true>(pos, depth, 0, alpha, beta);
+        // delta used for widening aspiration windows
+        int delta = WINDOW_SIZE;
+        int score;
+        U64 nps;
 
-        total_nodes += nodes_searched;
-        std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - start_time;
-        U64 nps = nodes_searched / time_elapsed.count();
+        while (true) {
+            nodes_searched = 0ULL;
+            std::chrono::time_point start_time = std::chrono::steady_clock::now();
 
-        // check for search timeout
-        if (times_up) {
-            // if the best move has changed we use it even if the search timed out
-            if (pv.getPVMove(0) && pv.getPVMove(0) != best_move) {
-                best_move = pv.getPVMove(0);
-                best_score = score;
-                if (make_output) outputInfo(depth, best_move, best_score, nps);
+
+            // call negaMax as a PV-node and root node at ply 0
+            score = negaMax<true, false, true>(pos, depth, 0, alpha, beta);
+
+            total_nodes += nodes_searched;
+            std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - start_time;
+            nps = nodes_searched / time_elapsed.count();
+
+            // check for search timeout
+            if (times_up) {
+                // if the best move has changed we use it even if the search timed out
+                if (pv.getPVMove(0) && pv.getPVMove(0) != best_move) {
+                    best_move = pv.getPVMove(0);
+                    best_score = score;
+                    if (make_output) outputInfo(depth, best_move, best_score, nps);
+                }
+                break;
             }
-            break;
-        }
 
-        // re-search if our score is outside the aspiration window
-        if (score <= alpha) {
-            beta = (alpha + beta) / 2;
-            alpha -= delta;
-            research = true;
-            depth--;
+            // re-search if our score is outside the aspiration window
+            if (score <= alpha) {
+                beta = (alpha + beta) / 2;
+                alpha -= delta;
+            } else if (score >= beta) {
+                alpha = (alpha + beta) / 2;
+                beta += delta;
+            } else {
+                // break if score fell within the window
+                break;
+            }
+            // increment delta for each re-search
             delta *= 2;
-            continue;
-        } else if (score >= beta) {
-            alpha = (alpha + beta) / 2;
-            beta += delta;
-            research = true;
-            depth--;
-            delta *= 2;
-            continue;
         }
-
-        research = false;
+        if (times_up) break;
 
         best_move = pv.getPVMove(0);
         best_score = score;
