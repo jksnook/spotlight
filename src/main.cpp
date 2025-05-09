@@ -29,7 +29,11 @@ int main(int argc, char* argv[]) {
         tuner.printWeights();
         tuner.outputToFile();
     } else if (static_cast<std::string>(argv[1]) == "datagen") {
-        selfplay(10000);
+        if (argc == 5) {
+            selfplay(std::stoi(argv[2]), std::stoi(argv[3]), std::stoi(argv[4]));
+        } else {
+            selfplay(100, NUM_THREADS, BASE_NODE_COUNT);
+        }
     }
 
 }

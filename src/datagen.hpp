@@ -17,8 +17,8 @@ const int BASE_NODE_COUNT = 5000;
 
 bool isQuiet(MoveList &moves);
 
-void selfplay(int num_games);
+void selfplay(int num_games, int num_threads, U64 node_count);
 
-void playGames(int num_games, int id, int &games_played, std::mutex &mx);
+void playGames(int num_games, U64 node_count, int id, int &games_played, std::mutex &mx);
 
 } // namespace Spotlight

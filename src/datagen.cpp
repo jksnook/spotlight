@@ -20,21 +20,21 @@ bool isQuiet(MoveList &moves) {
     return true;
 }
 
-void selfplay(int num_games) {
+void selfplay(int num_games, int num_threads, U64 node_count) {
     std::vector<std::thread> threads;
     std::mutex mx;
     int games_played = 0;
 
-    for (int i = 0; i < NUM_THREADS; i++) {
-        threads.push_back(std::thread(playGames, num_games, i, std::ref(games_played), std::ref(mx)));
+    for (int i = 0; i < num_threads; i++) {
+        threads.push_back(std::thread(playGames, num_games, node_count, i, std::ref(games_played), std::ref(mx)));
     }
 
-    for (int i = 0; i < NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         threads[i].join();
     }
 }
 
-void playGames(int num_games, int id, int& games_played, std::mutex& mx) {
+void playGames(int num_games, U64 node_count, int id, int& games_played, std::mutex& mx) {
     std::ofstream output_file;
     output_file.open("./selfplay" + std::to_string(id) + ".txt");
     if (!output_file.is_open()) return;
@@ -60,7 +60,7 @@ void playGames(int num_games, int id, int& games_played, std::mutex& mx) {
         std::cout << "starting game " << games_played << " of " << num_games << " on thread " << id <<
             " with the following position and number of random moves\n";
         mx.unlock();
-        pos.readFen(static_cast<std::string>(STARTPOS));
+        pos = Position();
         tt.clear();
         search.clearHistory();
 
@@ -168,7 +168,7 @@ void playGames(int num_games, int id, int& games_played, std::mutex& mx) {
             }
 
             is_stopped.store(false);
-            SearchResult search_result = search.nodeSearch(pos, MAX_PLY, BASE_NODE_COUNT + myRandom() % (BASE_NODE_COUNT / 5));
+            SearchResult search_result = search.nodeSearch(pos, MAX_PLY, node_count + myRandom() % (node_count / 5));
 
             move16 move = search_result.move;
             int score = search_result.score;
