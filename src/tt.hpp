@@ -30,7 +30,7 @@ private:
 };
 
 struct TTBucket {
-    TTEntry entries[3];
+    TTEntry entries[BUCKET_SIZE];
 };
 
 const int NUM_ENTRIES = TT_SIZE / sizeof(TTBucket);
