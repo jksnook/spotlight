@@ -173,6 +173,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
 
     // tells us if we are re-searching due to falling outside the aspiration window
     bool research = false;
+    int delta = WINDOW_SIZE;
 
     for (int depth = 1; depth <= max_depth; depth++) {
         nodes_searched = 0ULL;
@@ -210,16 +211,22 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
 
         // re-search if our score is outside the aspiration window
         if (score <= alpha) {
-            alpha = NEGATIVE_INFINITY;
+            beta = (alpha + beta) / 2;
+            alpha -= delta;
             research = true;
             depth--;
+            delta *= 2;
             continue;
         } else if (score >= beta) {
-            beta = POSITIVE_INFINITY;
+            alpha = (alpha + beta) / 2;
+            beta += delta;
             research = true;
             depth--;
+            delta *= 2;
             continue;
         }
+
+        research = false;
 
         best_move = pv.getPVMove(0);
         best_score = score;

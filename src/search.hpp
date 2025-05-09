@@ -17,7 +17,7 @@ const int POSITIVE_INFINITY = 32000;
 const int NEGATIVE_INFINITY = -POSITIVE_INFINITY;
 
 const int WINDOW_MIN_DEPTH = 3;
-const int WINDOW_SIZE = 50;
+const int WINDOW_SIZE = 15;
 const int WINDOW_INCREMENT = 60;
 const int FUTILITY_MARGIN = 120;
 
