@@ -130,12 +130,18 @@ bool Search::softTimesUp() {
 
 // Output the search info in the UCI format
 void Search::outputInfo(int depth, move16 best_move, int score, int nps) {
-    std::cout << "info depth " << depth << " nodes " << nodes_searched;
-    std::cout << " nps "<< nps << " bestmove " << moveToString(best_move) << " pv ";
+    std::cout << "info depth " << depth;
+    if (score > MATE_THRESHOLD || score < -MATE_THRESHOLD) {
+        std::cout << " score mate " << pv.length();
+    } else {
+        std::cout << " score cp " << score;
+    }
+    std::cout << " nodes " << nodes_searched << " nps "<< nps 
+    << " bestmove " << moveToString(best_move) << " pv ";
     for (const auto &m: pv) {
         std::cout << moveToString(m) << " ";
     }
-    std::cout << " score " << score << std::endl;
+    std::cout << "\n";
 }
 
 // Timed search
