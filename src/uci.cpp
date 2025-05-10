@@ -182,6 +182,11 @@ void UCI::parseGo(std::istringstream& commands) {
         std::cout << node_count << " nodes searched in " << duration.count() << "s " << nps << " nps\n";
     } else if (token == "infinite") {
         search_threads.infiniteSearch(position);
+    } else if (token == "movetime") {
+        token.clear();
+        commands >> token;
+        U64 time = stoi(token);
+        search_threads.timeSearch(position, time);
     }
 }
 
