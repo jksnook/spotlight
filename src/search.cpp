@@ -272,8 +272,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     bool in_check = inCheck(pos);
 
-    // check extension not gaining much. Will try again later
-
     // If we are at depth 0 then drop into the quiescence search
     if (depth <= 0) {
         return qSearch(pos, 0, ply, alpha, beta);
@@ -362,6 +360,11 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     }
     // recursive null move pruning disabled
+
+    /*
+    Check Extension
+    */
+    if (in_check && depth <= 3) depth++;
 
     /*
     Internal Iterative Reductions
