@@ -114,7 +114,7 @@ void testSearch() {
 
     Search search(&tt, &is_stopped);
 
-    U64 nodes;
+    U64 nodes = 0ULL;
     U64 q_nodes;
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -123,7 +123,7 @@ void testSearch() {
         search.clearHistory();
         search.clearTT();
         pos.readFen(fen);
-        SearchResult r = search.timeSearch(pos, 15, 100000);
+        SearchResult r = search.timeSearch(pos, 15, 100000ULL);
         nodes += search.total_nodes;
         q_nodes += search.q_nodes;
     }
