@@ -115,7 +115,7 @@ void testSearch() {
     Search search(&tt, &is_stopped);
 
     U64 nodes = 0ULL;
-    U64 q_nodes;
+    U64 q_nodes = 0ULL;
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
