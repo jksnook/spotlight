@@ -18,7 +18,7 @@ const int KILLER_2_SCORE = MAX_HISTORY * 2;
 const int IGNORE_MOVE = -(1 << 30);
 
 // TODO add stage for killer moves
-enum class PickerStage { TT_MOVE, GOOD_NOISY, QUIET_AND_BAD_NOISY, END };
+enum class PickerStage { TT_MOVE, GOOD_NOISY, KILLER_1, KILLER_2, QUIET_AND_BAD_NOISY, END };
 
 class MovePicker {
 public:
@@ -32,9 +32,9 @@ private:
     bool tt_played;
     move16 killer_1;
     move16 killer_2;
-    bool generated_captures;
+    bool generated_noisies;
     bool generated_quiets;
-    MoveList captures;
+    MoveList noisy_moves;
     uint16_t capture_index;
     MoveList quiets;
     uint16_t quiet_index;
@@ -43,8 +43,8 @@ private:
 
     move16 selectMove(int start, MoveList &scored_moves);
     move16 selectWinningCapture(int start, MoveList &scored_moves);
-    void scoreQuiets(MoveList &moves, move16 _tt_move, move16 _killer_1, move16 _killer_2);
-    void scoreNoisy(MoveList &moves, move16 _tt_move, move16 _killer_1, move16 _killer_2);
+    void scoreQuiets();
+    void scoreNoisy();
 };
 
 } // namespace Spotlight

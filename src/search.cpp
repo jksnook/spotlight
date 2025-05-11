@@ -313,14 +313,14 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         s_eval = eval(pos);
     }
     // update the stack (used for the improving heuristic)
-    eval_stack[ply] = s_eval;
+    search_stack[ply].s_eval = s_eval;
 
     /*
     Improving Heuristic
 
     We prune less when our static eval is improved from 2 plies ago
     */
-    bool improving = ply < 2 || s_eval >= eval_stack[ply - 2];
+    bool improving = ply < 2 || s_eval >= search_stack[ply - 2].s_eval;
 
     /*
     Reverse Futility Pruning
@@ -416,6 +416,10 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         */
         if (allow_fprune && num_moves > 1 && !isCaptureOrPromotion(move))
             continue;
+
+        // update the search stack
+        search_stack[ply].move = move;
+        search_stack[ply].piece_moved = pos.at(getFromSquare(move));
 
         pos.makeMove(move);
 

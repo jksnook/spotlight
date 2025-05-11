@@ -44,6 +44,12 @@ struct SearchResult {
     int score;
 };
 
+struct StackEntry {
+    move16 move;
+    Piece piece_moved;
+    int s_eval;
+};
+
 class Search
 {
 public:
@@ -78,6 +84,9 @@ private:
     }
     void clearKillers();
 
+    void saveCounterMove(int ply, move16 move, Color side);
+    void clearCounters();
+
     bool search_previous_pv;
     bool node_search;
     bool allow_nmp;
@@ -94,10 +103,11 @@ private:
 
     move16 killer_1[MAX_PLY];
     move16 killer_2[MAX_PLY];
+    move16 counter_moves[2][64][64];
 
     int lmr_table[2][MAX_PLY][256];
 
-    std::array<int, MAX_PLY> eval_stack;
+    std::array<StackEntry, MAX_PLY> search_stack;
 
     int quiet_history[2][64][64];
     void updateHistory(Color side, int from, int to, int bonus);

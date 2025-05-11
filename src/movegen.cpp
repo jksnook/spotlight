@@ -604,7 +604,7 @@ bool otherSideInCheck(Position &pos) {
 }
 
 bool isPseudoLegal(move16 move, Position &pos) {
-    if (move == 0) {
+    if (move == NULL_MOVE) {
         return false;
     }
 

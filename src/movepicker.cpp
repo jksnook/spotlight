@@ -4,9 +4,11 @@
 
 namespace Spotlight {
 
-MovePicker::MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 _tt_move, move16 _killer_1, move16 _killer_2): 
-stage(PickerStage::TT_MOVE), tt_move(_tt_move), killer_1(_killer_1), killer_2(_killer_2), capture_index(0), quiet_index(0),
-generated_captures(false), generated_quiets(false), tt_played(false), pos(_pos), quiet_history(_quiet_history) {}
+MovePicker::MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 _tt_move, 
+move16 _killer_1, move16 _killer_2): 
+stage(PickerStage::TT_MOVE), tt_move(_tt_move), killer_1(_killer_1), killer_2(_killer_2), 
+capture_index(0), quiet_index(0), generated_noisies(false), generated_quiets(false), 
+tt_played(false), pos(_pos), quiet_history(_quiet_history) {}
 
 // Selection sort for getting the highest scored move
 move16 MovePicker::selectMove(int start, MoveList &scored_moves) {
@@ -95,39 +97,41 @@ int MovePicker::scoreMove(move16 move) {
     }
 }
 
-void MovePicker::scoreQuiets(MoveList &moves, move16 _tt_move, move16 _killer_1, move16 _killer_2) {
-    int s = moves.size();
+void MovePicker::scoreQuiets() {
+    int s = quiets.size();
 
     for (int i = 0; i < s; i++) {
-        if (moves[i].move == _tt_move) {
-            moves.removeMove(i);
+        // quiets[i].score = scoreMove(quiets[i].move);
+        if (quiets[i].move == tt_move || quiets[i].move == killer_1 || quiets[i].move == killer_2) {
+            quiets.removeMove(i);
             i--;
             s--;
             continue;
-        } else if (moves[i].move == _killer_1) {
-            moves[i].score = KILLER_1_SCORE;
-        } else if (moves[i].move == _killer_2) {
-            moves[i].score = KILLER_2_SCORE;
         } else {
-            moves[i].score = scoreMove(moves[i].move);
+            quiets[i].score = scoreMove(quiets[i].move);
         }
     }
 
 }
 
-void MovePicker::scoreNoisy(MoveList &moves, move16 _tt_move, move16 _killer_1, move16 _killer_2) {
-    int s = moves.size();
+void MovePicker::scoreNoisy() {
+    int s = noisy_moves.size();
 
-    // Ignoring killer moves is OK here since I don't
-    // use them in quiescence search.
     for (int i = 0; i < s; i++) {
-        if (moves[i].move == _tt_move) {
-            moves.removeMove(i);
+        // noisy_moves[i].score = scoreMove(noisy_moves[i].move);
+        if (noisy_moves[i].move == tt_move) {
+            noisy_moves.removeMove(i);
             i--;
             s--;
             continue;
+        } else if (noisy_moves[i].move == killer_1) {
+            killer_1 = NULL_MOVE;
+            noisy_moves[i].score = scoreMove(noisy_moves[i].move);
+        } else if (noisy_moves[i].move == killer_2) {
+            killer_2 = NULL_MOVE;
+            noisy_moves[i].score = scoreMove(noisy_moves[i].move);
         } else {
-            moves[i].score = scoreMove(moves[i].move);
+            noisy_moves[i].score = scoreMove(noisy_moves[i].move);
         }
     }
 }
@@ -147,23 +151,33 @@ move16 MovePicker::getNextMove() {
     }
 
     if (stage == PickerStage::GOOD_NOISY) {
-        if (!generated_captures) {
-            generateNoisyMoves(captures, pos);
-            generated_captures = true;
+        if (!generated_noisies) {
+            generateNoisyMoves(noisy_moves, pos);
+            generated_noisies = true;
 
-            scoreNoisy(captures, tt_move, killer_1, killer_2);
+            scoreNoisy();
         }
-        if (capture_index < captures.size()) {
-            move16 m = selectWinningCapture(capture_index, captures);
+        if (capture_index < noisy_moves.size()) {
+            move16 m = selectWinningCapture(capture_index, noisy_moves);
             if (m) {
                 capture_index++;
                 return m;
             } else {
-                stage = PickerStage::QUIET_AND_BAD_NOISY;
+                stage = PickerStage::KILLER_1;
             }
         } else {
-            stage = PickerStage::QUIET_AND_BAD_NOISY;
+            stage = PickerStage::KILLER_1;
         }
+    }
+
+    if (stage == PickerStage::KILLER_1) {
+        stage = PickerStage::KILLER_2;
+        if (killer_1 && isLegal(killer_1, pos)) return killer_1;
+    }
+
+    if (stage == PickerStage::KILLER_2) {
+        stage = PickerStage::QUIET_AND_BAD_NOISY;
+        if (killer_2 && isLegal(killer_2, pos)) return killer_2;
     }
 
     if (stage == PickerStage::QUIET_AND_BAD_NOISY) {
@@ -171,14 +185,14 @@ move16 MovePicker::getNextMove() {
             generateQuietMoves(quiets, pos);
             generated_quiets = true;
 
-            scoreQuiets(quiets, tt_move, killer_1, killer_2);
+            scoreQuiets();
         }
         if (quiet_index < quiets.size()) {
             move16 m = selectMove(quiet_index, quiets);
             quiet_index++;
             return m;
-        } else if (capture_index < captures.size()) {
-            move16 m = selectMove(capture_index, captures);
+        } else if (capture_index < noisy_moves.size()) {
+            move16 m = selectMove(capture_index, noisy_moves);
             capture_index++;
             return m;
         } else {
@@ -186,7 +200,7 @@ move16 MovePicker::getNextMove() {
         }
     }
 
-    return 0;
+    return NULL_MOVE;
 }
 
 move16 MovePicker::getNextCapture() {
@@ -204,22 +218,22 @@ move16 MovePicker::getNextCapture() {
     }
 
     if (stage == PickerStage::GOOD_NOISY) {
-        if (!generated_captures) {
-            generateNoisyMoves(captures, pos);
-            generated_captures = true;
+        if (!generated_noisies) {
+            generateNoisyMoves(noisy_moves, pos);
+            generated_noisies = true;
 
-            scoreNoisy(captures, tt_move, killer_1, killer_2);
+            scoreNoisy();
         }
-        if (capture_index < captures.size()) {
-            move16 m = selectMove(capture_index, captures);
+        if (capture_index < noisy_moves.size()) {
+            move16 m = selectMove(capture_index, noisy_moves);
             capture_index++;
             return m;
         } else {
-            stage = PickerStage::QUIET_AND_BAD_NOISY;
+            stage = PickerStage::KILLER_1;
         }
     }
 
-    return 0;
+    return NULL_MOVE;
 }
 
 } // namespace Spotlight
