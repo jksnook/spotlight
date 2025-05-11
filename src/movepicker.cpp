@@ -48,9 +48,7 @@ move16 MovePicker::selectWinningCapture(int start, MoveList &scored_moves) {
 }
 
 int MovePicker::scoreMove(move16 move) {
-    int move_type = getMoveType(move);
-    int piece;
-    int from;
+    move16 move_type = getMoveType(move);
     switch (move_type)
     {
     case CAPTURE_MOVE:
@@ -64,8 +62,7 @@ int MovePicker::scoreMove(move16 move) {
         return (*quiet_history)[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR + 1;
         break;
     case QUEEN_PROMOTION:
-        return (SEE_VALUES[QUEEN] - SEE_VALUES[PAWN]) * SEE_MULTIPLIER + 
-            (*quiet_history)[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR;
+        return (SEE_VALUES[QUEEN] - SEE_VALUES[PAWN]) * SEE_MULTIPLIER;
         break;
     case ROOK_PROMOTION:
         return IGNORE_MOVE;
