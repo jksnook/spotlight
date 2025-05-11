@@ -1,27 +1,30 @@
 #include "eval.hpp"
+#include "bitboards.hpp"
 
 namespace Spotlight {
 
 int eval(Position &pos) {
     int early_eval = 0;
     int late_eval = 0;
-
-
     int game_phase = 0;
+    BitBoard occ = pos.bitboards[WHITE_OCCUPANCY];
 
-    for (int i = 0; i < 64; i++) {
-        Piece piece = pos.at(static_cast<Square>(i));
+    while(occ) {
+        Square i = popLSB(occ);
+        PieceType pt = getPieceType(pos.at(i));
+        game_phase += phase_values[pt];
+        early_eval += piece_values[0][pt] + piece_square_tables[pt][0][i ^ 56];
+        late_eval += piece_values[1][pt] + piece_square_tables[pt][1][i ^ 56];
+    }
 
-        if (piece != NO_PIECE) {
-            game_phase += phase_values[piece % 6];
-            if (piece < BLACK_PAWN) {
-                early_eval += piece_values[0][getPieceType(piece)] + piece_square_tables[getPieceType(piece)][0][i ^ 56];
-                late_eval += piece_values[1][getPieceType(piece)] + piece_square_tables[getPieceType(piece)][1][i ^ 56];
-            } else {
-                early_eval -= piece_values[0][getPieceType(piece)] + piece_square_tables[getPieceType(piece)][0][i];
-                late_eval -= piece_values[1][getPieceType(piece)] + piece_square_tables[getPieceType(piece)][1][i];
-            }
-        }
+    occ = pos.bitboards[BLACK_OCCUPANCY];
+
+    while(occ) {
+        Square i = popLSB(occ);
+        PieceType pt = getPieceType(pos.at(i));
+        game_phase += phase_values[pt];
+        early_eval -= piece_values[0][pt] + piece_square_tables[pt][0][i];
+        late_eval -= piece_values[1][pt] + piece_square_tables[pt][1][i];
     }
 
     int total_eval = (early_eval * game_phase + late_eval * (TOTAL_PHASE - game_phase)) / TOTAL_PHASE;
