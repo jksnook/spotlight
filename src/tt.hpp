@@ -47,6 +47,7 @@ public:
     void save(U64 z_key, int depth, int ply, move16 best_move, int score, NodeType node_type, int s_eval);
     bool probe(U64 z_key, move16 &tt_move, NodeType &node_type, int &depth, int &score, int &s_eval);
     void prefetch(U64 z_key);
+    int hashfull();
 private:
     uint8_t generation;
     U64 num_entries;

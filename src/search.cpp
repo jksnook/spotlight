@@ -139,7 +139,7 @@ void Search::outputInfo(int depth, move16 best_move, int score) {
     } else {
         std::cout << " score cp " << score;
     }
-    std::cout << " nodes " << nodes << " nps "<< nps 
+    std::cout << " nodes " << nodes << " nps "<< nps << " hashfull " << tt->hashfull()
     << " bestmove " << moveToString(best_move) << " pv ";
     for (const auto &m: pv) {
         std::cout << moveToString(m) << " ";

@@ -109,4 +109,15 @@ void TT::prefetch(U64 z_key) {
     __builtin_prefetch(&hash_table[z_key % num_entries]);
 }
 
+int TT::hashfull() {
+    int n = 0;
+    for (int i = 0; i < 1000; i++) {
+        for (const auto &entry: hash_table[i].entries) {
+            n += entry.node_type != NULL_NODE && entry.age == generation;
+        }
+    }
+
+    return n / BUCKET_SIZE;
+}
+
 } // namespace Spotlight
