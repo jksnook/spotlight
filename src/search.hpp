@@ -10,6 +10,7 @@
 #include <chrono>
 #include <array>
 #include <atomic>
+#include <functional>
 
 namespace Spotlight {
 
@@ -46,7 +47,7 @@ struct SearchResult {
 class Search
 {
 public:
-    Search(TT* _tt, std::atomic<bool>* _is_stopped);
+    Search(TT* _tt, std::atomic<bool>* _is_stopped, std::function<U64()> _getNodes);
 
     SearchResult timeSearch(Position &pos, int max_depth, U64 time_in_ms);
     SearchResult nodeSearch(Position &pos, int max_depth, U64 num_nodes);
@@ -54,13 +55,13 @@ public:
     void clearTT();
     void clearHistory();
     int tt_hits;
-    int nodes_searched;
+    U64 nodes_searched;
     U64 q_nodes;
-    U64 total_nodes;
     bool make_output;
 
     int thread_id;
     std::atomic<bool>* is_stopped;
+    std::function<U64()> getNodes;
 
 private:
     void setTimer(U64 duration_in_ms, int interval);
@@ -70,7 +71,7 @@ private:
     bool timesUp();
     bool softTimesUp();
     SearchResult iterSearch(Position &pos, int max_depth);
-    void outputInfo(int depth, move16 best_move, int score, int nps);
+    void outputInfo(int depth, move16 best_move, int score);
     inline void saveKiller(int ply, move16 move) {
         killer_2[ply] = killer_1[ply];
         killer_1[ply] = move;

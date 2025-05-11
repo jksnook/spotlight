@@ -112,7 +112,7 @@ void testSearch() {
     TT tt;
     std::atomic<bool> is_stopped(false);
 
-    Search search(&tt, &is_stopped);
+    Search search(&tt, &is_stopped, [&search](){ return search.nodes_searched;});
 
     U64 nodes = 0ULL;
     U64 q_nodes = 0ULL;
@@ -124,7 +124,7 @@ void testSearch() {
         search.clearTT();
         pos.readFen(fen);
         SearchResult r = search.timeSearch(pos, 15, 100000ULL);
-        nodes += search.total_nodes;
+        nodes += search.nodes_searched;
         q_nodes += search.q_nodes;
     }
 

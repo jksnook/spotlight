@@ -13,7 +13,7 @@ namespace Spotlight {
 
 class SearchWrapper {
 public:
-    SearchWrapper(TT* _tt, std::atomic<bool>* _is_stopped);
+    SearchWrapper(TT* _tt, std::atomic<bool>* _is_stopped, std::function<U64()> _getNodes);
     ~SearchWrapper() {};
 
     Search search;
@@ -45,6 +45,7 @@ public:
     void stop();
     void finishSearch();
     void exitThreads();
+    U64 getNodes();
 
     std::atomic<bool> is_stopped;
     TT tt;

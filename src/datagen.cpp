@@ -44,7 +44,7 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
     TT tt;
     std::atomic<bool> is_stopped(false);
 
-    Search search(&tt, &is_stopped);
+    Search search(&tt, &is_stopped, [&](){return search.nodes_searched;});
     search.make_output = false;
 
     std::random_device r;

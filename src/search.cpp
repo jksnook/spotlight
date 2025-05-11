@@ -30,9 +30,9 @@ void PVTable::zeroLength(int ply) {
     pv_length[ply] = 0;
 }
 
-Search::Search(TT* _tt, std::atomic<bool>* _is_stopped): start_time(std::chrono::steady_clock::now()), 
+Search::Search(TT* _tt, std::atomic<bool>* _is_stopped, std::function<U64()> _getNodes): start_time(std::chrono::steady_clock::now()), 
 tt_hits(0), allow_nmp(true), enable_qsearch_tt(true),  tt(_tt), is_stopped(_is_stopped),
-q_nodes(0), make_output(true), times_up(false), thread_id(0) {
+q_nodes(0), make_output(true), times_up(false), thread_id(0), getNodes(_getNodes) {
     clearHistory();
     for (int i = 0; i < MAX_PLY; i++) {
         for (int k = 0; k < 256; k++) {
@@ -129,14 +129,17 @@ bool Search::softTimesUp() {
 }
 
 // Output the search info in the UCI format
-void Search::outputInfo(int depth, move16 best_move, int score, int nps) {
+void Search::outputInfo(int depth, move16 best_move, int score) {
+    std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - start_time;
+    U64 nodes = getNodes();
+    U64 nps = nodes / time_elapsed.count();
     std::cout << "info depth " << depth;
     if (score > MATE_THRESHOLD || score < -MATE_THRESHOLD) {
         std::cout << " score mate " << pv.length();
     } else {
         std::cout << " score cp " << score;
     }
-    std::cout << " nodes " << nodes_searched << " nps "<< nps 
+    std::cout << " nodes " << nodes << " nps "<< nps 
     << " bestmove " << moveToString(best_move) << " pv ";
     for (const auto &m: pv) {
         std::cout << moveToString(m) << " ";
@@ -161,7 +164,7 @@ SearchResult Search::nodeSearch(Position &pos, int max_depth, U64 num_nodes) {
 
 // Iterative deepening framework
 SearchResult Search::iterSearch(Position& pos, int max_depth) {
-    total_nodes = 0ULL;
+    nodes_searched = 0ULL;
     q_nodes = 0ULL;
     enable_qsearch_tt = true;
     tt_hits = 0;
@@ -196,16 +199,8 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
         U64 nps;
 
         while (true) {
-            nodes_searched = 0ULL;
-            std::chrono::time_point start_time = std::chrono::steady_clock::now();
-
-
             // call negaMax as a PV-node and root node at ply 0
             score = negaMax<true, false, true>(pos, depth, 0, alpha, beta);
-
-            total_nodes += nodes_searched;
-            std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - start_time;
-            nps = nodes_searched / time_elapsed.count();
 
             // check for search timeout
             if (times_up) {
@@ -213,7 +208,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
                 if (pv.getPVMove(0) && pv.getPVMove(0) != best_move) {
                     best_move = pv.getPVMove(0);
                     best_score = score;
-                    if (make_output) outputInfo(depth, best_move, best_score, nps);
+                    if (make_output) outputInfo(depth, best_move, best_score);
                 }
                 break;
             }
@@ -237,7 +232,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
         best_move = pv.getPVMove(0);
         best_score = score;
 
-        if (make_output && thread_id == 0) outputInfo(depth, best_move, best_score, nps);
+        if (make_output && thread_id == 0) outputInfo(depth, best_move, best_score);
 
         // If our soft time limit has expired we don't start another search iteration
         if (softTimesUp()) break;

@@ -3,8 +3,9 @@
 
 namespace Spotlight {
 
-SearchWrapper::SearchWrapper(TT* _tt, std::atomic<bool>* _is_stopped): pos(), search(_tt, _is_stopped), 
-exit_thread(false), is_waiting(true), node_search(false), max_nodes(0ULL), time_in_ms(0ULL), max_depth(MAX_PLY) {
+SearchWrapper::SearchWrapper(TT* _tt, std::atomic<bool>* _is_stopped, std::function<U64()> _getNodes): pos(), 
+search(_tt, _is_stopped, _getNodes), exit_thread(false), is_waiting(true), node_search(false), 
+max_nodes(0ULL), time_in_ms(0ULL), max_depth(MAX_PLY) {
 
 }
 
@@ -95,7 +96,7 @@ void Threads::resize(int num_threads) {
     threads.clear();
 
     for (int i = 0; i < num_threads; i++) {
-        workers.emplace_back(new SearchWrapper(&tt, &is_stopped));
+        workers.emplace_back(new SearchWrapper(&tt, &is_stopped, [this](){return getNodes();}));
         workers[i]->search.thread_id = i;
         threads.emplace_back(std::thread([this, i] {workers[i]->wait();}));
     }
@@ -132,6 +133,14 @@ void Threads::exitThreads() {
     for (int i = 0; i < threads.size(); i++) {
         if(threads[i].joinable()) threads[i].join();
     }
+}
+
+U64 Threads::getNodes() {
+    U64 nodes = 0ULL;
+    for (const auto &w: workers) {
+        nodes += w->search.nodes_searched;
+    }
+    return nodes;
 }
 
 } // namespace Spotlight
