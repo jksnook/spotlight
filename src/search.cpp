@@ -2,6 +2,7 @@
 #include "movepicker.hpp"
 
 #include <algorithm>
+#include <sstream>
 
 namespace Spotlight {
 
@@ -130,21 +131,22 @@ bool Search::softTimesUp() {
 
 // Output the search info in the UCI format
 void Search::outputInfo(int depth, move16 best_move, int score) {
+    std::stringstream ss;
     std::chrono::duration<double> time_elapsed = std::chrono::steady_clock::now() - start_time;
     U64 nodes = getNodes();
     U64 nps = nodes / time_elapsed.count();
-    std::cout << "info depth " << depth;
+    ss << "info depth " << depth;
     if (score > MATE_THRESHOLD || score < -MATE_THRESHOLD) {
-        std::cout << " score mate " << pv.length();
+        ss << " score mate " << pv.length();
     } else {
-        std::cout << " score cp " << score;
+        ss << " score cp " << score;
     }
-    std::cout << " nodes " << nodes << " nps "<< nps << " hashfull " << tt->hashfull()
-    << " bestmove " << moveToString(best_move) << " pv ";
+    ss << " nodes " << nodes << " nps "<< nps << " hashfull " << tt->hashfull();
+    ss << " pv ";
     for (const auto &m: pv) {
-        std::cout << moveToString(m) << " ";
+        ss << moveToString(m) << " ";
     }
-    std::cout << "\n";
+    std::cout << ss.str() << std::endl;
 }
 
 // Timed search
@@ -205,7 +207,7 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
             // check for search timeout
             if (times_up) {
                 // if the best move has changed we use it even if the search timed out
-                if (pv.getPVMove(0) && pv.getPVMove(0) != best_move) {
+                if (thread_id == 0 && pv.getPVMove(0) && pv.getPVMove(0) != best_move) {
                     best_move = pv.getPVMove(0);
                     best_score = score;
                     if (make_output) outputInfo(depth, best_move, best_score);
