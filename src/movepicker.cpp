@@ -93,15 +93,10 @@ int MovePicker::scoreQuietMove(move16 move) {
     move16 move_type = getMoveType(move);
     Square from = getFromSquare(move);
     Square to = getToSquare(move);
-    Piece piece = pos.at(from);
 
     int score = (*quiet_history)[pos.side_to_move][from][to] / HISTORY_DIVISOR;
 
     if (move_type == DOUBLE_PAWN_PUSH) score++;
-
-    if ((setBit(from) & pos.movegen_data.enemy_attacks) && !(setBit(to) & pos.movegen_data.enemy_attacks)) {
-        score += 1;
-    }
 
     return score;
 }

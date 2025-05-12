@@ -84,9 +84,6 @@ private:
     }
     void clearKillers();
 
-    void saveCounterMove(int ply, move16 move, Color side);
-    void clearCounters();
-
     bool search_previous_pv;
     bool node_search;
     bool allow_nmp;
