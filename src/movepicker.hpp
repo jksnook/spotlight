@@ -27,7 +27,8 @@ public:
     move16 getNextCapture();
     PickerStage stage;
 private:
-    int scoreMove(move16 move);
+    int scoreNoisyMove(move16 move);
+    int scoreQuietMove(move16 move);
     move16 tt_move;
     bool tt_played;
     move16 killer_1;
@@ -44,7 +45,7 @@ private:
     move16 selectMove(int start, MoveList &scored_moves);
     move16 selectWinningCapture(int start, MoveList &scored_moves);
     void scoreQuiets();
-    void scoreNoisy();
+    void scoreNoisies();
 };
 
 } // namespace Spotlight

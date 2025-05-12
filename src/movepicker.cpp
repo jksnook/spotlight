@@ -47,7 +47,7 @@ move16 MovePicker::selectWinningCapture(int start, MoveList &scored_moves) {
     return temp;
 }
 
-int MovePicker::scoreMove(move16 move) {
+int MovePicker::scoreNoisyMove(move16 move) {
     move16 move_type = getMoveType(move);
     switch (move_type)
     {
@@ -55,11 +55,6 @@ int MovePicker::scoreMove(move16 move) {
         // currently using the SEE value alone for scoring captures. I think SEE to determine good/bad
         // plus MVV/LVA to determine ranking is a bit more standard. It didn't make much difference for me.
         return see(pos, move);
-        break;
-    case QUIET_MOVE:
-        return (*quiet_history)[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR;
-    case DOUBLE_PAWN_PUSH:
-        return (*quiet_history)[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / HISTORY_DIVISOR + 1;
         break;
     case QUEEN_PROMOTION:
         return (SEE_VALUES[QUEEN] - SEE_VALUES[PAWN]) * SEE_MULTIPLIER;
@@ -94,6 +89,23 @@ int MovePicker::scoreMove(move16 move) {
     }
 }
 
+int MovePicker::scoreQuietMove(move16 move) {
+    move16 move_type = getMoveType(move);
+    Square from = getFromSquare(move);
+    Square to = getToSquare(move);
+    Piece piece = pos.at(from);
+
+    int score = (*quiet_history)[pos.side_to_move][from][to] / HISTORY_DIVISOR;
+
+    if (move_type == DOUBLE_PAWN_PUSH) score++;
+
+    if ((setBit(from) & pos.movegen_data.enemy_attacks) && !(setBit(to) & pos.movegen_data.enemy_attacks)) {
+        score += 1;
+    }
+
+    return score;
+}
+
 void MovePicker::scoreQuiets() {
     int s = quiets.size();
 
@@ -105,13 +117,13 @@ void MovePicker::scoreQuiets() {
             s--;
             continue;
         } else {
-            quiets[i].score = scoreMove(quiets[i].move);
+            quiets[i].score = scoreQuietMove(quiets[i].move);
         }
     }
 
 }
 
-void MovePicker::scoreNoisy() {
+void MovePicker::scoreNoisies() {
     int s = noisy_moves.size();
 
     for (int i = 0; i < s; i++) {
@@ -123,12 +135,12 @@ void MovePicker::scoreNoisy() {
             continue;
         } else if (noisy_moves[i].move == killer_1) {
             killer_1 = NULL_MOVE;
-            noisy_moves[i].score = scoreMove(noisy_moves[i].move);
+            noisy_moves[i].score = scoreNoisyMove(noisy_moves[i].move);
         } else if (noisy_moves[i].move == killer_2) {
             killer_2 = NULL_MOVE;
-            noisy_moves[i].score = scoreMove(noisy_moves[i].move);
+            noisy_moves[i].score = scoreNoisyMove(noisy_moves[i].move);
         } else {
-            noisy_moves[i].score = scoreMove(noisy_moves[i].move);
+            noisy_moves[i].score = scoreNoisyMove(noisy_moves[i].move);
         }
     }
 }
@@ -152,7 +164,7 @@ move16 MovePicker::getNextMove() {
             generateNoisyMoves(noisy_moves, pos);
             generated_noisies = true;
 
-            scoreNoisy();
+            scoreNoisies();
         }
         if (capture_index < noisy_moves.size()) {
             move16 m = selectWinningCapture(capture_index, noisy_moves);
@@ -219,7 +231,7 @@ move16 MovePicker::getNextCapture() {
             generateNoisyMoves(noisy_moves, pos);
             generated_noisies = true;
 
-            scoreNoisy();
+            scoreNoisies();
         }
         if (capture_index < noisy_moves.size()) {
             move16 m = selectMove(capture_index, noisy_moves);
