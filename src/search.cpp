@@ -42,8 +42,8 @@ q_nodes(0), make_output(true), times_up(false), thread_id(0), getNodes(_getNodes
 
             indices are [improving][depth][num_moves]
             */
-            lmr_table[0][i][k] = log(i) * log(k) / 2.5 + 2.86;
-            lmr_table[1][i][k] = log(i) * log(k) / 2.52 + 1.6;
+            lmr_table[0][i][k] = log(i) * log(k) / 2.5 + 2;
+            lmr_table[1][i][k] = log(i) * log(k) / 2.5 + 2;
         } 
 
         // clear the killer moves
@@ -321,6 +321,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
+    bool tt_pv = node_type == EXACT_NODE;
+
     // get static evaluation for use in pruning heuristics if we didn't get it from the tt
     if (!tt_hit) {
         s_eval = eval(pos);
@@ -417,7 +419,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     Loop through all the legal moves.
     */
     while (move = move_picker.getNextMove()) {
-        num_moves++;
 
         int score = 0;
 
@@ -450,6 +451,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
             continue;
         }
 
+        num_moves++;
 
         /*
         Late Move Reductions
@@ -460,9 +462,18 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         be good
         */
         bool do_full_search = true;
-        if (num_moves > 1 && depth > 2 && !in_check && isQuiet(move) && !inCheck(pos)) {
+        if (bad_quiets.size() > 1 && depth > 2 && !in_check && (!pv_node || !isCaptureOrPromotion(move))) {
             // get pre-calculated reduction from the table
             int lmr_reduction = lmr_table[improving][depth][num_moves];
+
+            lmr_reduction += !pv_node;
+
+            lmr_reduction -= tt_pv;
+
+            lmr_reduction -= inCheck(pos);
+
+            lmr_reduction -= isCaptureOrPromotion(move);
+
             // don't drop directly into qsearch
             lmr_reduction = std::min(lmr_reduction, depth - 1);
 
