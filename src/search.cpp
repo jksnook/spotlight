@@ -137,7 +137,7 @@ void Search::outputInfo(int depth, move16 best_move, int score) {
     U64 nps = nodes / time_elapsed.count();
     ss << "info depth " << depth;
     if (score > MATE_THRESHOLD || score < -MATE_THRESHOLD) {
-        ss << " score mate " << pv.length();
+        ss << " score mate " << (pv.length() + 1) / 2;
     } else {
         ss << " score cp " << score;
     }
@@ -279,6 +279,17 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     if (depth <= 0) {
         return qSearch(pos, 0, ply, alpha, beta);
     }
+
+    /*
+    Mate Distance Pruning
+
+    Don't bother looking past the current mate depth
+    when a mate has been found
+    */
+    alpha = std::max(alpha, -MATE_SCORE + ply);
+    beta = std::min(beta, MATE_SCORE - ply - 1);
+    if (!is_root && alpha >= beta) return beta;
+    
 
     // Increase node count only after checking for exit conditions
     nodes_searched++;
