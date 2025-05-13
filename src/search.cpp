@@ -42,8 +42,7 @@ q_nodes(0), make_output(true), times_up(false), thread_id(0), getNodes(_getNodes
 
             indices are [improving][depth][num_moves]
             */
-            lmr_table[0][i][k] = log(i) * log(k) / 2.5 + 2;
-            lmr_table[1][i][k] = log(i) * log(k) / 2.5 + 2;
+            lmr_table[i][k] = log(i) * log(k) / 2.5 + 2;
         } 
 
         // clear the killer moves
@@ -335,7 +334,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     We prune less when our static eval is improved from 2 plies ago
     */
-    bool improving = ply < 2 || s_eval >= search_stack[ply - 2].s_eval;
+    bool improving = ply < 2 || s_eval > search_stack[ply - 2].s_eval;
 
     /*
     Reverse Futility Pruning
@@ -451,6 +450,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
             continue;
         }
 
+        // increase the move counter only for moves that aren't pruned
         num_moves++;
 
         /*
@@ -464,7 +464,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         bool do_full_search = true;
         if (bad_quiets.size() > 1 && depth > 2 && !in_check && (!pv_node || !isCaptureOrPromotion(move))) {
             // get pre-calculated reduction from the table
-            int lmr_reduction = lmr_table[improving][depth][num_moves];
+            int lmr_reduction = lmr_table[depth][num_moves];
 
             lmr_reduction += !pv_node;
 

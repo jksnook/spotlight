@@ -102,7 +102,7 @@ private:
     move16 killer_2[MAX_PLY];
     move16 counter_moves[2][64][64];
 
-    int lmr_table[2][MAX_PLY][256];
+    int lmr_table[MAX_PLY][256];
 
     std::array<StackEntry, MAX_PLY> search_stack;
 
