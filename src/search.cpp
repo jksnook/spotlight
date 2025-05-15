@@ -422,13 +422,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         int score = 0;
 
         /*
-        SEE Pruning
-
-        Prune moves with low static exchange evaluation scores at low depths.
-        */
-        // TODO
-
-        /*
         Futility pruning
 
         If our eval is far below alpha at a low depth, then after the first move search only 
