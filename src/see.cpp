@@ -5,17 +5,18 @@
 
 namespace Spotlight {
 
-BitBoard getAttackersTo(Position &pos, int sq) {
-    return knight_moves[sq] & (pos.bitboards[WHITE_KNIGHT] | pos.bitboards[BLACK_KNIGHT])
+BitBoard getAttackersTo(Position &pos, int sq, BitBoard occupancy) {
+    return (knight_moves[sq] & (pos.bitboards[WHITE_KNIGHT] | pos.bitboards[BLACK_KNIGHT])
         | pawn_attacks[BLACK][sq] & pos.bitboards[WHITE_PAWN]
         | pawn_attacks[WHITE][sq] & pos.bitboards[BLACK_PAWN]
-        | getMagicBishopAttack(sq, pos.bitboards[OCCUPANCY]) 
+        | getMagicBishopAttack(sq, occupancy) 
         & (pos.bitboards[WHITE_BISHOP] | pos.bitboards[WHITE_QUEEN] 
             | pos.bitboards[BLACK_BISHOP] | pos.bitboards[BLACK_QUEEN]) 
-        | getMagicRookAttack(sq, pos.bitboards[OCCUPANCY]) 
+        | getMagicRookAttack(sq, occupancy) 
         & (pos.bitboards[WHITE_ROOK] | pos.bitboards[WHITE_QUEEN] 
             | pos.bitboards[BLACK_ROOK] | pos.bitboards[BLACK_QUEEN])
-        | king_moves[sq] & (pos.bitboards[WHITE_KING] | pos.bitboards[BLACK_KING]);
+        | king_moves[sq] & (pos.bitboards[WHITE_KING] | pos.bitboards[BLACK_KING]))
+        & occupancy;
 }
 
 void refreshXraysDiagonal(Position &pos, int sq, BitBoard remaining_occupancy, BitBoard &attackers_bb) {
@@ -28,7 +29,6 @@ void refreshXraysRanksFiles(Position &pos, int sq, BitBoard remaining_occupancy,
     BitBoard rook_rays_from_to_sq = getMagicRookAttack(sq, remaining_occupancy) & remaining_occupancy;
     attackers_bb |= rook_rays_from_to_sq & (pos.bitboards[BLACK_ROOK] | pos.bitboards[BLACK_QUEEN]);
     attackers_bb |= rook_rays_from_to_sq & (pos.bitboards[WHITE_ROOK] | pos.bitboards[WHITE_QUEEN]);
-    // attackers_bb &= remaining_occupancy;
 }
 
 // Static exchange evaluation for move ordering
@@ -43,16 +43,17 @@ int see(Position &pos, move16 move) {
     BitBoard occupancy = pos.bitboards[OCCUPANCY];
 
     int capture_scores[32];
-    BitBoard attackers_bb = getAttackersTo(pos, to_sq);
-    
-    capture_scores[0] = SEE_VALUES[pos.at(to_sq)];
+
     if (move_type & PROMOTION_FLAG) {
-        capture_scores[0] += SEE_VALUES[promoPiece(move_type)] - SEE_VALUES[PAWN];
+        capture_scores[0] = SEE_VALUES[pos.at(to_sq)] + SEE_VALUES[promoPiece(move_type)] - SEE_VALUES[PAWN];
     } else if (move_type == EN_PASSANT_CAPTURE) {
         capture_scores[0] = SEE_VALUES[PAWN];
         occupancy ^= setBit(prevPawnSquare(to_sq, side));
-        refreshXraysRanksFiles(pos, to_sq, occupancy, attackers_bb);
+    } else {
+        capture_scores[0] = SEE_VALUES[pos.at(to_sq)];
     }
+
+    BitBoard attackers_bb = getAttackersTo(pos, to_sq, occupancy);
 
     int i = 1;
     while (true) {
@@ -108,22 +109,37 @@ bool see_ge(Position &pos, move16 move, int margin) {
     Square from_sq = getFromSquare(move);
     Square to_sq = getToSquare(move);
     move16 move_type = getMoveType(move);
-    Color side = pos.side_to_move;
+
+    if (isCastleMove(move_type)) return true;
 
     BitBoard occupancy = pos.bitboards[OCCUPANCY];
 
     int swap_value;
-    BitBoard attackers_bb = getAttackersTo(pos, to_sq);
     
-    swap_value = SEE_VALUES[pos.at(to_sq)];
     if (move_type & PROMOTION_FLAG) {
-        swap_value += SEE_VALUES[promoPiece(move_type)] - SEE_VALUES[PAWN];
+        swap_value = SEE_VALUES[pos.at(to_sq)] + SEE_VALUES[promoPiece(move_type)] - SEE_VALUES[PAWN];
     } else if (move_type == EN_PASSANT_CAPTURE) {
         swap_value = SEE_VALUES[PAWN];
-        occupancy ^= setBit(prevPawnSquare(to_sq, side));
-        refreshXraysRanksFiles(pos, to_sq, occupancy, attackers_bb);
+        occupancy ^= setBit(prevPawnSquare(to_sq, pos.side_to_move));
+    } else {
+        swap_value = SEE_VALUES[pos.at(to_sq)];
     }
 
+    if (swap_value < margin) return false;
+
+    if (move_type & PROMOTION_FLAG) {
+        swap_value = SEE_VALUES[promoPiece(move_type)] - swap_value;
+    } else {
+        swap_value = SEE_VALUES[pos.at(from_sq)] - swap_value;
+    }
+
+    if (-swap_value >= margin) return true;
+
+    occupancy ^= setBit(from_sq);
+
+    BitBoard attackers_bb = getAttackersTo(pos, to_sq, occupancy);
+    Color side = getOtherSide(pos.side_to_move);
+    
     while (true) {
         // get the least valuable attacker
         BitBoard piece_bb;

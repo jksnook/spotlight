@@ -102,6 +102,10 @@ static inline bool isCaptureOrPromotion(const move16 &move) {
     return getMoveType(move) & CAPTURE_MOVE || getMoveType(move) & PROMOTION_FLAG;
 }
 
+static inline bool isCastleMove(const move16 &move_type) {
+    return move_type == KING_CASTLE || move_type == QUEEN_CASTLE;
+} 
+
 inline constexpr PieceType promoPiece(move16 move_type) {
     switch (move_type & ~CAPTURE_MOVE)
     {
