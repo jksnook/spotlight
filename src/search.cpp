@@ -426,10 +426,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
         Prune moves with low static exchange evaluation scores at low depths.
         */
-        // if (num_moves > 0 && !in_check && depth <= 4 && 
-        //     move_picker.stage > PickerStage::GOOD_NOISY &&
-        //     see(pos, move) < -20 * depth * SEE_MULTIPLIER) 
-        //     continue;
+        // TODO
 
         /*
         Futility pruning
@@ -665,7 +662,7 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
         of raising alpha
         */
         if (!in_check && !isQuiet(move) && 
-            !see_ge(pos, move, (alpha - stand_pat) - SEE_MARGIN)) 
+            !seeGe(pos, move, (alpha - stand_pat) - SEE_MARGIN)) 
             continue;
 
         pos.makeMove(move);

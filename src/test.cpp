@@ -32,48 +32,58 @@ void testSee() {
     int score = see(pos, move);
     int correct_score = SEE_MARGIN * SEE_MULTIPLIER;
     assert(score == correct_score);
-    assert(see_ge(pos, move, 0));
-    assert(!see_ge(pos, move, 1));
+    assert(seeGe(pos, move, 0));
+    assert(!seeGe(pos, move, 1));
 
     pos.readFen("4k3/p7/6r1/1pP5/8/8/1R6/4K3 w - b6 0 2");
     move = encodeMove(C5, B6, EN_PASSANT_CAPTURE);
     score = see(pos, move);
     correct_score = SEE_MARGIN * SEE_MULTIPLIER;
     assert(score == correct_score);
-    assert(see_ge(pos, move, 0));
-    assert(!see_ge(pos, move, 1));
+    assert(seeGe(pos, move, 0));
+    assert(!seeGe(pos, move, 1));
 
     pos.readFen("4k3/p7/8/1pP5/8/8/1R6/4K3 w - b6 0 2");
     move = encodeMove(C5, B6, EN_PASSANT_CAPTURE);
     score = see(pos, move);
     correct_score = (SEE_VALUES[PAWN] + SEE_MARGIN) * SEE_MULTIPLIER;
     assert(score == correct_score);
-    assert(see_ge(pos, move, SEE_VALUES[PAWN]));
-    assert(!see_ge(pos, move, SEE_VALUES[PAWN] + 1));
+    assert(seeGe(pos, move, SEE_VALUES[PAWN]));
+    assert(!seeGe(pos, move, SEE_VALUES[PAWN] + 1));
 
     pos.readFen("4k3/8/8/1pP5/8/8/8/4K3 w - b6 0 2");
     move = encodeMove(C5, B6, EN_PASSANT_CAPTURE);
     score = see(pos, move);
     correct_score = (SEE_VALUES[PAWN] + SEE_MARGIN) * SEE_MULTIPLIER;
     assert(score == correct_score);
-    assert(see_ge(pos, move, SEE_VALUES[PAWN]));
-    assert(!see_ge(pos, move, SEE_VALUES[PAWN] + 1));
+    assert(seeGe(pos, move, SEE_VALUES[PAWN]));
+    assert(!seeGe(pos, move, SEE_VALUES[PAWN] + 1));
 
     pos.readFen("4k3/8/8/8/8/8/2p5/1R2K3 b - - 0 1");
     move = encodeMove(C2, B1, QUEEN_PROMOTION_CAPTURE);
     score = see(pos, move);
     correct_score = (SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN] + SEE_MARGIN) * SEE_MULTIPLIER;
     assert(score == correct_score);
-    assert(see_ge(pos, move, SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN]));
-    assert(!see_ge(pos, move, SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN] + 1));
+    assert(seeGe(pos, move, SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN]));
+    assert(!seeGe(pos, move, SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN] + 1));
 
     pos.readFen("k2q4/3q4/3q4/8/8/3Q4/3Q4/K2Q4 w - - 0 1");
     move = encodeMove(D3, D6, CAPTURE_MOVE);
     score = see(pos, move);
     correct_score = (SEE_VALUES[QUEEN] + SEE_MARGIN) * SEE_MULTIPLIER;
     assert(score == correct_score);
-    assert(see_ge(pos, move, SEE_VALUES[QUEEN]));
-    assert(!see_ge(pos, move, SEE_VALUES[QUEEN] + 1));
+    assert(seeGe(pos, move, SEE_VALUES[QUEEN]));
+    assert(!seeGe(pos, move, SEE_VALUES[QUEEN] + 1));
+
+    pos.readFen("k7/8/8/r7/8/5N2/8/K7 w - - 0 1");
+    move = encodeMove(F3, E5, QUIET_MOVE);
+    assert(seeGe(pos, move, -SEE_VALUES[KNIGHT]));
+    assert(!seeGe(pos, move, -SEE_VALUES[KNIGHT] + 1));
+
+    pos.readFen("k2r3q/8/8/8/8/5N2/K7/3R2Q1 w - - 0 1");
+    move = encodeMove(F3, D4, QUIET_MOVE);
+    assert(seeGe(pos, move, 0));
+    assert(!seeGe(pos, move, 1));
 }
 
 void testCheck() {

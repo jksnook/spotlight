@@ -16,6 +16,6 @@ BitBoard getAttackersTo(Position &pos, int sq, BitBoard occupancy);
 
 int see(Position &pos, move16 move);
 
-bool see_ge(Position &pos, move16 move, int margin);
+bool seeGe(Position &pos, move16 move, int margin);
 
 } // namespace Spotlight

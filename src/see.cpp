@@ -105,7 +105,7 @@ int see(Position &pos, move16 move) {
 }
 
 // Boolean SEE for pruning. The boolean form allows for early returns.
-bool see_ge(Position &pos, move16 move, int margin) {
+bool seeGe(Position &pos, move16 move, int margin) {
     Square from_sq = getFromSquare(move);
     Square to_sq = getToSquare(move);
     move16 move_type = getMoveType(move);
