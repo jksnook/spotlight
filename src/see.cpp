@@ -5,141 +5,173 @@
 
 namespace Spotlight {
 
-BitBoard getAllAttackers(Position &pos, int sq) {
-    BitBoard attackers = 0ULL;
-
-    attackers |= knight_moves[sq] & (pos.bitboards[WHITE_KNIGHT] | pos.bitboards[BLACK_KNIGHT]);
-    attackers |= pawn_attacks[BLACK][sq] & pos.bitboards[WHITE_PAWN];
-    attackers |= pawn_attacks[WHITE][sq] & pos.bitboards[BLACK_PAWN];
-    BitBoard bishop_rays_from_sq = getMagicBishopAttack(sq, pos.bitboards[OCCUPANCY]);
-    attackers |= bishop_rays_from_sq & (pos.bitboards[WHITE_BISHOP] | pos.bitboards[WHITE_QUEEN]);
-    attackers |= bishop_rays_from_sq & (pos.bitboards[BLACK_BISHOP] | pos.bitboards[BLACK_QUEEN]);
-    BitBoard rook_rays_from_sq = getMagicRookAttack(sq, pos.bitboards[OCCUPANCY]);
-    attackers |= rook_rays_from_sq & (pos.bitboards[WHITE_ROOK] | pos.bitboards[WHITE_QUEEN]);
-    attackers |= rook_rays_from_sq & (pos.bitboards[BLACK_ROOK] | pos.bitboards[BLACK_QUEEN]);
-    attackers |= king_moves[sq] & (pos.bitboards[WHITE_KING] | pos.bitboards[BLACK_KING]);
-
-    return attackers;
+BitBoard getAttackersTo(Position &pos, int sq) {
+    return knight_moves[sq] & (pos.bitboards[WHITE_KNIGHT] | pos.bitboards[BLACK_KNIGHT])
+        | pawn_attacks[BLACK][sq] & pos.bitboards[WHITE_PAWN]
+        | pawn_attacks[WHITE][sq] & pos.bitboards[BLACK_PAWN]
+        | getMagicBishopAttack(sq, pos.bitboards[OCCUPANCY]) 
+        & (pos.bitboards[WHITE_BISHOP] | pos.bitboards[WHITE_QUEEN] 
+            | pos.bitboards[BLACK_BISHOP] | pos.bitboards[BLACK_QUEEN]) 
+        | getMagicRookAttack(sq, pos.bitboards[OCCUPANCY]) 
+        & (pos.bitboards[WHITE_ROOK] | pos.bitboards[WHITE_QUEEN] 
+            | pos.bitboards[BLACK_ROOK] | pos.bitboards[BLACK_QUEEN])
+        | king_moves[sq] & (pos.bitboards[WHITE_KING] | pos.bitboards[BLACK_KING]);
 }
 
 void refreshXraysDiagonal(Position &pos, int sq, BitBoard remaining_occupancy, BitBoard &attackers_bb) {
-    BitBoard bishop_rays_from_to_sq = getMagicBishopAttack(sq, remaining_occupancy);
+    BitBoard bishop_rays_from_to_sq = getMagicBishopAttack(sq, remaining_occupancy) & remaining_occupancy;
     attackers_bb |= bishop_rays_from_to_sq & (pos.bitboards[BLACK_BISHOP] | pos.bitboards[BLACK_QUEEN]);
     attackers_bb |= bishop_rays_from_to_sq & (pos.bitboards[WHITE_BISHOP] | pos.bitboards[WHITE_QUEEN]);
-    attackers_bb &= remaining_occupancy;
 }
 
 void refreshXraysRanksFiles(Position &pos, int sq, BitBoard remaining_occupancy, BitBoard &attackers_bb) {
-    BitBoard rook_rays_from_to_sq = getMagicRookAttack(sq, remaining_occupancy);
+    BitBoard rook_rays_from_to_sq = getMagicRookAttack(sq, remaining_occupancy) & remaining_occupancy;
     attackers_bb |= rook_rays_from_to_sq & (pos.bitboards[BLACK_ROOK] | pos.bitboards[BLACK_QUEEN]);
     attackers_bb |= rook_rays_from_to_sq & (pos.bitboards[WHITE_ROOK] | pos.bitboards[WHITE_QUEEN]);
-    attackers_bb &= remaining_occupancy;
+    // attackers_bb &= remaining_occupancy;
 }
 
 // Static exchange evaluation for move ordering
 int see(Position &pos, move16 move) {
-    Color side = getOtherSide(pos.side_to_move);
-    Square to_sq = getToSquare(move);
     Square from_sq = getFromSquare(move);
+    Square to_sq = getToSquare(move);
     move16 move_type = getMoveType(move);
-    BitBoard attackers_bb = getAllAttackers(pos, to_sq);
-    BitBoard remaining_occupancy = pos.bitboards[OCCUPANCY];
+    Color side = pos.side_to_move;
+
+    if (!isCaptureOrPromotion(move)) return 1;
+
+    BitBoard occupancy = pos.bitboards[OCCUPANCY];
+
     int capture_scores[32];
-    Piece attacking_piece;
-    if (move_type == EN_PASSANT_CAPTURE) {
-        attacking_piece = getPieceID(PAWN, pos.side_to_move);
-        capture_scores[0] = SEE_VALUES[PAWN];
-    } else {
-        attacking_piece = pos.at(from_sq);
-        capture_scores[0] = SEE_VALUES[getPieceType(pos.at(to_sq))];
-    }
-    assert(attacking_piece != NO_PIECE);
+    BitBoard attackers_bb = getAttackersTo(pos, to_sq);
     
-    // if this is a promotion consider the additional change in material
+    capture_scores[0] = SEE_VALUES[pos.at(to_sq)];
     if (move_type & PROMOTION_FLAG) {
-        switch (move_type)
-        {
-        case QUEEN_PROMOTION_CAPTURE:
-            capture_scores[0] += SEE_VALUES[QUEEN] - SEE_VALUES[PAWN];
-            attacking_piece = getPieceID(QUEEN, pos.side_to_move);
-            break;
-        case KNIGHT_PROMOTION_CAPTURE:
-            capture_scores[0] += SEE_VALUES[KNIGHT] - SEE_VALUES[PAWN];
-            attacking_piece = getPieceID(KNIGHT, pos.side_to_move);
-            break;
-        case BISHOP_PROMOTION_CAPTURE:
-            capture_scores[0] += SEE_VALUES[BISHOP] - SEE_VALUES[PAWN];
-            attacking_piece = getPieceID(BISHOP, pos.side_to_move);
-            break;
-        case ROOK_PROMOTION_CAPTURE:
-            capture_scores[0] += SEE_VALUES[ROOK] - SEE_VALUES[PAWN];
-            attacking_piece = getPieceID(ROOK, pos.side_to_move);
-            break;
-        default:
-            break;
-        }
-    }
-    int attacking_piece_type = attacking_piece % 6;
-
-
-    // simulate the initial capture
-    BitBoard current_attacker_bb = 1ULL << from_sq;
-    attackers_bb &= ~current_attacker_bb;
-    remaining_occupancy &= ~current_attacker_bb;
-    BitBoard diagonal_xray_pieces = pos.bitboards[WHITE_PAWN] | pos.bitboards[BLACK_PAWN] | pos.bitboards[WHITE_BISHOP] | 
-        pos.bitboards[BLACK_BISHOP] | pos.bitboards[WHITE_QUEEN] | pos.bitboards[BLACK_QUEEN];
-    BitBoard vertical_xray_pieces = pos.bitboards[WHITE_ROOK] | pos.bitboards[BLACK_ROOK] | pos.bitboards[WHITE_QUEEN] | 
-        pos.bitboards[BLACK_QUEEN];
-
-    capture_scores[1] = SEE_VALUES[attacking_piece % BLACK_PAWN] - capture_scores[0];
-
-    // extra updates for en passant
-    if (move_type == EN_PASSANT_CAPTURE) {
-        remaining_occupancy &= ~(1ULL << (to_sq - 8 * side + 8 * (1 - side)));
-        refreshXraysRanksFiles(pos, to_sq, remaining_occupancy, attackers_bb);
+        capture_scores[0] += SEE_VALUES[promoPiece(move_type)] - SEE_VALUES[PAWN];
+    } else if (move_type == EN_PASSANT_CAPTURE) {
+        capture_scores[0] = SEE_VALUES[PAWN];
+        occupancy ^= setBit(prevPawnSquare(to_sq, side));
+        refreshXraysRanksFiles(pos, to_sq, occupancy, attackers_bb);
     }
 
-    if (current_attacker_bb & diagonal_xray_pieces) refreshXraysDiagonal(pos, to_sq, remaining_occupancy, attackers_bb);
-    if (current_attacker_bb & vertical_xray_pieces) refreshXraysRanksFiles(pos, to_sq, remaining_occupancy, attackers_bb);
-
-    // simulate the rest of the captures
-    int k = 2;
-    while(true) {
-        current_attacker_bb = 0ULL;
-        // loop through bitboards to find the least valuable attacker
-        for (int p = getPieceID(PAWN, side); p <= getPieceID(KING, side); p++) {
-            if (pos.bitboards[p] & attackers_bb) {
-                attacking_piece = static_cast<Piece>(p);
-                current_attacker_bb = (pos.bitboards[p] & attackers_bb) & -(pos.bitboards[p] & attackers_bb);
-                break;
-            }
-        }
-        if (!current_attacker_bb) {
+    int i = 1;
+    while (true) {
+        // get the least valuable attacker
+        BitBoard piece_bb;
+        if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(PAWN, side)])) {
+            capture_scores[i] = SEE_VALUES[PAWN] - capture_scores[i - 1];
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+            refreshXraysDiagonal(pos, to_sq, occupancy, attackers_bb);
+        } else if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(KNIGHT, side)])) {
+            capture_scores[i] = SEE_VALUES[KNIGHT] - capture_scores[i - 1];
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+        } else if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(BISHOP, side)])) {
+            capture_scores[i] = SEE_VALUES[BISHOP] - capture_scores[i - 1];
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+            refreshXraysDiagonal(pos, to_sq, occupancy, attackers_bb);
+        } else if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(ROOK, side)])) {
+            capture_scores[i] = SEE_VALUES[ROOK] - capture_scores[i - 1];
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+            refreshXraysRanksFiles(pos, to_sq, occupancy, attackers_bb);
+        } else if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(QUEEN, side)])) {
+            capture_scores[i] = SEE_VALUES[QUEEN] - capture_scores[i - 1];
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+            refreshXraysDiagonal(pos, to_sq, occupancy, attackers_bb);
+            refreshXraysRanksFiles(pos, to_sq, occupancy, attackers_bb);
+        } else if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(KING, side)])) {
+            capture_scores[i] = SEE_VALUES[KING] - capture_scores[i - 1];
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+        } else {
             break;
         }
 
-        capture_scores[k] = SEE_VALUES[attacking_piece % BLACK_PAWN] - capture_scores[k - 1];
-        remaining_occupancy &= ~current_attacker_bb;
-
-        if (current_attacker_bb & diagonal_xray_pieces) {
-            refreshXraysDiagonal(pos, to_sq, remaining_occupancy, attackers_bb);
-        }
-        if (current_attacker_bb & vertical_xray_pieces) {
-            refreshXraysRanksFiles(pos, to_sq, remaining_occupancy, attackers_bb);
-        }
-
-        k++;
+        attackers_bb ^= piece_bb;
+        i++;
         side = getOtherSide(side);
-        attackers_bb ^= current_attacker_bb;
     }
-
-    for (k -= 2;k > 0; k--) {
-        capture_scores[k - 1] = -std::max(-capture_scores[k - 1], capture_scores[k]);
+    
+    for (i -= 2; i > 0; i--) {
+        capture_scores[i - 1] = std::min(capture_scores[i - 1], -capture_scores[i]);
     }
 
     return (capture_scores[0] + SEE_MARGIN) * SEE_MULTIPLIER;
 }
 
+// Boolean SEE for pruning. The boolean form allows for early returns.
+bool see_ge(Position &pos, move16 move, int margin) {
+    Square from_sq = getFromSquare(move);
+    Square to_sq = getToSquare(move);
+    move16 move_type = getMoveType(move);
+    Color side = pos.side_to_move;
 
+    BitBoard occupancy = pos.bitboards[OCCUPANCY];
+
+    int swap_value;
+    BitBoard attackers_bb = getAttackersTo(pos, to_sq);
+    
+    swap_value = SEE_VALUES[pos.at(to_sq)];
+    if (move_type & PROMOTION_FLAG) {
+        swap_value += SEE_VALUES[promoPiece(move_type)] - SEE_VALUES[PAWN];
+    } else if (move_type == EN_PASSANT_CAPTURE) {
+        swap_value = SEE_VALUES[PAWN];
+        occupancy ^= setBit(prevPawnSquare(to_sq, side));
+        refreshXraysRanksFiles(pos, to_sq, occupancy, attackers_bb);
+    }
+
+    while (true) {
+        // get the least valuable attacker
+        BitBoard piece_bb;
+        if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(PAWN, side)])) {
+            swap_value = SEE_VALUES[PAWN] - swap_value;
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+            refreshXraysDiagonal(pos, to_sq, occupancy, attackers_bb);
+        } else if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(KNIGHT, side)])) {
+            swap_value = SEE_VALUES[KNIGHT] - swap_value;
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+        } else if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(BISHOP, side)])) {
+            swap_value = SEE_VALUES[BISHOP] - swap_value;
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+            refreshXraysDiagonal(pos, to_sq, occupancy, attackers_bb);
+        } else if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(ROOK, side)])) {
+            swap_value = SEE_VALUES[ROOK] - swap_value;
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+            refreshXraysRanksFiles(pos, to_sq, occupancy, attackers_bb);
+        } else if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(QUEEN, side)])) {
+            swap_value = SEE_VALUES[QUEEN] - swap_value;
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+            refreshXraysDiagonal(pos, to_sq, occupancy, attackers_bb);
+            refreshXraysRanksFiles(pos, to_sq, occupancy, attackers_bb);
+        } else if ((piece_bb = attackers_bb & pos.bitboards[getPieceID(KING, side)])) {
+            swap_value = SEE_VALUES[KING] - swap_value;
+            piece_bb = lsb(piece_bb);
+            occupancy ^= piece_bb;
+        } else {
+            return side != pos.side_to_move;
+        }
+
+        // early return if we know we the max/min possible score is below/above our margin
+        if (side != pos.side_to_move && swap_value < margin) {
+            return false;
+        } else if (side == pos.side_to_move && -swap_value >= margin) {
+            return true;
+        }
+
+        attackers_bb ^= piece_bb;
+        side = getOtherSide(side);
+    }
+
+    return true;
+}
 
 } //namespace Spotlight

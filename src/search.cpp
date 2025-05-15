@@ -422,6 +422,16 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         int score = 0;
 
         /*
+        SEE Pruning
+
+        Prune moves with low static exchange evaluation scores at low depths.
+        */
+        // if (num_moves > 0 && !in_check && depth <= 4 && 
+        //     move_picker.stage > PickerStage::GOOD_NOISY &&
+        //     see(pos, move) < -20 * depth * SEE_MULTIPLIER) 
+        //     continue;
+
+        /*
         Futility pruning
 
         If our eval is far below alpha at a low depth, then after the first move search only 
@@ -655,7 +665,7 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
         of raising alpha
         */
         if (!in_check && !isQuiet(move) && 
-            see(pos, move) <= (alpha - stand_pat) * SEE_MULTIPLIER) 
+            !see_ge(pos, move, (alpha - stand_pat) - SEE_MARGIN)) 
             continue;
 
         pos.makeMove(move);

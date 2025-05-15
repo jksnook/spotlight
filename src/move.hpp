@@ -102,6 +102,27 @@ static inline bool isCaptureOrPromotion(const move16 &move) {
     return getMoveType(move) & CAPTURE_MOVE || getMoveType(move) & PROMOTION_FLAG;
 }
 
+inline constexpr PieceType promoPiece(move16 move_type) {
+    switch (move_type & ~CAPTURE_MOVE)
+    {
+    case QUEEN_PROMOTION:
+        return QUEEN;
+        break;
+    case KNIGHT_PROMOTION:
+        return KNIGHT;
+        break;
+    case ROOK_PROMOTION:
+        return ROOK;
+        break;
+    case BISHOP_PROMOTION:
+        return BISHOP;
+        break;
+    default:
+        return PAWN;
+        break;
+    }
+}
+
 std::string moveToString(move16 move);
 
 void printMove(move16 move);
