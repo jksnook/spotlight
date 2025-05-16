@@ -426,7 +426,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         If our eval is far below alpha at a low depth, then after the first move search only 
         moves with a decent chance of raising alpha. (in this case only captures and promotions)
         */
-        if (allow_fprune && num_moves > 1 && !isCaptureOrPromotion(move))
+        if (allow_fprune && best_score > -MATE_THRESHOLD && !isCaptureOrPromotion(move))
             continue;
 
         // update the search stack
