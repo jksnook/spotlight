@@ -352,12 +352,10 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     always better than doing nothing. We disable it in positions where 
     zugzwang is likely (in this case king pawn endgames)
     */
-    if (!pv_node && allow_nmp && depth > 3 && !in_check &&
+    if (!pv_node && allow_nmp && depth >= 2 && !in_check &&
         s_eval >= beta && pos.zugzwangUnlikely()) {
         // calculate depth reduction
-        int reduction = 3 + depth / 4;
-        // don't drop directly into quiescence search
-        reduction = std::min(reduction, depth - 1);
+        int reduction = 3 + depth / 3;
         // apply a null move
         pos.makeNullMove();
         // disable null move pruning in our reduced search
@@ -374,6 +372,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         if (nmp >= beta) return beta;
 
     }
+    // allow_nmp = true;
     // recursive null move pruning disabled
 
     /*
