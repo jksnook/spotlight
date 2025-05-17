@@ -42,7 +42,7 @@ q_nodes(0), make_output(true), times_up(false), thread_id(0), getNodes(_getNodes
 
             indices are [improving][depth][num_moves]
             */
-            lmr_table[i][k] = log(i) * log(k) / 2.5 + 2;
+            lmr_table[i][k] = log(i) * log(k) / 2.5 + 2.5;
         } 
 
         // clear the killer moves
@@ -464,9 +464,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
             // get pre-calculated reduction from the table
             int lmr_reduction = lmr_table[depth][num_moves];
 
-            lmr_reduction += !pv_node;
-
-            lmr_reduction -= node_type == EXACT_NODE;
+            lmr_reduction -= tt_pv;
 
             lmr_reduction -= inCheck(pos);
 
