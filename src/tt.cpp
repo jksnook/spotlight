@@ -3,15 +3,16 @@
 namespace Spotlight {
 
 TTEntry::TTEntry() : 
-hash16(0ULL), depth(0), best_move(0), score(0), node_type(NULL_NODE)
+hash16(0ULL), depth(0), best_move(0), score(0), flags(0)
 {
     
 }
 
-TTEntry::TTEntry(U64 _z_key, int _depth, move16 _best_move, int _score, NodeType _node_type, int _s_eval, uint8_t _age) : 
-depth(_depth), best_move(_best_move), score(_score), node_type(_node_type), age(_age),
+TTEntry::TTEntry(U64 _z_key, int _depth, move16 _best_move, int _score, NodeType _node_type, int _s_eval, uint8_t _age, bool _is_pv) : 
+depth(_depth), best_move(_best_move), score(_score), age(_age),
 s_eval(_s_eval)
 {
+    flags = _node_type | (static_cast<uint8_t>(_is_pv) << 2);
     hash16 = static_cast<uint16_t>(_z_key >> 48);
 }
 
@@ -45,7 +46,7 @@ void TT::nextGeneration() {
 }
 
 // Fetches data from the TT. Returns true if there is a matching hash.
-bool TT::probe(U64 z_key, move16 &tt_move, NodeType &node_type, int &depth, int &score, int &s_eval) {
+bool TT::probe(U64 z_key, move16 &tt_move, NodeType &node_type, int &depth, int &score, int &s_eval, bool &tt_pv) {
     uint16_t hash16 = static_cast<uint16_t>(z_key >> 48);
 
     TTBucket* bucket = &hash_table[z_key % num_entries];
@@ -53,7 +54,8 @@ bool TT::probe(U64 z_key, move16 &tt_move, NodeType &node_type, int &depth, int 
     for (auto &entry: bucket->entries) {
         if (entry.hash16 == hash16) {
             tt_move = entry.best_move;
-            node_type = entry.node_type;
+            node_type = entry.getNodeType();
+            tt_pv = entry.getIsPV();
             depth = entry.depth;
             score = entry.score;
             s_eval = entry.s_eval;
@@ -64,7 +66,7 @@ bool TT::probe(U64 z_key, move16 &tt_move, NodeType &node_type, int &depth, int 
 }
 
 // saves data to the TT
-void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, NodeType node_type, int s_eval) {
+void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, NodeType node_type, int s_eval, bool is_pv) {
     int16_t worst_score = 32000;
     uint16_t hash16 = static_cast<uint16_t>(z_key >> 48);
     TTBucket* bucket = &hash_table[z_key % num_entries];
@@ -97,12 +99,12 @@ void TT::save(U64 z_key, int depth, int ply, move16 best_move, int score, NodeTy
     // the new node type is exact
     if (to_replace->hash16 == hash16) {
         if (depth >= to_replace->depth || node_type == EXACT_NODE) {
-            *to_replace = TTEntry(z_key, depth, best_move, score, node_type, s_eval, generation);
+            *to_replace = TTEntry(z_key, depth, best_move, score, node_type, s_eval, generation, is_pv);
         }
         return;
     }
 
-    *to_replace = TTEntry(z_key, depth, best_move, score, node_type, s_eval, generation);
+    *to_replace = TTEntry(z_key, depth, best_move, score, node_type, s_eval, generation, is_pv);
 }
 
 void TT::prefetch(U64 z_key) {
@@ -112,8 +114,8 @@ void TT::prefetch(U64 z_key) {
 int TT::hashfull() {
     int n = 0;
     for (int i = 0; i < 1000; i++) {
-        for (const auto &entry: hash_table[i].entries) {
-            n += entry.node_type != NULL_NODE && entry.age == generation;
+        for (auto &entry: hash_table[i].entries) {
+            n += entry.getNodeType() != NULL_NODE && entry.age == generation;
         }
     }
 

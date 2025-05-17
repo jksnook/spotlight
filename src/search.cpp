@@ -263,7 +263,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // index ply + 1
     if (ply >= MAX_PLY - 1) return eval(pos);
 
-
     // clear the pv at this ply
     pv.zeroLength(ply);
 
@@ -299,9 +298,10 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     NodeType node_type;
     int tt_depth;
     int tt_score;
+    bool tt_pv;
     
     // Probe the transposition table
-    if (tt_hit = tt->probe(pos.z_key, tt_move, node_type, tt_depth, tt_score, s_eval)) {
+    if ((tt_hit = tt->probe(pos.z_key, tt_move, node_type, tt_depth, tt_score, s_eval, tt_pv))) {
 
         // adjust checkmate scores according to our ply
         if (tt_score > MATE_THRESHOLD) {
@@ -320,7 +320,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         }
     }
 
-    bool tt_pv = node_type == EXACT_NODE;
 
     // get static evaluation for use in pruning heuristics if we didn't get it from the tt
     if (!tt_hit) {
@@ -467,7 +466,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
             lmr_reduction += !pv_node;
 
-            lmr_reduction -= tt_pv;
+            lmr_reduction -= node_type == EXACT_NODE;
 
             lmr_reduction -= inCheck(pos);
 
@@ -537,7 +536,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
                     }
                 }
                 // Store to TT as a fail high
-                tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, s_eval);
+                tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, s_eval, pv_node);
                 // beta cutoff
                 return score;
             }
@@ -563,9 +562,9 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // save to TT as an upper bound node or an exact node depending on if we raised alpha
     if (is_upper_bound) {
         // re-use the old TT move in fail lows
-        tt->save(pos.z_key, depth, ply, tt_move, best_score, UPPER_BOUND_NODE, s_eval);
+        tt->save(pos.z_key, depth, ply, tt_move, best_score, UPPER_BOUND_NODE, s_eval, pv_node);
     } else {
-        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, s_eval);
+        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, s_eval, pv_node);
     }
 
     return best_score;
@@ -590,11 +589,12 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     NodeType node_type;
     int tt_depth;
     int tt_score;
+    bool tt_pv;
     // our quiescence search static eval. used as a lower bound for our score
     int stand_pat;
     
     // Probe the transposition table
-    if (tt_hit = tt->probe(pos.z_key, tt_move, node_type, tt_depth, tt_score, stand_pat)) {
+    if ((tt_hit = tt->probe(pos.z_key, tt_move, node_type, tt_depth, tt_score, stand_pat, tt_pv))) {
 
         // adjust checkmate scores according to our ply
         if (tt_score > MATE_THRESHOLD) {
@@ -665,7 +665,7 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
             best_score = score;
             best_move = move;
             if (score >= beta) {
-                tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, stand_pat);
+                tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, stand_pat, false);
                 return score;
             } else if (score > alpha) {
                 alpha = score;
@@ -685,9 +685,9 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     }
 
     if (is_upper_bound) {
-        tt->save(pos.z_key, depth, ply, tt_move, best_score, UPPER_BOUND_NODE, stand_pat);
+        tt->save(pos.z_key, depth, ply, tt_move, best_score, UPPER_BOUND_NODE, stand_pat, false);
     } else {
-        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, stand_pat);
+        tt->save(pos.z_key, depth, ply, best_move, best_score, EXACT_NODE, stand_pat, false);
     }
 
     return best_score;
