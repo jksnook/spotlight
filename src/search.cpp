@@ -428,6 +428,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         if (allow_fprune && best_score > -MATE_THRESHOLD && !isCaptureOrPromotion(move))
             continue;
 
+        if (best_score > -MATE_THRESHOLD && !in_check && depth <= 7 && !seeGe(pos, move, -50 - 150 * !isQuiet(move) - 100 * improving)) continue;
+
         // update the search stack
         search_stack[ply].move = move;
         search_stack[ply].piece_moved = pos.at(getFromSquare(move));
