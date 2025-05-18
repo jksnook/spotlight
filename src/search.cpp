@@ -428,7 +428,15 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         if (allow_fprune && best_score > -MATE_THRESHOLD && !isCaptureOrPromotion(move))
             continue;
 
-        if (best_score > -MATE_THRESHOLD && !in_check && depth <= 7 && !seeGe(pos, move, -50 - 150 * !isQuiet(move) - 100 * improving)) continue;
+        /*
+        SEE pruning
+
+        at low depths prune moves determined as losing by the static exchange evaluator
+        */
+        if (best_score > -MATE_THRESHOLD 
+            && !in_check && depth <= 7 
+            && !seeGe(pos, move, -50 - 150 * !isQuiet(move) - 100 * improving)) 
+            continue;
 
         // update the search stack
         search_stack[ply].move = move;
@@ -492,7 +500,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         Principal Variation Search
 
         The root node is a PV node and from there we search the first child
-        of a PV node as a PV with a full window and subsequent children as non-PV
+        of a PV node as a PV node with a full window and subsequent children as non-PV
         nodes with a zero window. If a move raises alpha in a pv node then we re-search
         that child as a pv node with a full window.
 
