@@ -435,7 +435,11 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         */
         if (best_score > -MATE_THRESHOLD 
             && !in_check && depth <= 7 
-            && !seeGe(pos, move, -50 - 150 * !isQuiet(move) - 100 * improving)) 
+            && !seeGe(pos, move,
+                -20
+                - 100 * !isQuiet(move) 
+                - 100 * improving 
+                - isQuiet(move) * quiet_history[pos.side_to_move][getFromSquare(move)][getToSquare(move)] / 100)) 
             continue;
 
         // update the search stack
