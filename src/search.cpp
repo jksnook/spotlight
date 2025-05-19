@@ -88,13 +88,13 @@ void Search::clearHistory() {
 
 // Update butterfly history using the history gravity formula
 void Search::updateHistory(Color side, int from, int to, int bonus) {
-    quiet_history[side][from][to] += bonus - abs(bonus) * quiet_history[side][from][to] / 4096;
+    quiet_history[side][from][to] += bonus - abs(bonus) * quiet_history[side][from][to] / MAX_HISTORY;
 }
 
 void Search::updateContHist(Piece piece, Square to_sq, int bonus, int ply) {
     for (int i = ply - 1; i >= 0 && i >= ply - 2; i--) {
        (*search_stack[i].cont_hist)[piece][to_sq] += bonus 
-       - abs(bonus) * (*search_stack[i].cont_hist)[piece][to_sq] / 4096;
+       - abs(bonus) * (*search_stack[i].cont_hist)[piece][to_sq] / MAX_HISTORY;
     }
 }
 

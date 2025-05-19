@@ -12,7 +12,7 @@ namespace Spotlight {
 
 const int HISTORY_DIVISOR = 1;
 const int TT_MOVE_SCORE = (1 << 30);
-const int MAX_HISTORY = 2048;
+const int MAX_HISTORY = 512;
 const int KILLER_1_SCORE = MAX_HISTORY * 2 + 1;
 const int KILLER_2_SCORE = MAX_HISTORY * 2;
 const int IGNORE_MOVE = -(1 << 30);
