@@ -177,11 +177,18 @@ void testMovePicker() {
         }
     }
 
+    PieceToHistory pth;
+
+    std::array<PieceToHistory*, 2> _cont_hist = {
+        &pth,
+        &pth
+    };
+
     move16 tt_move = encodeMove(C2, C4, DOUBLE_PAWN_PUSH);
     move16 killer_1 = encodeMove(D2, D4, DOUBLE_PAWN_PUSH);
     move16 killer_2 = encodeMove(E2, E4, DOUBLE_PAWN_PUSH);
 
-    MovePicker picker(pos, &hist, tt_move, killer_1, killer_2);
+    MovePicker picker(pos, &hist, tt_move, killer_1, killer_2, _cont_hist);
 
     assert(picker.getNextMove() == tt_move);
     move16 move = picker.getNextMove();
@@ -222,7 +229,7 @@ void testMovePicker() {
             killer_2 = quiets[myRandom() % quiets.size()].move;
         } while (killer_2 == tt_move || killer_2 == killer_1);
 
-        MovePicker picker(pos, &hist, tt_move, killer_1, killer_2);
+        MovePicker picker(pos, &hist, tt_move, killer_1, killer_2, _cont_hist);
 
         assert(picker.getNextMove() == tt_move);
 

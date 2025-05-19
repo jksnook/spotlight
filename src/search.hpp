@@ -48,6 +48,7 @@ struct StackEntry {
     move16 move;
     Piece piece_moved;
     int s_eval;
+    PieceToHistory* cont_hist;
 };
 
 class Search
@@ -100,7 +101,6 @@ private:
 
     move16 killer_1[MAX_PLY];
     move16 killer_2[MAX_PLY];
-    move16 counter_moves[2][64][64];
 
     int lmr_table[MAX_PLY][256];
 
@@ -108,6 +108,9 @@ private:
 
     int quiet_history[2][64][64];
     void updateHistory(Color side, int from, int to, int bonus);
+
+    std::vector<std::array<PieceToHistory, 64>> cont_hist;
+    void updateContHist(Piece piece, Square to_sq, int bonus, int ply);
 
     TT* tt;
     PVTable pv;

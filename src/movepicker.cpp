@@ -5,10 +5,10 @@
 namespace Spotlight {
 
 MovePicker::MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 _tt_move, 
-move16 _killer_1, move16 _killer_2): 
+move16 _killer_1, move16 _killer_2,  std::array<PieceToHistory*, 2> _cont_hist): 
 stage(PickerStage::TT_MOVE), tt_move(_tt_move), killer_1(_killer_1), killer_2(_killer_2), 
 capture_index(0), quiet_index(0), generated_noisies(false), generated_quiets(false), 
-tt_played(false), pos(_pos), quiet_history(_quiet_history) {}
+tt_played(false), pos(_pos), quiet_history(_quiet_history), cont_hist(_cont_hist) {}
 
 // Selection sort for getting the highest scored move
 move16 MovePicker::selectMove(int start, MoveList &scored_moves) {
@@ -93,8 +93,12 @@ int MovePicker::scoreQuietMove(move16 move) {
     move16 move_type = getMoveType(move);
     Square from = getFromSquare(move);
     Square to = getToSquare(move);
+    Piece piece_moved = pos.at(from);
 
     int score = (*quiet_history)[pos.side_to_move][from][to] / HISTORY_DIVISOR;
+
+    score += (*cont_hist[0])[piece_moved][to] / 2;
+    score += (*cont_hist[1])[piece_moved][to] / 2;
 
     if (move_type == DOUBLE_PAWN_PUSH) score++;
 

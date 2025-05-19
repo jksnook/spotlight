@@ -34,6 +34,7 @@ void PVTable::zeroLength(int ply) {
 Search::Search(TT* _tt, std::atomic<bool>* _is_stopped, std::function<U64()> _getNodes): start_time(std::chrono::steady_clock::now()), 
 tt_hits(0), allow_nmp(true), enable_qsearch_tt(true),  tt(_tt), is_stopped(_is_stopped),
 q_nodes(0), make_output(true), times_up(false), thread_id(0), getNodes(_getNodes) {
+    cont_hist.resize(12);
     clearHistory();
     for (int i = 0; i < MAX_PLY; i++) {
         for (int k = 0; k < 256; k++) {
@@ -76,6 +77,13 @@ void Search::clearHistory() {
 // Update butterfly history using the history gravity formula
 void Search::updateHistory(Color side, int from, int to, int bonus) {
     quiet_history[side][from][to] += bonus - abs(bonus) * quiet_history[side][from][to] / MAX_HISTORY;
+}
+
+void Search::updateContHist(Piece piece, Square to_sq, int bonus, int ply) {
+    for (int i = ply - 1; i >= 0 && i >= ply - 2; i--) {
+       (*search_stack[i].cont_hist)[piece][to_sq] += bonus 
+       - abs(bonus) * (*search_stack[i].cont_hist)[piece][to_sq] / MAX_HISTORY;
+    }
 }
 
 void Search::setTimer(U64 duration_in_ms, int interval) {
@@ -353,6 +361,9 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     */
     if (!pv_node && allow_nmp && depth >= 2 && !in_check &&
         s_eval >= beta && pos.zugzwangUnlikely()) {
+        // update continuation history on the stack
+        // we use otherwise unused cont hist slots for null moves
+        search_stack[ply].cont_hist = &cont_hist[WHITE_PAWN][1 + pos.side_to_move];
         // calculate depth reduction
         int reduction = 3 + depth / 3;
         // apply a null move
@@ -390,8 +401,17 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     */
     if (depth >= 5 && tt_move == NULL_MOVE && !in_check) depth--;
 
+    // build continuation history for the move picker
+    std::array<PieceToHistory*, 2> _cont_hist = {
+        &cont_hist[0][0],
+        &cont_hist[0][0]
+    };
+    for (int i = 1; ply - i >= 0 && i <= 2; i++) {
+        _cont_hist[i] = search_stack[i].cont_hist;
+    }
+
     // initialize move picker with appropriate data for move ordering
-    MovePicker move_picker(pos, &quiet_history, tt_move, killer_1[ply], killer_2[ply]);
+    MovePicker move_picker(pos, &quiet_history, tt_move, killer_1[ply], killer_2[ply], _cont_hist);
 
     move16 move = NULL_MOVE;
     int best_score = NEGATIVE_INFINITY;
@@ -438,9 +458,16 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
             && !seeGe(pos, move, -50 - 150 * !isQuiet(move) - 100 * improving)) 
             continue;
 
+        // get move info for later
+        Square from_sq = getFromSquare(move);
+        Square to_sq = getToSquare(move);
+        Piece piece_moved = pos.at(from_sq);
+
         // update the search stack
         search_stack[ply].move = move;
-        search_stack[ply].piece_moved = pos.at(getFromSquare(move));
+        search_stack[ply].piece_moved = pos.at(from_sq);
+        // update the continuation history on the stack
+        search_stack[ply].cont_hist = &cont_hist[piece_moved][to_sq];
 
         pos.makeMove(move);
 
@@ -538,9 +565,11 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
                     // update butterfly history
                     int bonus = depth * depth;
                     updateHistory(pos.side_to_move, getFromSquare(move), getToSquare(move), bonus);
+                    updateContHist(piece_moved, to_sq, bonus, ply);
                     // apply malus to the previous quiet moves
                     for (auto& bq : bad_quiets) {
                         updateHistory(pos.side_to_move, getFromSquare(bq.move), getToSquare(bq.move), -bonus);
+                        updateContHist(pos.at(getFromSquare(bq.move)), getToSquare(bq.move), -bonus, ply);
                     }
                 }
                 // Store to TT as a fail high
@@ -589,6 +618,9 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     pv.zeroLength(ply);
     nodes_searched++;
     q_nodes++;
+
+    // put a null cont hist on the stack
+    search_stack[ply].cont_hist = &cont_hist[0][0];
 
     bool in_check = inCheck(pos);
 
@@ -644,7 +676,16 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
         is_upper_bound = false;
     }
 
-    MovePicker move_picker(pos, &quiet_history, tt_move, 0, 0);
+    // build continuation history for the move picker
+    std::array<PieceToHistory*, 2> _cont_hist = {
+        &cont_hist[0][0],
+        &cont_hist[0][0]
+    };
+    for (int i = 1; ply - i >= 0 && i <= 2; i++) {
+        _cont_hist[i] = search_stack[i].cont_hist;
+    }
+
+    MovePicker move_picker(pos, &quiet_history, tt_move, 0, 0, _cont_hist);
 
     move16 move = NULL_MOVE;
     move16 best_move = NULL_MOVE;

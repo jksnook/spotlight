@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <array>
 
 namespace Spotlight {
 
@@ -30,5 +31,7 @@ enum Square : uint16_t {
     A7, B7, C7, D7, E7, F7, G7, H7,
     A8, B8, C8, D8, E8, F8, G8, H8,
 };
+
+using PieceToHistory = std::array<std::array<int, 64>, 12>;
 
 } // namespace Spotlight
