@@ -99,7 +99,6 @@ class Search {
 
     move16 killer_1[MAX_PLY];
     move16 killer_2[MAX_PLY];
-    move16 counter_moves[2][64][64];
 
     int lmr_table[MAX_PLY][256];
 
