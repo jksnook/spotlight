@@ -97,8 +97,8 @@ int MovePicker::scoreQuietMove(move16 move) {
 
     int score = (*quiet_history)[pos.side_to_move][from][to] / HISTORY_DIVISOR;
 
-    // score += (*cont_hist[0])[piece_moved][to] / 2;
-    // score += (*cont_hist[1])[piece_moved][to] / 2;
+    score += (*cont_hist[0])[piece_moved][to];
+    score += (*cont_hist[1])[piece_moved][to];
 
     if (move_type == DOUBLE_PAWN_PUSH) score++;
 

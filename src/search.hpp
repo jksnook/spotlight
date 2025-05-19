@@ -109,7 +109,7 @@ private:
     int quiet_history[2][64][64];
     void updateHistory(Color side, int from, int to, int bonus);
 
-    std::vector<std::array<PieceToHistory, 64>> cont_hist;
+    std::vector<std::array<std::array<PieceToHistory, 64>, 12>> cont_hist;
     void updateContHist(Piece piece, Square to_sq, int bonus, int ply);
 
     TT* tt;

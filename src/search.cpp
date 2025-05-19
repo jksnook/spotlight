@@ -72,17 +72,29 @@ void Search::clearHistory() {
             }
         }
     }
+
+    for (auto &is_quiet: cont_hist) {
+        for (auto &piece1: is_quiet) {
+            for (auto &square1: piece1) {
+                for (auto &piece2: square1) {
+                    for (auto &square2: piece2) {
+                        square2 = 0;
+                    }
+                }
+            }
+        }
+    }
 }
 
 // Update butterfly history using the history gravity formula
 void Search::updateHistory(Color side, int from, int to, int bonus) {
-    quiet_history[side][from][to] += bonus - abs(bonus) * quiet_history[side][from][to] / MAX_HISTORY;
+    quiet_history[side][from][to] += bonus - abs(bonus) * quiet_history[side][from][to] / 4096;
 }
 
 void Search::updateContHist(Piece piece, Square to_sq, int bonus, int ply) {
     for (int i = ply - 1; i >= 0 && i >= ply - 2; i--) {
        (*search_stack[i].cont_hist)[piece][to_sq] += bonus 
-       - abs(bonus) * (*search_stack[i].cont_hist)[piece][to_sq] / MAX_HISTORY;
+       - abs(bonus) * (*search_stack[i].cont_hist)[piece][to_sq] / 4096;
     }
 }
 
@@ -363,7 +375,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         s_eval >= beta && pos.zugzwangUnlikely()) {
         // update continuation history on the stack
         // we use otherwise unused cont hist slots for null moves
-        search_stack[ply].cont_hist = &cont_hist[WHITE_PAWN][1 + pos.side_to_move];
+        search_stack[ply].cont_hist = &cont_hist[1][WHITE_PAWN][1 + pos.side_to_move];
         // calculate depth reduction
         int reduction = 3 + depth / 3;
         // apply a null move
@@ -403,8 +415,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
     // build continuation history for the move picker
     std::array<PieceToHistory*, 2> _cont_hist = {
-        &cont_hist[0][0],
-        &cont_hist[0][0]
+        &cont_hist[0][0][0],
+        &cont_hist[0][0][0]
     };
     for (int i = 1; ply - i >= 0 && i <= 2; i++) {
         _cont_hist[i] = search_stack[i].cont_hist;
@@ -467,7 +479,7 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         search_stack[ply].move = move;
         search_stack[ply].piece_moved = pos.at(from_sq);
         // update the continuation history on the stack
-        search_stack[ply].cont_hist = &cont_hist[piece_moved][to_sq];
+        search_stack[ply].cont_hist = &cont_hist[isQuiet(move)][piece_moved][to_sq];
 
         pos.makeMove(move);
 
@@ -620,7 +632,7 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     q_nodes++;
 
     // put a null cont hist on the stack
-    search_stack[ply].cont_hist = &cont_hist[0][0];
+    search_stack[ply].cont_hist = &cont_hist[0][0][0];
 
     bool in_check = inCheck(pos);
 
@@ -678,8 +690,8 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
 
     // build continuation history for the move picker
     std::array<PieceToHistory*, 2> _cont_hist = {
-        &cont_hist[0][0],
-        &cont_hist[0][0]
+        &cont_hist[0][0][0],
+        &cont_hist[0][0][0]
     };
     for (int i = 1; ply - i >= 0 && i <= 2; i++) {
         _cont_hist[i] = search_stack[i].cont_hist;
