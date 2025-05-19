@@ -1,12 +1,12 @@
 #pragma once
 
+#include <memory>
+
+#include "movegen.hpp"
+#include "position.hpp"
+#include "see.hpp"
 #include "types.hpp"
 #include "utils.hpp"
-#include "position.hpp"
-#include "movegen.hpp"
-#include "see.hpp"
-
-#include <memory>
 
 namespace Spotlight {
 
@@ -21,12 +21,14 @@ const int IGNORE_MOVE = -(1 << 30);
 enum class PickerStage { TT_MOVE, GOOD_NOISY, KILLER_1, KILLER_2, QUIET_AND_BAD_NOISY, END };
 
 class MovePicker {
-public:
-    MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 _tt_move, move16 _killer_1, move16 _killer_2);
+   public:
+    MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 _tt_move, move16 _killer_1,
+               move16 _killer_2);
     move16 getNextMove();
     move16 getNextCapture();
     PickerStage stage;
-private:
+
+   private:
     int scoreNoisyMove(move16 move);
     int scoreQuietMove(move16 move);
     move16 tt_move;
@@ -48,4 +50,4 @@ private:
     void scoreNoisies();
 };
 
-} // namespace Spotlight
+}  // namespace Spotlight

@@ -1,14 +1,14 @@
 #pragma once
 
-#include "types.hpp"
-
-#include <vector>
 #include <string>
+#include <vector>
+
+#include "types.hpp"
 
 namespace Spotlight {
 
 class MoveGenData {
-public:
+   public:
     MoveGenData();
 
     bool generated_checkers;
@@ -32,7 +32,7 @@ struct Undo {
 };
 
 class Position {
-public:
+   public:
     Position();
     BitBoard bitboards[15];
     int castle_rights;
@@ -71,10 +71,10 @@ public:
     move16 parseMove(std::string move_string);
     bool zugzwangUnlikely();
 
-    inline Piece at(Square sq) {return board[sq];};
+    inline Piece at(Square sq) { return board[sq]; };
 
-private:
+   private:
     Piece board[64];
 };
 
-} // namespace Spotlight
+}  // namespace Spotlight

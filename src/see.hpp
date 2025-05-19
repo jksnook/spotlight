@@ -1,10 +1,10 @@
 #pragma once
 
+#include <memory>
+
+#include "eval.hpp"
 #include "move.hpp"
 #include "position.hpp"
-#include "eval.hpp"
-
-#include <memory>
 
 namespace Spotlight {
 
@@ -18,4 +18,4 @@ int see(Position &pos, move16 move);
 
 bool seeGe(Position &pos, move16 move, int margin);
 
-} // namespace Spotlight
+}  // namespace Spotlight

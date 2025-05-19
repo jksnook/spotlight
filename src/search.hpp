@@ -1,16 +1,16 @@
 #pragma once
 
-#include "movegen.hpp"
-#include "eval.hpp"
-#include "position.hpp"
-#include "utils.hpp"
-#include "tt.hpp"
-#include "see.hpp"
-
-#include <chrono>
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <functional>
+
+#include "eval.hpp"
+#include "movegen.hpp"
+#include "position.hpp"
+#include "see.hpp"
+#include "tt.hpp"
+#include "utils.hpp"
 
 namespace Spotlight {
 
@@ -23,7 +23,7 @@ const int WINDOW_INCREMENT = 60;
 const int FUTILITY_MARGIN = 120;
 
 class PVTable {
-public:
+   public:
     std::array<std::array<move16, MAX_PLY>, MAX_PLY> table;
     std::array<int, MAX_PLY> pv_length;
     void updatePV(int ply, move16 first_move);
@@ -31,12 +31,13 @@ public:
     void clearPV();
     void zeroLength(int ply);
 
-    inline int length() {return pv_length[0];}
-    inline move16 getPVMove(int ply) {return table[0][ply];}
+    inline int length() { return pv_length[0]; }
+    inline move16 getPVMove(int ply) { return table[0][ply]; }
 
-    inline auto begin() { return table[0].begin();}
-    inline auto end() { return  table[0].begin() + pv_length[0];}
-private:
+    inline auto begin() { return table[0].begin(); }
+    inline auto end() { return table[0].begin() + pv_length[0]; }
+
+   private:
 };
 
 struct SearchResult {
@@ -50,14 +51,13 @@ struct StackEntry {
     int s_eval;
 };
 
-class Search
-{
-public:
+class Search {
+   public:
     Search(TT* _tt, std::atomic<bool>* _is_stopped, std::function<U64()> _getNodes);
 
-    SearchResult timeSearch(Position &pos, int max_depth, U64 time_in_ms);
-    SearchResult nodeSearch(Position &pos, int max_depth, U64 num_nodes);
-    int qScore(Position &pos);
+    SearchResult timeSearch(Position& pos, int max_depth, U64 time_in_ms);
+    SearchResult nodeSearch(Position& pos, int max_depth, U64 num_nodes);
+    int qScore(Position& pos);
     void clearTT();
     void clearHistory();
     int tt_hits;
@@ -69,14 +69,14 @@ public:
     std::atomic<bool>* is_stopped;
     std::function<U64()> getNodes;
 
-private:
+   private:
     void setTimer(U64 duration_in_ms, int interval);
     template <bool pv_node, bool cut_node, bool is_root>
     int negaMax(Position& pos, int depth, int ply, int alpha, int beta);
-    int qSearch(Position &pos, int depth, int ply, int alpha, int beta);
+    int qSearch(Position& pos, int depth, int ply, int alpha, int beta);
     bool timesUp();
     bool softTimesUp();
-    SearchResult iterSearch(Position &pos, int max_depth);
+    SearchResult iterSearch(Position& pos, int max_depth);
     void outputInfo(int depth, move16 best_move, int score);
     inline void saveKiller(int ply, move16 move) {
         killer_2[ply] = killer_1[ply];
@@ -113,7 +113,6 @@ private:
     PVTable pv;
     std::array<move16, MAX_PLY> old_pv;
     int old_pv_length;
-
 };
 
-} // namespace Spotlight
+}  // namespace Spotlight

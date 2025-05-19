@@ -10,8 +10,9 @@ using move16 = std::uint16_t;
 
 enum Color : uint8_t { WHITE, BLACK };
 
-enum GenType : int {CAPTURES_AND_PROMOTIONS, QUIET, LEGAL };
+enum GenType : int { CAPTURES_AND_PROMOTIONS, QUIET, LEGAL };
 
+// clang-format off
 enum Piece : uint8_t {
     WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
     BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
@@ -19,6 +20,7 @@ enum Piece : uint8_t {
 };
 
 enum PieceType : uint8_t { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING };
+
 
 enum Square : uint16_t {
     A1, B1, C1, D1, E1, F1, G1, H1,
@@ -30,5 +32,6 @@ enum Square : uint16_t {
     A7, B7, C7, D7, E7, F7, G7, H7,
     A8, B8, C8, D8, E8, F8, G8, H8,
 };
+// clang-format on
 
-} // namespace Spotlight
+}  // namespace Spotlight

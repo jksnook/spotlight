@@ -1,18 +1,17 @@
 #include "datagen.hpp"
 
+#include <array>
+#include <atomic>
+#include <chrono>
+#include <random>
+#include <string>
 #include <thread>
 #include <vector>
-#include <array>
-#include <random>
-#include <chrono>
-#include <string>
-#include <atomic>
 
-namespace Spotlight
-{
+namespace Spotlight {
 
-bool isQuiet(MoveList &moves) {
-    for (const auto &m: moves) {
+bool isQuiet(MoveList& moves) {
+    for (const auto& m : moves) {
         if (getMoveType(m.move) & CAPTURE_MOVE) {
             return false;
         }
@@ -26,7 +25,8 @@ void selfplay(int num_games, int num_threads, U64 node_count) {
     int games_played = 0;
 
     for (int i = 0; i < num_threads; i++) {
-        threads.push_back(std::thread(playGames, num_games, node_count, i, std::ref(games_played), std::ref(mx)));
+        threads.push_back(
+            std::thread(playGames, num_games, node_count, i, std::ref(games_played), std::ref(mx)));
     }
 
     for (int i = 0; i < num_threads; i++) {
@@ -44,7 +44,7 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
     TT tt;
     std::atomic<bool> is_stopped(false);
 
-    Search search(&tt, &is_stopped, [&](){return search.nodes_searched;});
+    Search search(&tt, &is_stopped, [&]() { return search.nodes_searched; });
     search.make_output = false;
 
     std::random_device r;
@@ -57,8 +57,8 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
             mx.unlock();
             break;
         };
-        std::cout << "starting game " << games_played << " of " << num_games << " on thread " << id <<
-            " with the following position and number of random moves\n";
+        std::cout << "starting game " << games_played << " of " << num_games << " on thread " << id
+                  << " with the following position and number of random moves\n";
         mx.unlock();
         pos = Position();
         tt.clear();
@@ -68,7 +68,8 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
 
         std::string result;
 
-        int num_random = (myRandom() % (MAX_RANDOM_MOVES - MIN_RANDOM_MOVES + 1)) + MIN_RANDOM_MOVES;
+        int num_random =
+            (myRandom() % (MAX_RANDOM_MOVES - MIN_RANDOM_MOVES + 1)) + MIN_RANDOM_MOVES;
         std::cout << num_random << "\n";
 
         // make some random moves
@@ -87,22 +88,19 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
                     if (inCheckSided<WHITE>(pos)) {
                         std::cout << "Black wins" << std::endl;
                         result = "0";
-                    }
-                    else {
+                    } else {
                         std::cout << "Stalemate" << std::endl;
                         result = "0.5";
                     }
                     break;
                 }
-            }
-            else {
+            } else {
                 generateMovesSided<BLACK, LEGAL>(moves, pos);
                 if (moves.size() == 0) {
                     if (inCheckSided<BLACK>(pos)) {
                         std::cout << "White wins" << std::endl;
                         result = "1";
-                    }
-                    else {
+                    } else {
                         std::cout << "Stalemate" << std::endl;
                         result = "0.5";
                     }
@@ -122,14 +120,12 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
                 pos.print();
                 result = "0.5";
                 break;
-            }
-            else if (pos.isTripleRepetition()) {
+            } else if (pos.isTripleRepetition()) {
                 std::cout << "Draw by triple repetition\n";
                 pos.print();
                 result = "0.5";
                 break;
-            }
-            else if (countBits(pos.bitboards[OCCUPANCY]) == 2) {
+            } else if (countBits(pos.bitboards[OCCUPANCY]) == 2) {
                 std::cout << "Draw by insufficient material\n";
                 pos.print();
                 result = "0.5";
@@ -144,22 +140,19 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
                     if (inCheckSided<WHITE>(pos)) {
                         std::cout << "Black wins" << std::endl;
                         result = "0";
-                    }
-                    else {
+                    } else {
                         std::cout << "Stalemate" << std::endl;
                         result = "0.5";
                     }
                     break;
                 }
-            }
-            else {
+            } else {
                 generateMovesSided<BLACK, LEGAL>(moves, pos);
                 if (moves.size() == 0) {
                     if (inCheckSided<BLACK>(pos)) {
                         std::cout << "White wins" << std::endl;
                         result = "1";
-                    }
-                    else {
+                    } else {
                         std::cout << "Stalemate" << std::endl;
                         result = "0.5";
                     }
@@ -168,7 +161,8 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
             }
 
             is_stopped.store(false);
-            SearchResult search_result = search.nodeSearch(pos, MAX_PLY, node_count + myRandom() % (node_count / 5));
+            SearchResult search_result =
+                search.nodeSearch(pos, MAX_PLY, node_count + myRandom() % (node_count / 5));
 
             move16 move = search_result.move;
             int score = search_result.score;
@@ -194,4 +188,4 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
     output_file.close();
 }
 
-} // namespace Spotlight
+}  // namespace Spotlight

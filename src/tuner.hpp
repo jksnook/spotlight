@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vector>
 #include <array>
 #include <string>
+#include <vector>
 
 /*
 Tuning implementation from Andrew Grant's tuning paper:
@@ -23,7 +23,7 @@ const std::string TUNING_PARAMS_FILE = "./piece_squares.txt";
 
 struct CoeffData {
     int wcoef, bcoef;
-    int index; 
+    int index;
 };
 
 struct PositionData {
@@ -35,9 +35,9 @@ struct PositionData {
 };
 
 class Tuner {
-public:
+   public:
     Tuner();
-    
+
     static double sigmoid(double k, double e);
 
     double staticEvaluationError(double k);
@@ -56,7 +56,8 @@ public:
     std::array<std::array<double, 2>, PSQ_ARRAY_SIZE> gradient;
 
     double k_param;
-private:
+
+   private:
 };
 
-} // namespace Spotlight
+}  // namespace Spotlight

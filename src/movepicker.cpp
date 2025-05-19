@@ -4,11 +4,19 @@
 
 namespace Spotlight {
 
-MovePicker::MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 _tt_move, 
-move16 _killer_1, move16 _killer_2): 
-stage(PickerStage::TT_MOVE), tt_move(_tt_move), killer_1(_killer_1), killer_2(_killer_2), 
-capture_index(0), quiet_index(0), generated_noisies(false), generated_quiets(false), 
-tt_played(false), pos(_pos), quiet_history(_quiet_history) {}
+MovePicker::MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 _tt_move,
+                       move16 _killer_1, move16 _killer_2)
+    : stage(PickerStage::TT_MOVE),
+      tt_move(_tt_move),
+      killer_1(_killer_1),
+      killer_2(_killer_2),
+      capture_index(0),
+      quiet_index(0),
+      generated_noisies(false),
+      generated_quiets(false),
+      tt_played(false),
+      pos(_pos),
+      quiet_history(_quiet_history) {}
 
 // Selection sort for getting the highest scored move
 move16 MovePicker::selectMove(int start, MoveList &scored_moves) {
@@ -23,7 +31,7 @@ move16 MovePicker::selectMove(int start, MoveList &scored_moves) {
     }
     move16 temp = scored_moves[k].move;
     scored_moves[k] = scored_moves[start];
-    //scored_moves[start] = temp;
+    // scored_moves[start] = temp;
     return temp;
 }
 
@@ -43,49 +51,49 @@ move16 MovePicker::selectWinningCapture(int start, MoveList &scored_moves) {
     }
     move16 temp = scored_moves[k].move;
     scored_moves[k] = scored_moves[start];
-    //scored_moves[start] = temp;
+    // scored_moves[start] = temp;
     return temp;
 }
 
 int MovePicker::scoreNoisyMove(move16 move) {
     move16 move_type = getMoveType(move);
-    switch (move_type)
-    {
-    case CAPTURE_MOVE:
-        // currently using the SEE value alone for scoring captures. I think SEE to determine good/bad
-        // plus MVV/LVA to determine ranking is a bit more standard. It didn't make much difference for me.
-        return see(pos, move);
-        break;
-    case QUEEN_PROMOTION:
-        return (SEE_VALUES[QUEEN] - SEE_VALUES[PAWN]) * SEE_MULTIPLIER;
-        break;
-    case ROOK_PROMOTION:
-        return IGNORE_MOVE;
-        break;
-    case BISHOP_PROMOTION:
-        return IGNORE_MOVE;
-        break;
-    case KNIGHT_PROMOTION:
-        return 0;
-        break;
-    case QUEEN_PROMOTION_CAPTURE:
-        return see(pos, move);
-        break;
-    case ROOK_PROMOTION_CAPTURE:
-        return IGNORE_MOVE;
-        break;
-    case BISHOP_PROMOTION_CAPTURE:
-        return IGNORE_MOVE;
-        break;
-    case KNIGHT_PROMOTION_CAPTURE:
-        return see(pos, move);
-        break;
-    case EN_PASSANT_CAPTURE:
-        return see(pos, move);
-        break;
-    default:
-        return 0;
-        break;
+    switch (move_type) {
+        case CAPTURE_MOVE:
+            // currently using the SEE value alone for scoring captures. I think SEE to determine
+            // good/bad plus MVV/LVA to determine ranking is a bit more standard. It didn't make
+            // much difference for me.
+            return see(pos, move);
+            break;
+        case QUEEN_PROMOTION:
+            return (SEE_VALUES[QUEEN] - SEE_VALUES[PAWN]) * SEE_MULTIPLIER;
+            break;
+        case ROOK_PROMOTION:
+            return IGNORE_MOVE;
+            break;
+        case BISHOP_PROMOTION:
+            return IGNORE_MOVE;
+            break;
+        case KNIGHT_PROMOTION:
+            return 0;
+            break;
+        case QUEEN_PROMOTION_CAPTURE:
+            return see(pos, move);
+            break;
+        case ROOK_PROMOTION_CAPTURE:
+            return IGNORE_MOVE;
+            break;
+        case BISHOP_PROMOTION_CAPTURE:
+            return IGNORE_MOVE;
+            break;
+        case KNIGHT_PROMOTION_CAPTURE:
+            return see(pos, move);
+            break;
+        case EN_PASSANT_CAPTURE:
+            return see(pos, move);
+            break;
+        default:
+            return 0;
+            break;
     }
 }
 
@@ -115,7 +123,6 @@ void MovePicker::scoreQuiets() {
             quiets[i].score = scoreQuietMove(quiets[i].move);
         }
     }
-
 }
 
 void MovePicker::scoreNoisies() {
@@ -218,7 +225,8 @@ move16 MovePicker::getNextCapture() {
         }
 
         // debug so I know if I get a bad tt move
-        // assert(!(tt_move && (getMoveType(tt_move) & CAPTURE_MOVE || getMoveType(tt_move) & PROMOTION_FLAG)));
+        // assert(!(tt_move && (getMoveType(tt_move) & CAPTURE_MOVE || getMoveType(tt_move) &
+        // PROMOTION_FLAG)));
     }
 
     if (stage == PickerStage::GOOD_NOISY) {
@@ -240,4 +248,4 @@ move16 MovePicker::getNextCapture() {
     return NULL_MOVE;
 }
 
-} // namespace Spotlight
+}  // namespace Spotlight

@@ -1,12 +1,12 @@
-#include "types.hpp"
-#include "position.hpp"
-#include "zobrist.hpp"
-#include "move.hpp"
-#include "test.hpp"
-#include "eval.hpp"
-#include "uci.hpp"
 #include "datagen.hpp"
+#include "eval.hpp"
+#include "move.hpp"
+#include "position.hpp"
+#include "test.hpp"
 #include "tuner.hpp"
+#include "types.hpp"
+#include "uci.hpp"
+#include "zobrist.hpp"
 
 using namespace Spotlight;
 
@@ -35,5 +35,4 @@ int main(int argc, char* argv[]) {
             selfplay(100, NUM_THREADS, BASE_NODE_COUNT);
         }
     }
-
 }

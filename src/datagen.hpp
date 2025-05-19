@@ -1,13 +1,12 @@
 #pragma once
 
-#include "position.hpp"
-#include "search.hpp"
-
 #include <fstream>
 #include <mutex>
 
-namespace Spotlight
-{
+#include "position.hpp"
+#include "search.hpp"
+
+namespace Spotlight {
 
 const int NUM_THREADS = 12;
 const int FIFTY_MOVE_LIMIT = 20;
@@ -21,4 +20,4 @@ void selfplay(int num_games, int num_threads, U64 node_count);
 
 void playGames(int num_games, U64 node_count, int id, int &games_played, std::mutex &mx);
 
-} // namespace Spotlight
+}  // namespace Spotlight

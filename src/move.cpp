@@ -15,14 +15,11 @@ std::string moveToString(move16 move) {
         move_type &= QUEEN_PROMOTION;
         if (move_type == QUEEN_PROMOTION) {
             s += 'q';
-        }
-        else if (move_type == KNIGHT_PROMOTION) {
+        } else if (move_type == KNIGHT_PROMOTION) {
             s += 'n';
-        }
-        else if (move_type == BISHOP_PROMOTION) {
+        } else if (move_type == BISHOP_PROMOTION) {
             s += 'b';
-        }
-        else if (move_type == ROOK_PROMOTION) {
+        } else if (move_type == ROOK_PROMOTION) {
             s += 'r';
         }
     }
@@ -30,9 +27,7 @@ std::string moveToString(move16 move) {
     return s;
 }
 
-void printMove(move16 move) {
-    std::cout << moveToString(move) << "\n";
-};
+void printMove(move16 move) { std::cout << moveToString(move) << "\n"; };
 
 void printMoveLong(move16 move) {
     int move_type = getMoveType(move);
@@ -40,4 +35,4 @@ void printMoveLong(move16 move) {
     std::cout << moveToString(move) << " " << moveTypeToString(move_type) << "\n";
 };
 
-}
+}  // namespace Spotlight

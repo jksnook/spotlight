@@ -1,4 +1,5 @@
 #include "eval.hpp"
+
 #include "bitboards.hpp"
 
 namespace Spotlight {
@@ -9,7 +10,7 @@ int eval(Position &pos) {
     int game_phase = 0;
     BitBoard occ = pos.bitboards[WHITE_OCCUPANCY];
 
-    while(occ) {
+    while (occ) {
         Square i = popLSB(occ);
         PieceType pt = getPieceType(pos.at(i));
         game_phase += phase_values[pt];
@@ -19,7 +20,7 @@ int eval(Position &pos) {
 
     occ = pos.bitboards[BLACK_OCCUPANCY];
 
-    while(occ) {
+    while (occ) {
         Square i = popLSB(occ);
         PieceType pt = getPieceType(pos.at(i));
         game_phase += phase_values[pt];
@@ -27,7 +28,8 @@ int eval(Position &pos) {
         late_eval -= piece_values[1][pt] + piece_square_tables[pt][1][i];
     }
 
-    int total_eval = (early_eval * game_phase + late_eval * (TOTAL_PHASE - game_phase)) / TOTAL_PHASE;
+    int total_eval =
+        (early_eval * game_phase + late_eval * (TOTAL_PHASE - game_phase)) / TOTAL_PHASE;
 
     // assert(game_phase == TOTAL_PHASE || total_eval != early_eval);
 
@@ -38,4 +40,4 @@ int eval(Position &pos) {
     return total_eval;
 }
 
-} //namespace Spotlight
+}  // namespace Spotlight

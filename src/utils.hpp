@@ -1,8 +1,8 @@
 #pragma once
 
-#include "types.hpp"
-
 #include <string_view>
+
+#include "types.hpp"
 
 namespace Spotlight {
 
@@ -26,7 +26,7 @@ inline constexpr Color getOtherSide(Color side) {
 }
 
 inline constexpr Piece getPieceID(PieceType piece_type, Color side) {
-    return static_cast<Piece>( static_cast<int>(piece_type) + static_cast<int>(side) * 6 );
+    return static_cast<Piece>(static_cast<int>(piece_type) + static_cast<int>(side) * 6);
 }
 
 inline constexpr PieceType getPieceType(Piece piece) {
@@ -52,30 +52,30 @@ const int BQC = 4;
 const int BKC = 8;
 
 constexpr int charToCastleRights(char c) {
-    switch (c)
-    {
-    case 'Q':
-        return WQC;
-        break;
-    case 'K':
-        return WKC;
-        break;
-    case 'q':
-        return BQC;
-        break;
-    case 'k':
-        return BKC;
-        break;
-    case '-':
-        return 0;
-        break;
-    default:
-        return 0;
-        break;
+    switch (c) {
+        case 'Q':
+            return WQC;
+            break;
+        case 'K':
+            return WKC;
+            break;
+        case 'q':
+            return BQC;
+            break;
+        case 'k':
+            return BKC;
+            break;
+        case '-':
+            return 0;
+            break;
+        default:
+            return 0;
+            break;
     }
 }
 
-constexpr std::string_view SQUARE_NAMES[64] {
+// clang-format off
+constexpr std::string_view SQUARE_NAMES[64]{
     "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", 
     "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", 
     "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3", 
@@ -85,6 +85,7 @@ constexpr std::string_view SQUARE_NAMES[64] {
     "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", 
     "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8" 
 };
+// clang-format on
 
 inline constexpr Square getRelativeSquare(Square sq, Color side) {
     return static_cast<Square>(static_cast<int>(sq) ^ (56 * static_cast<int>(side)));
@@ -96,4 +97,4 @@ inline constexpr Square prevPawnSquare(Square sq, Color side) {
 
 constexpr std::string_view STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-} // namespace Spotlight
+}  // namespace Spotlight

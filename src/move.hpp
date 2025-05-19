@@ -1,11 +1,11 @@
 #pragma once
 
-#include "types.hpp"
-#include "utils.hpp"
-#include "bitboards.hpp"
-
 #include <string>
 #include <string_view>
+
+#include "bitboards.hpp"
+#include "types.hpp"
+#include "utils.hpp"
 
 namespace Spotlight {
 
@@ -17,7 +17,6 @@ bits 6-11: end square
 bits 12-15: move type
 
 */
-
 
 // move type codes
 const move16 QUIET_MOVE = 0;
@@ -42,38 +41,37 @@ const move16 PROMOTION_FLAG = 0b1000;
 const move16 NULL_MOVE = 0;
 
 constexpr std::string_view moveTypeToString(move16 move_type) {
-    switch (move_type)
-    {
-    case QUIET_MOVE:
-        return "quiet move";
-    case DOUBLE_PAWN_PUSH:
-        return "double pawn push";
-    case CAPTURE_MOVE:
-        return "capture";
-    case KING_CASTLE:
-        return "king castle";
-    case QUEEN_CASTLE:
-        return "queen castle";
-    case EN_PASSANT_CAPTURE:
-        return "en passant";
-    case KNIGHT_PROMOTION:
-        return "knight promotion";
-    case BISHOP_PROMOTION:
-        return "bishop promotion";
-    case ROOK_PROMOTION:
-        return "rook promotion";
-    case QUEEN_PROMOTION:
-        return "queen promotion";
-    case KNIGHT_PROMOTION_CAPTURE:
-        return "knight promotion capture";
-    case BISHOP_PROMOTION_CAPTURE:
-        return "bishop promotion capture";
-    case ROOK_PROMOTION_CAPTURE:
-        return "rook promotion capture";
-    case QUEEN_PROMOTION_CAPTURE:
-        return "queen promotion capture";
-    default:
-        break;
+    switch (move_type) {
+        case QUIET_MOVE:
+            return "quiet move";
+        case DOUBLE_PAWN_PUSH:
+            return "double pawn push";
+        case CAPTURE_MOVE:
+            return "capture";
+        case KING_CASTLE:
+            return "king castle";
+        case QUEEN_CASTLE:
+            return "queen castle";
+        case EN_PASSANT_CAPTURE:
+            return "en passant";
+        case KNIGHT_PROMOTION:
+            return "knight promotion";
+        case BISHOP_PROMOTION:
+            return "bishop promotion";
+        case ROOK_PROMOTION:
+            return "rook promotion";
+        case QUEEN_PROMOTION:
+            return "queen promotion";
+        case KNIGHT_PROMOTION_CAPTURE:
+            return "knight promotion capture";
+        case BISHOP_PROMOTION_CAPTURE:
+            return "bishop promotion capture";
+        case ROOK_PROMOTION_CAPTURE:
+            return "rook promotion capture";
+        case QUEEN_PROMOTION_CAPTURE:
+            return "queen promotion capture";
+        default:
+            break;
     }
     return "unknown move type";
 }
@@ -90,13 +88,9 @@ static inline Square getToSquare(const move16 &move) {
     return static_cast<Square>((move >> 6) & 0b111111);
 }
 
-static inline move16 getMoveType(const move16 &move) {
-    return (move >> 12) & 0b1111;
-}
+static inline move16 getMoveType(const move16 &move) { return (move >> 12) & 0b1111; }
 
-static inline bool isQuiet(const move16 &move) {
-    return !((move >> 12) & 0b1111 & CAPTURE_MOVE);
-}
+static inline bool isQuiet(const move16 &move) { return !((move >> 12) & 0b1111 & CAPTURE_MOVE); }
 
 static inline bool isCaptureOrPromotion(const move16 &move) {
     return getMoveType(move) & CAPTURE_MOVE || getMoveType(move) & PROMOTION_FLAG;
@@ -104,26 +98,25 @@ static inline bool isCaptureOrPromotion(const move16 &move) {
 
 static inline bool isCastleMove(const move16 &move_type) {
     return move_type == KING_CASTLE || move_type == QUEEN_CASTLE;
-} 
+}
 
 inline constexpr PieceType promoPiece(move16 move_type) {
-    switch (move_type & ~CAPTURE_MOVE)
-    {
-    case QUEEN_PROMOTION:
-        return QUEEN;
-        break;
-    case KNIGHT_PROMOTION:
-        return KNIGHT;
-        break;
-    case ROOK_PROMOTION:
-        return ROOK;
-        break;
-    case BISHOP_PROMOTION:
-        return BISHOP;
-        break;
-    default:
-        return PAWN;
-        break;
+    switch (move_type & ~CAPTURE_MOVE) {
+        case QUEEN_PROMOTION:
+            return QUEEN;
+            break;
+        case KNIGHT_PROMOTION:
+            return KNIGHT;
+            break;
+        case ROOK_PROMOTION:
+            return ROOK;
+            break;
+        case BISHOP_PROMOTION:
+            return BISHOP;
+            break;
+        default:
+            return PAWN;
+            break;
     }
 }
 
@@ -139,43 +132,36 @@ struct ScoredMove {
 };
 
 class MoveList {
-public:
-    MoveList(): length(0) {}
+   public:
+    MoveList() : length(0) {}
 
-    inline void addMove(move16 move) { 
+    inline void addMove(move16 move) {
         move_array[length].move = move;
-        length++;  
+        length++;
     }
 
-    inline void setMove(int index, move16 move) {
-        move_array[index].move = move;
-    }
+    inline void setMove(int index, move16 move) { move_array[index].move = move; }
 
-    inline void removeMove(int index) {
-        move_array[index] = move_array[--length];
-    }
+    inline void removeMove(int index) { move_array[index] = move_array[--length]; }
 
-    inline ScoredMove& operator[](int index) {
-        return move_array[index];
-    };
-    inline const ScoredMove& operator[](int index) const {
-        return move_array[index];
-    };
+    inline ScoredMove &operator[](int index) { return move_array[index]; };
+    inline const ScoredMove &operator[](int index) const { return move_array[index]; };
 
-    inline ScoredMove *begin() {return &move_array[0];}
-    inline ScoredMove *end() {return &move_array[length];}
+    inline ScoredMove *begin() { return &move_array[0]; }
+    inline ScoredMove *end() { return &move_array[length]; }
 
-    inline size_t size() {return length;}
+    inline size_t size() { return length; }
 
-private:
+   private:
     ScoredMove move_array[256];
     int length;
 };
 
-static inline void addMovesFromBitboard(Square start, BitBoard bb, move16 move_type,  MoveList &moves) {
+static inline void addMovesFromBitboard(Square start, BitBoard bb, move16 move_type,
+                                        MoveList &moves) {
     while (bb) {
         moves.addMove(encodeMove(start, popLSB(bb), move_type));
     }
 };
 
-} // namespace Spotlight
+}  // namespace Spotlight

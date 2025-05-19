@@ -1,20 +1,20 @@
 #pragma once
 
-#include "position.hpp"
-#include "search.hpp"
-
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <thread>
 #include <vector>
-#include <atomic>
-#include <mutex>
-#include <condition_variable>
+
+#include "position.hpp"
+#include "search.hpp"
 
 namespace Spotlight {
 
 class SearchWrapper {
-public:
+   public:
     SearchWrapper(TT* _tt, std::atomic<bool>* _is_stopped, std::function<U64()> _getNodes);
-    ~SearchWrapper() {};
+    ~SearchWrapper(){};
 
     Search search;
     Position pos;
@@ -29,11 +29,12 @@ public:
     bool is_waiting;
     bool exit_thread;
     void wait();
-private:
+
+   private:
 };
 
 class Threads {
-public:
+   public:
     Threads(int num_threads);
     ~Threads();
 
@@ -50,9 +51,9 @@ public:
     std::atomic<bool> is_stopped;
     TT tt;
 
-private:
+   private:
     std::vector<SearchWrapper*> workers;
     std::vector<std::thread> threads;
 };
 
-} // namespace Spotlight
+}  // namespace Spotlight

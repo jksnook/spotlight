@@ -1,14 +1,16 @@
 #include "search.hpp"
-#include "movepicker.hpp"
 
 #include <algorithm>
 #include <sstream>
+
+#include "movepicker.hpp"
 
 namespace Spotlight {
 
 // copy the pv from ply + 1 to ply and add the first move to the front
 void PVTable::updatePV(int ply, move16 first_move) {
-    std::copy(table[ply + 1].begin(), table[ply + 1].begin() + pv_length[ply + 1], table[ply].begin() + 1);
+    std::copy(table[ply + 1].begin(), table[ply + 1].begin() + pv_length[ply + 1],
+              table[ply].begin() + 1);
     pv_length[ply] = pv_length[ply + 1] + 1;
     table[ply][0] = first_move;
 }
@@ -20,20 +22,27 @@ void PVTable::updateFromTT(int ply, move16 first_move) {
 }
 
 void PVTable::clearPV() {
-    for (auto &a: table) {
+    for (auto &a : table) {
         std::fill(a.begin(), a.end(), 0);
     }
     std::fill(pv_length.begin(), pv_length.end(), 0);
 }
 
 // sets the length of a particular pv index to zero (used before searching each ply)
-void PVTable::zeroLength(int ply) {
-    pv_length[ply] = 0;
-}
+void PVTable::zeroLength(int ply) { pv_length[ply] = 0; }
 
-Search::Search(TT* _tt, std::atomic<bool>* _is_stopped, std::function<U64()> _getNodes): start_time(std::chrono::steady_clock::now()), 
-tt_hits(0), allow_nmp(true), enable_qsearch_tt(true),  tt(_tt), is_stopped(_is_stopped),
-q_nodes(0), make_output(true), times_up(false), thread_id(0), getNodes(_getNodes) {
+Search::Search(TT *_tt, std::atomic<bool> *_is_stopped, std::function<U64()> _getNodes)
+    : start_time(std::chrono::steady_clock::now()),
+      tt_hits(0),
+      allow_nmp(true),
+      enable_qsearch_tt(true),
+      tt(_tt),
+      is_stopped(_is_stopped),
+      q_nodes(0),
+      make_output(true),
+      times_up(false),
+      thread_id(0),
+      getNodes(_getNodes) {
     clearHistory();
     for (int i = 0; i < MAX_PLY; i++) {
         for (int k = 0; k < 256; k++) {
@@ -43,7 +52,7 @@ q_nodes(0), make_output(true), times_up(false), thread_id(0), getNodes(_getNodes
             indices are [improving][depth][num_moves]
             */
             lmr_table[i][k] = log(i) * log(k) / 2.5 + 2.5;
-        } 
+        }
 
         // clear the killer moves
         killer_1[i] = 0;
@@ -51,10 +60,7 @@ q_nodes(0), make_output(true), times_up(false), thread_id(0), getNodes(_getNodes
     }
 }
 
-void Search::clearTT() {
-    tt->clear();
-}
-
+void Search::clearTT() { tt->clear(); }
 
 void Search::clearKillers() {
     for (int i = 0; i < MAX_PLY; i++) {
@@ -64,9 +70,9 @@ void Search::clearKillers() {
 }
 
 void Search::clearHistory() {
-    for (auto &side: quiet_history) {
-        for (auto &start: side) {
-            for (auto &end: start) {
+    for (auto &side : quiet_history) {
+        for (auto &start : side) {
+            for (auto &end : start) {
                 end = 0;
             }
         }
@@ -75,7 +81,8 @@ void Search::clearHistory() {
 
 // Update butterfly history using the history gravity formula
 void Search::updateHistory(Color side, int from, int to, int bonus) {
-    quiet_history[side][from][to] += bonus - abs(bonus) * quiet_history[side][from][to] / MAX_HISTORY;
+    quiet_history[side][from][to] +=
+        bonus - abs(bonus) * quiet_history[side][from][to] / MAX_HISTORY;
 }
 
 void Search::setTimer(U64 duration_in_ms, int interval) {
@@ -105,7 +112,8 @@ bool Search::timesUp() {
         times_up = true;
         return true;
     }
-    auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+    auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - start_time);
     if (time_elapsed.count() > timer_duration) {
         is_stopped->store(true);
         times_up = true;
@@ -119,7 +127,8 @@ bool Search::softTimesUp() {
     if (node_search) {
         return false;
     }
-    auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+    auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - start_time);
     if (time_elapsed.count() > soft_time_limit) {
         times_up = true;
         is_stopped->store(true);
@@ -140,9 +149,9 @@ void Search::outputInfo(int depth, move16 best_move, int score) {
     } else {
         ss << " score cp " << score;
     }
-    ss << " nodes " << nodes << " nps "<< nps << " hashfull " << tt->hashfull();
+    ss << " nodes " << nodes << " nps " << nps << " hashfull " << tt->hashfull();
     ss << " pv ";
-    for (const auto &m: pv) {
+    for (const auto &m : pv) {
         ss << moveToString(m) << " ";
     }
     std::cout << ss.str() << std::endl;
@@ -155,7 +164,7 @@ SearchResult Search::timeSearch(Position &pos, int max_depth, U64 time_in_ms) {
     return iterSearch(pos, max_depth);
 }
 
-//search a fixed number of nodes
+// search a fixed number of nodes
 SearchResult Search::nodeSearch(Position &pos, int max_depth, U64 num_nodes) {
     node_search = true;
     times_up = false;
@@ -164,7 +173,7 @@ SearchResult Search::nodeSearch(Position &pos, int max_depth, U64 num_nodes) {
 };
 
 // Iterative deepening framework
-SearchResult Search::iterSearch(Position& pos, int max_depth) {
+SearchResult Search::iterSearch(Position &pos, int max_depth) {
     nodes_searched = 0ULL;
     q_nodes = 0ULL;
     enable_qsearch_tt = true;
@@ -182,7 +191,6 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
     int alpha = NEGATIVE_INFINITY;
 
     for (int depth = 1; depth <= max_depth; depth++) {
-
         /*
         Aspiration Windows
 
@@ -246,7 +254,8 @@ SearchResult Search::iterSearch(Position& pos, int max_depth) {
 
     // assert(best_move);
 
-    if (thread_id == 0 && make_output) std::cout << "bestmove " << moveToString(best_move) << std::endl;
+    if (thread_id == 0 && make_output)
+        std::cout << "bestmove " << moveToString(best_move) << std::endl;
 
     return result;
 }
@@ -257,7 +266,7 @@ The Main Search Function
 Alpha-beta pruning in a negamax framework
 */
 template <bool pv_node, bool cut_node, bool is_root>
-int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
+int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     // check ply limit
     // we use MAX_PLY - 1 because some arrays are accessed with
     // index ply + 1
@@ -287,7 +296,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     alpha = std::max(alpha, -MATE_SCORE + ply);
     beta = std::min(beta, MATE_SCORE - ply - 1);
     if (!is_root && alpha >= beta) return beta;
-    
 
     // Increase node count only after checking for exit conditions
     nodes_searched++;
@@ -299,10 +307,9 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     int tt_depth;
     int tt_score;
     bool tt_pv;
-    
+
     // Probe the transposition table
     if ((tt_hit = tt->probe(pos.z_key, tt_move, node_type, tt_depth, tt_score, s_eval, tt_pv))) {
-
         // adjust checkmate scores according to our ply
         if (tt_score > MATE_THRESHOLD) {
             tt_score -= ply;
@@ -311,15 +318,12 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         }
 
         // return the score from the TT if the bounds and depth allow it
-        if (!pv_node && !is_root && tt_depth >= depth && (
-            node_type == EXACT_NODE ||
-            (node_type == LOWER_BOUND_NODE && tt_score >= beta) ||
-            (node_type == UPPER_BOUND_NODE && tt_score <= alpha)
-            )) {
+        if (!pv_node && !is_root && tt_depth >= depth &&
+            (node_type == EXACT_NODE || (node_type == LOWER_BOUND_NODE && tt_score >= beta) ||
+             (node_type == UPPER_BOUND_NODE && tt_score <= alpha))) {
             return tt_score;
         }
     }
-
 
     // get static evaluation for use in pruning heuristics if we didn't get it from the tt
     if (!tt_hit) {
@@ -348,11 +352,11 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     Null Move Pruning
 
     This takes advantage of the observation that playing a move is nearly
-    always better than doing nothing. We disable it in positions where 
+    always better than doing nothing. We disable it in positions where
     zugzwang is likely (in this case king pawn endgames)
     */
-    if (!pv_node && allow_nmp && depth >= 2 && !in_check &&
-        s_eval >= beta && pos.zugzwangUnlikely()) {
+    if (!pv_node && allow_nmp && depth >= 2 && !in_check && s_eval >= beta &&
+        pos.zugzwangUnlikely()) {
         // calculate depth reduction
         int reduction = 3 + depth / 3;
         // apply a null move
@@ -369,7 +373,6 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
         // if our score is still above beta even after a null move we consider this a beta cutoff
         if (nmp >= beta) return beta;
-
     }
     // allow_nmp = true;
     // recursive null move pruning disabled
@@ -409,33 +412,29 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     // enable or disable futility pruning
     bool allow_fprune = !pv_node && depth <= 4 && !in_check && s_eval < alpha - 50 - 80 * depth;
 
-
     /*
     Main Move Loop
 
     Loop through all the legal moves.
     */
     while (move = move_picker.getNextMove()) {
-
         int score = 0;
 
         /*
         Futility pruning
 
-        If our eval is far below alpha at a low depth, then after the first move search only 
+        If our eval is far below alpha at a low depth, then after the first move search only
         moves with a decent chance of raising alpha. (in this case only captures and promotions)
         */
-        if (allow_fprune && best_score > -MATE_THRESHOLD && !isCaptureOrPromotion(move))
-            continue;
+        if (allow_fprune && best_score > -MATE_THRESHOLD && !isCaptureOrPromotion(move)) continue;
 
         /*
         SEE pruning
 
         at low depths prune moves determined as losing by the static exchange evaluator
         */
-        if (best_score > -MATE_THRESHOLD 
-            && !in_check && depth <= 7 
-            && !seeGe(pos, move, -50 - 150 * !isQuiet(move) - 100 * improving)) 
+        if (best_score > -MATE_THRESHOLD && !in_check && depth <= 7 &&
+            !seeGe(pos, move, -50 - 150 * !isQuiet(move) - 100 * improving))
             continue;
 
         // update the search stack
@@ -452,8 +451,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
         prune late-ordered quiet moves in non-PV nodes at low depth
         */
-        if (!pv_node && !in_check && bad_quiets.size() > 2 + depth * 2 && 
-            depth <= 2 && isQuiet(move) && !inCheck(pos)) {
+        if (!pv_node && !in_check && bad_quiets.size() > 2 + depth * 2 && depth <= 2 &&
+            isQuiet(move) && !inCheck(pos)) {
             pos.unmakeMove();
             continue;
         }
@@ -470,7 +469,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
         be good
         */
         bool do_full_search = true;
-        if (bad_quiets.size() > 1 && depth > 2 && !in_check && (!pv_node || !isCaptureOrPromotion(move))) {
+        if (bad_quiets.size() > 1 && depth > 2 && !in_check &&
+            (!pv_node || !isCaptureOrPromotion(move))) {
             // get pre-calculated reduction from the table
             int lmr_reduction = lmr_table[depth][num_moves];
 
@@ -485,7 +485,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
             // don't bother unless we have an actual reduction
             if (lmr_reduction > 1) {
-                score = -negaMax<false, true, false>(pos, depth - lmr_reduction, ply + 1, -alpha - 1, -alpha);
+                score = -negaMax<false, true, false>(pos, depth - lmr_reduction, ply + 1,
+                                                     -alpha - 1, -alpha);
 
                 // re-search when we raise alpha
                 if (score > alpha) {
@@ -525,11 +526,11 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
 
         // check for timeout to avoid storing bad values in the TT
         if (times_up) return 0;
-        
+
         if (score > best_score) {
             best_score = score;
             best_move = move;
-            if constexpr(pv_node) pv.updatePV(ply, move);
+            if constexpr (pv_node) pv.updatePV(ply, move);
             // check for a beta cutoff
             if (score >= beta) {
                 if (isQuiet(move)) {
@@ -539,16 +540,16 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
                     int bonus = depth * depth;
                     updateHistory(pos.side_to_move, getFromSquare(move), getToSquare(move), bonus);
                     // apply malus to the previous quiet moves
-                    for (auto& bq : bad_quiets) {
-                        updateHistory(pos.side_to_move, getFromSquare(bq.move), getToSquare(bq.move), -bonus);
+                    for (auto &bq : bad_quiets) {
+                        updateHistory(pos.side_to_move, getFromSquare(bq.move),
+                                      getToSquare(bq.move), -bonus);
                     }
                 }
                 // Store to TT as a fail high
                 tt->save(pos.z_key, depth, ply, move, score, LOWER_BOUND_NODE, s_eval, pv_node);
                 // beta cutoff
                 return score;
-            }
-            else if (score > alpha) {
+            } else if (score > alpha) {
                 // raise alpha if necessary
                 alpha = score;
                 is_upper_bound = false;
@@ -578,8 +579,8 @@ int Search::negaMax(Position& pos, int depth, int ply, int alpha, int beta) {
     return best_score;
 }
 
-// quiescence search 
-int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
+// quiescence search
+int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
     if (timesUp() || pos.fifty_move >= 100 || pos.isTripleRepetition()) {
         return 0;
     }
@@ -600,10 +601,9 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     bool tt_pv;
     // our quiescence search static eval. used as a lower bound for our score
     int stand_pat;
-    
+
     // Probe the transposition table
     if ((tt_hit = tt->probe(pos.z_key, tt_move, node_type, tt_depth, tt_score, stand_pat, tt_pv))) {
-
         // adjust checkmate scores according to our ply
         if (tt_score > MATE_THRESHOLD) {
             tt_score -= ply;
@@ -612,15 +612,13 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
         }
 
         // return the score from the TT if the bounds and depth allow it
-        if (enable_qsearch_tt && tt_depth >= depth && (
-            node_type == EXACT_NODE ||
-            (node_type == LOWER_BOUND_NODE && tt_score >= beta) ||
-            (node_type == UPPER_BOUND_NODE && tt_score <= alpha)
-            )) {
+        if (enable_qsearch_tt && tt_depth >= depth &&
+            (node_type == EXACT_NODE || (node_type == LOWER_BOUND_NODE && tt_score >= beta) ||
+             (node_type == UPPER_BOUND_NODE && tt_score <= alpha))) {
             return tt_score;
         }
     }
-    
+
     // don't use standing pat when in check. (we need to search evasions)
     if (in_check) {
         stand_pat = NEGATIVE_INFINITY;
@@ -633,11 +631,10 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
     if (stand_pat >= beta) {
         // standing pat beta cutoff
         return stand_pat;
-    }
-    else if (stand_pat > alpha) {
+    } else if (stand_pat > alpha) {
         /*
         Use the static eval as a lower bound for our score.
-        This is sound because in chess making a move is 
+        This is sound because in chess making a move is
         usually better than doing nothing.
         */
         alpha = stand_pat;
@@ -661,8 +658,7 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
         use SEE to determine good/bad captures and skip the ones with little chance
         of raising alpha
         */
-        if (!in_check && !isQuiet(move) && 
-            !seeGe(pos, move, (alpha - stand_pat) - SEE_MARGIN)) 
+        if (!in_check && !isQuiet(move) && !seeGe(pos, move, (alpha - stand_pat) - SEE_MARGIN))
             continue;
 
         pos.makeMove(move);
@@ -680,7 +676,6 @@ int Search::qSearch(Position& pos, int depth, int ply, int alpha, int beta) {
                 is_upper_bound = false;
             }
         }
-
     }
 
     // check for checkmate and stalemate
@@ -706,8 +701,8 @@ int Search::qScore(Position &pos) {
     search_previous_pv = false;
     node_search = false;
     enable_qsearch_tt = false;
-    
+
     return qSearch(pos, 0, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY);
 }
 
-} // namespace Spotlight
+}  // namespace Spotlight

@@ -32,16 +32,15 @@ Square bitScanReverse(BitBoard bitboard) {
     //  #endif
 }
 
-void printBitboard(BitBoard bitboard) 
-{
+void printBitboard(BitBoard bitboard) {
     std::string bitboard_string = "";
     for (int rank = 7; rank >= 0; rank--) {
         for (int file = 0; file < 8; file++) {
-        if ((bitboard >> (rank * 8 + file)) & 1) {
-            bitboard_string += "1";
-        } else {
-            bitboard_string += "0";
-        };
+            if ((bitboard >> (rank * 8 + file)) & 1) {
+                bitboard_string += "1";
+            } else {
+                bitboard_string += "0";
+            };
         };
         bitboard_string += "\n";
     };
@@ -66,9 +65,7 @@ BitBoard rook_magic_mask[64];
 BitBoard rook_relevant_bit_count[64];
 BitBoard bishop_relevant_bit_count[64];
 
-BitBoard generateWhitePawnPush(int index) {
-    return (1ULL << (index + 8)) & NOT_RANK_1;
-}
+BitBoard generateWhitePawnPush(int index) { return (1ULL << (index + 8)) & NOT_RANK_1; }
 
 BitBoard generateWhitePawnDoublePush(int index) {
     if (1ULL << index & RANK_2) {
@@ -81,16 +78,14 @@ BitBoard generateWhitePawnAttack(int index) {
     return (1ULL << (index + 7) & NOT_H_FILE) | (1ULL << (index + 9) & NOT_A_FILE);
 }
 
-BitBoard generateBlackPawnPush(int index) {
-    return (1ULL << (index - 8)) & NOT_RANK_8;
-}
+BitBoard generateBlackPawnPush(int index) { return (1ULL << (index - 8)) & NOT_RANK_8; }
 
 BitBoard generateBlackPawnDoublePush(int index) {
     if (1ULL << index & RANK_7) {
         return (1ULL << (index - 16));
     }
     return 0ULL;
-    }
+}
 
 BitBoard generateBlackPawnAttack(int index) {
     return (1ULL << (index - 7) & NOT_A_FILE) | (1ULL << (index - 9) & NOT_H_FILE);
@@ -100,9 +95,9 @@ BitBoard generateKnightMove(int index) {
     BitBoard knight_square = 1ULL << index;
     BitBoard moves = 0ULL;
     moves |= (knight_square << 17) & NOT_A_FILE;
-    moves |= (knight_square <<  15) & NOT_H_FILE;
-    moves |= (knight_square <<  10) & NOT_AB_FILE;
-    moves |= (knight_square <<  6) & NOT_GH_FILE;
+    moves |= (knight_square << 15) & NOT_H_FILE;
+    moves |= (knight_square << 10) & NOT_AB_FILE;
+    moves |= (knight_square << 6) & NOT_GH_FILE;
     moves |= (knight_square >> 6) & NOT_AB_FILE;
     moves |= (knight_square >> 10) & NOT_GH_FILE;
     moves |= (knight_square >> 15) & NOT_A_FILE;
@@ -137,7 +132,7 @@ BitBoard generateSlidingMove_NW(int index) {
 BitBoard generateSlidingMove_N(int index) {
     BitBoard moves = 0ULL;
     int file = index % 8;
-    for (int rank = index / 8 + 1; rank < 8; rank++ ) {
+    for (int rank = index / 8 + 1; rank < 8; rank++) {
         moves |= 1ULL << (rank * 8 + file);
     }
     return moves;
@@ -155,7 +150,7 @@ BitBoard generateSlidingMove_NE(int index) {
 BitBoard generateSlidingMove_E(int index) {
     BitBoard moves = 0ULL;
     int rank = index / 8;
-    for (int file = index % 8 + 1; file < 8; file++ ) {
+    for (int file = index % 8 + 1; file < 8; file++) {
         moves |= 1ULL << (rank * 8 + file);
     }
     return moves;
@@ -171,27 +166,27 @@ BitBoard generateSlidingMove_SE(int index) {
 }
 
 BitBoard generateSlidingMove_S(int index) {
-BitBoard moves = 0ULL;
-int file = index % 8;
-for (int rank = index / 8 - 1; rank >= 0; rank-- ) {
+    BitBoard moves = 0ULL;
+    int file = index % 8;
+    for (int rank = index / 8 - 1; rank >= 0; rank--) {
         moves |= 1ULL << (rank * 8 + file);
     }
     return moves;
 }
 
 BitBoard generateSlidingMove_SW(int index) {
-BitBoard moves = 0ULL;
-int rank, file;
-for (rank = index / 8 - 1, file = index % 8 - 1; rank >= 0 && file >=0; rank--, file--) {
+    BitBoard moves = 0ULL;
+    int rank, file;
+    for (rank = index / 8 - 1, file = index % 8 - 1; rank >= 0 && file >= 0; rank--, file--) {
         moves |= 1ULL << (rank * 8 + file);
     }
     return moves;
 }
 
 BitBoard generateSlidingMove_W(int index) {
-BitBoard moves = 0ULL;
-int rank = index / 8;
-for (int file = index % 8 - 1; file >= 0; file-- ) {
+    BitBoard moves = 0ULL;
+    int rank = index / 8;
+    for (int file = index % 8 - 1; file >= 0; file--) {
         moves |= 1ULL << (rank * 8 + file);
     }
     return moves;
@@ -219,8 +214,10 @@ void initMoves() {
         sliding_moves[6][i] = generateSlidingMove_SW(i);
         sliding_moves[7][i] = generateSlidingMove_W(i);
 
-        bishop_moves[i] = sliding_moves[0][i] | sliding_moves[2][i] | sliding_moves[4][i] | sliding_moves[6][i];
-        rook_moves[i] = sliding_moves[1][i] | sliding_moves[3][i] | sliding_moves[5][i] | sliding_moves[7][i];
+        bishop_moves[i] =
+            sliding_moves[0][i] | sliding_moves[2][i] | sliding_moves[4][i] | sliding_moves[6][i];
+        rook_moves[i] =
+            sliding_moves[1][i] | sliding_moves[3][i] | sliding_moves[5][i] | sliding_moves[7][i];
 
         bishop_magic_mask[i] = bishop_moves[i] & NOT_A_FILE & NOT_H_FILE & NOT_RANK_1 & NOT_RANK_8;
         rook_magic_mask[i] = rook_moves[i];
@@ -278,7 +275,8 @@ BitBoard generateRookAttacks(int index, BitBoard occupancy) {
 BitBoard rook_magic_attacks[64][4096];
 BitBoard bishop_magic_attacks[64][1024];
 
-// iterate to the next occupancy as if counting bit by bit with the bits from the mask (still not ideal. looking for something better.)
+// iterate to the next occupancy as if counting bit by bit with the bits from the mask (still not
+// ideal. looking for something better.)
 void iterateOccupancy(BitBoard &occupancy, BitBoard mask) {
     BitBoard least_sig_zero = (occupancy ^ mask) & -(occupancy ^ mask);
     occupancy = (occupancy & ~((least_sig_zero - 1))) | (least_sig_zero);
@@ -297,7 +295,7 @@ void findBishopMagic(int index) {
 
     magic_number = bishop_magic_numbers[index];
 
-    //reset all the attacks to zero each time
+    // reset all the attacks to zero each time
     for (int i = 0; i < 1024; i++) {
         bishop_magic_attacks[index][i] = 0ULL;
     }
@@ -307,8 +305,9 @@ void findBishopMagic(int index) {
         iterateOccupancy(occupancy, mask);
         attacks = generateBishopAttacks(index, occupancy);
         magic_index = (occupancy * magic_number) >> (64 - (bishop_relevant_bit_count[index]));
-        //reliability check for magic number
-        assert(bishop_magic_attacks[index][magic_index] == attacks || bishop_magic_attacks[index][magic_index] == 0ULL);
+        // reliability check for magic number
+        assert(bishop_magic_attacks[index][magic_index] == attacks ||
+               bishop_magic_attacks[index][magic_index] == 0ULL);
         bishop_magic_attacks[index][magic_index] = attacks;
     }
 }
@@ -324,11 +323,10 @@ void findRookMagic(int index) {
     BitBoard magic_index;
     BitBoard mask = rook_magic_mask[index];
 
-
-    //get a new magic number
+    // get a new magic number
     magic_number = rook_magic_numbers[index];
 
-    //reset all attack masks to zero
+    // reset all attack masks to zero
     for (int i = 0; i < 4096; i++) {
         rook_magic_attacks[index][i] = 0ULL;
     }
@@ -339,8 +337,9 @@ void findRookMagic(int index) {
         iterateOccupancy(occupancy, mask);
         attacks = generateRookAttacks(index, occupancy);
         magic_index = (magic_number * occupancy) >> (64 - rook_relevant_bit_count[index]);
-        //reliability check for magic numbers
-        assert(rook_magic_attacks[index][magic_index] == attacks || rook_magic_attacks[index][magic_index] == 0);
+        // reliability check for magic numbers
+        assert(rook_magic_attacks[index][magic_index] == attacks ||
+               rook_magic_attacks[index][magic_index] == 0);
         rook_magic_attacks[index][magic_index] = attacks;
     }
 }
@@ -355,9 +354,9 @@ void initMagics() {
 BitBoard knightAttacksFromBitboard(BitBoard bitboard) {
     BitBoard attacks;
     attacks = (bitboard << 17) & NOT_A_FILE;
-    attacks |= (bitboard <<  15) & NOT_H_FILE;
-    attacks |= (bitboard <<  10) & NOT_AB_FILE;
-    attacks |= (bitboard <<  6) & NOT_GH_FILE;
+    attacks |= (bitboard << 15) & NOT_H_FILE;
+    attacks |= (bitboard << 10) & NOT_AB_FILE;
+    attacks |= (bitboard << 6) & NOT_GH_FILE;
     attacks |= (bitboard >> 6) & NOT_AB_FILE;
     attacks |= (bitboard >> 10) & NOT_GH_FILE;
     attacks |= (bitboard >> 15) & NOT_A_FILE;
@@ -366,19 +365,19 @@ BitBoard knightAttacksFromBitboard(BitBoard bitboard) {
 }
 
 BitBoard bishopAttacksFromBitboard(BitBoard bishops, BitBoard occupancy) {
-  BitBoard attacks = 0ULL;
-  while (bishops) {
-    attacks |= getMagicBishopAttack(popLSB(bishops), occupancy);
-  }
-  return attacks;
+    BitBoard attacks = 0ULL;
+    while (bishops) {
+        attacks |= getMagicBishopAttack(popLSB(bishops), occupancy);
+    }
+    return attacks;
 }
 
 BitBoard rookAttacksFromBitboard(BitBoard rooks, BitBoard occupancy) {
-  BitBoard attacks = 0ULL;
-  while (rooks) {
-    attacks |= getMagicRookAttack(popLSB(rooks), occupancy);
-  }
-  return attacks;
+    BitBoard attacks = 0ULL;
+    while (rooks) {
+        attacks |= getMagicRookAttack(popLSB(rooks), occupancy);
+    }
+    return attacks;
 }
 
-} // namespace Spotlight
+}  // namespace Spotlight

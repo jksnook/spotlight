@@ -12,4 +12,4 @@ extern U64 side_key;
 
 void initZobrist();
 
-} // namespace Spotlight
+}  // namespace Spotlight

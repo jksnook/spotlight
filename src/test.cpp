@@ -1,15 +1,16 @@
 #include "test.hpp"
-#include "utils.hpp"
-#include "position.hpp"
-#include "move.hpp"
-#include "see.hpp"
-#include "movegen.hpp"
-#include "search.hpp"
-#include "movepicker.hpp"
 
 #include <cassert>
-#include <iostream>
 #include <chrono>
+#include <iostream>
+
+#include "move.hpp"
+#include "movegen.hpp"
+#include "movepicker.hpp"
+#include "position.hpp"
+#include "search.hpp"
+#include "see.hpp"
+#include "utils.hpp"
 
 namespace Spotlight {
 
@@ -25,7 +26,6 @@ void runTests() {
 
 void testSee() {
     Position pos;
-    
 
     pos.readFen("1r2k3/8/6r1/1pP5/8/8/1R6/4K3 w - b6 0 2");
     move16 move = encodeMove(C5, B6, EN_PASSANT_CAPTURE);
@@ -62,7 +62,8 @@ void testSee() {
     pos.readFen("4k3/8/8/8/8/8/2p5/1R2K3 b - - 0 1");
     move = encodeMove(C2, B1, QUEEN_PROMOTION_CAPTURE);
     score = see(pos, move);
-    correct_score = (SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN] + SEE_MARGIN) * SEE_MULTIPLIER;
+    correct_score =
+        (SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN] + SEE_MARGIN) * SEE_MULTIPLIER;
     assert(score == correct_score);
     assert(seeGe(pos, move, SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN]));
     assert(!seeGe(pos, move, SEE_VALUES[QUEEN] + SEE_VALUES[ROOK] - SEE_VALUES[PAWN] + 1));
@@ -127,7 +128,7 @@ void testPerft() {
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds> (end - start);
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
     int nps = total_nodes * 1000 / elapsed_time.count();
     // int nps = 0;
@@ -140,14 +141,14 @@ void testSearch() {
     TT tt;
     std::atomic<bool> is_stopped(false);
 
-    Search search(&tt, &is_stopped, [&search](){ return search.nodes_searched;});
+    Search search(&tt, &is_stopped, [&search]() { return search.nodes_searched; });
 
     U64 nodes = 0ULL;
     U64 q_nodes = 0ULL;
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-    for (const auto &fen: TEST_POSITIONS) {
+    for (const auto &fen : TEST_POSITIONS) {
         search.clearHistory();
         search.clearTT();
         pos.readFen(fen);
@@ -158,20 +159,21 @@ void testSearch() {
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds> (end - start);
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
     int nps = nodes * 1000 / elapsed_time.count();
 
-    std::cout << nodes << " nodes searched at " << nps << " nps " << q_nodes << " quiescence nodes\n";
+    std::cout << nodes << " nodes searched at " << nps << " nps " << q_nodes
+              << " quiescence nodes\n";
 }
 
 void testMovePicker() {
     Position pos;
     int hist[2][64][64];
 
-    for (auto &side: hist) {
-        for (auto &start: side) {
-            for (auto &end: start) {
+    for (auto &side : hist) {
+        for (auto &start : side) {
+            for (auto &end : start) {
                 end = 0;
             }
         }
@@ -188,15 +190,14 @@ void testMovePicker() {
     assert(move == killer_1);
     assert(picker.getNextMove() == killer_2);
 
-    while (picker.getNextMove())
-    {
+    while (picker.getNextMove()) {
         continue;
     }
 
     std::random_device r;
     std::mt19937 myRandom(r());
 
-    for (const auto &p: TEST_POSITIONS) {
+    for (const auto &p : TEST_POSITIONS) {
         pos.readFen(p);
         MoveList moves;
 
@@ -210,7 +211,7 @@ void testMovePicker() {
         MoveList captures;
         generateQuietMoves(quiets, pos);
         generateNoisyMoves(captures, pos);
-        
+
         killer_1 = 0;
         killer_2 = 0;
 
@@ -236,11 +237,9 @@ void testMovePicker() {
 
         assert(picker.getNextMove() == killer_2);
 
-        while (picker.getNextMove())
-        {
+        while (picker.getNextMove()) {
             continue;
         }
-
     }
 }
 
@@ -251,7 +250,7 @@ U64 testLegalPerftHelper(Position &pos, int depth) {
 
     U64 nodes = 0;
 
-    for(move16 move = 0; move < 0xffff; move++) {
+    for (move16 move = 0; move < 0xffff; move++) {
         if (isLegal(move, pos)) {
             pos.makeMove(move);
             nodes += testLegalPerftHelper(pos, depth - 1);
@@ -262,7 +261,6 @@ U64 testLegalPerftHelper(Position &pos, int depth) {
     return nodes;
 };
 
-
 // Iterate through (almost) all possible move encodings and play the legal ones
 U64 testLegalPerft(Position &pos, int depth) {
     if (depth == 0) {
@@ -271,20 +269,20 @@ U64 testLegalPerft(Position &pos, int depth) {
 
     U64 nodes = 0;
 
-    for(move16 move = 0; move < 0xffff; move++) {
+    for (move16 move = 0; move < 0xffff; move++) {
         if (isLegal(move, pos)) {
             pos.makeMove(move);
             int nodes_this_move = testLegalPerftHelper(pos, depth - 1);
             pos.unmakeMove();
             nodes += nodes_this_move;
             std::cout << moveToString(move) << ": " << nodes_this_move << std::endl;
-            // std::cout << moveToString(move) << " " << move_type_map[getMoveType(move)] << ": " << nodes_this_move << std::endl;
+            // std::cout << moveToString(move) << " " << move_type_map[getMoveType(move)] << ": " <<
+            // nodes_this_move << std::endl;
         }
     }
 
     return nodes;
 };
-
 
 void testMoveVerification() {
     Position pos;
@@ -295,4 +293,4 @@ void testMoveVerification() {
     assert(n == 48);
 }
 
-} //namespace Spotlight
+}  // namespace Spotlight

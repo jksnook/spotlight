@@ -1,8 +1,8 @@
 #pragma once
 
+#include "position.hpp"
 #include "types.hpp"
 #include "utils.hpp"
-#include "position.hpp"
 
 namespace Spotlight {
 
@@ -10,11 +10,12 @@ namespace Spotlight {
 
 constexpr int piece_values[2][6] = {{100, 250, 300, 400, 900, 0}, {100, 250, 300, 400, 900, 0}};
 constexpr int phase_values[6] = {0, 3, 3, 5, 8, 0};
-const int TOTAL_PHASE = phase_values[PAWN] * 16 + phase_values[KNIGHT] * 4 
-+ phase_values[BISHOP] * 4 + phase_values[ROOK] * 4 + phase_values[QUEEN] * 2;
+const int TOTAL_PHASE = phase_values[PAWN] * 16 + phase_values[KNIGHT] * 4 +
+                        phase_values[BISHOP] * 4 + phase_values[ROOK] * 4 + phase_values[QUEEN] * 2;
 
 // piece square tables
 
+// clang-format off
 constexpr int piece_square_tables[6][2][64] = {
     {
         {
@@ -282,7 +283,8 @@ constexpr int piece_square_tables[6][2][64] = {
 //   },
 // },
 };
+// clang-format on
 
 int eval(Position &pos);
 
-} // namespace Spotlight
+}  // namespace Spotlight

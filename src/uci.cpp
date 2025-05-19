@@ -1,14 +1,13 @@
 #include "uci.hpp"
+
+#include <chrono>
+#include <iostream>
+
 #include "test.hpp"
 
-#include <iostream>
-#include <chrono>
+namespace Spotlight {
 
-namespace Spotlight
-{
-
-UCI::UCI(): search_threads(1), position() {
-}
+UCI::UCI() : search_threads(1), position() {}
 
 void UCI::loop() {
     std::string line;
@@ -34,7 +33,7 @@ void UCI::loop() {
         } else if (token == "isready") {
             std::cout << "readyok" << std::endl;
         } else if (token == "position") {
-            //parse the position here
+            // parse the position here
             parsePosition(commands);
 
         } else if (token == "go") {
@@ -66,7 +65,7 @@ void UCI::parsePosition(std::istringstream& commands) {
     } else if (token == "fen") {
         std::string fen;
         token.clear();
-        while(commands >> token) {
+        while (commands >> token) {
             if (token == "moves") {
                 break;
             }
@@ -87,7 +86,6 @@ void UCI::parsePosition(std::istringstream& commands) {
         position.makeMove(position.parseMove(token));
         position.game_half_moves++;
     }
-
 }
 void UCI::parseGo(std::istringstream& commands) {
     search_threads.stop();
@@ -107,7 +105,7 @@ void UCI::parseGo(std::istringstream& commands) {
         token.clear();
         commands >> token;
         int winc = 0;
-        int binc  = 0;
+        int binc = 0;
         if (token == "winc") {
             token.clear();
             commands >> token;
@@ -220,4 +218,4 @@ void UCI::parseSetOption(std::istringstream& commands) {
     }
 }
 
-} // namespace Spotlight
+}  // namespace Spotlight

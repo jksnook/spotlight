@@ -1,13 +1,14 @@
 #include "tuner.hpp"
-#include "position.hpp"
-#include "eval.hpp"
 
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include "eval.hpp"
+#include "position.hpp"
 
 /*
 Tuning implementation from Andrew Grant's tuning paper:
@@ -16,7 +17,7 @@ https://github.com/AndyGrant/Ethereal/blob/master/Tuning.pdf
 
 namespace Spotlight {
 
-Tuner::Tuner(): weights{}, gradient{} {
+Tuner::Tuner() : weights{}, gradient{} {
     std::ifstream fen_file;
     std::string line;
     Position pos;
@@ -24,7 +25,7 @@ Tuner::Tuner(): weights{}, gradient{} {
     fen_file.open(TUNING_FILE);
     int positions_loaded = 0;
 
-    while(positions_loaded < MAX_POSITIONS && std::getline(fen_file, line)) {
+    while (positions_loaded < MAX_POSITIONS && std::getline(fen_file, line)) {
         PositionData entry;
         std::string outcome;
         std::string fen;
@@ -65,18 +66,23 @@ Tuner::Tuner(): weights{}, gradient{} {
                 if (piece < BLACK_PAWN) {
                     coeff_idx = getPieceType(piece) * 64 + (i ^ 56);
                     coeffs[coeff_idx][WHITE]++;
-                    early_eval += piece_values[0][getPieceType(piece)] + piece_square_tables[getPieceType(piece)][0][i ^ 56];
-                    late_eval += piece_values[1][getPieceType(piece)] + piece_square_tables[getPieceType(piece)][1][i ^ 56];
+                    early_eval += piece_values[0][getPieceType(piece)] +
+                                  piece_square_tables[getPieceType(piece)][0][i ^ 56];
+                    late_eval += piece_values[1][getPieceType(piece)] +
+                                 piece_square_tables[getPieceType(piece)][1][i ^ 56];
                 } else {
                     coeff_idx = getPieceType(piece) * 64 + i;
                     coeffs[coeff_idx][BLACK]++;
-                    early_eval -= piece_values[0][getPieceType(piece)] + piece_square_tables[getPieceType(piece)][0][i];
-                    late_eval -= piece_values[1][getPieceType(piece)] + piece_square_tables[getPieceType(piece)][1][i];
+                    early_eval -= piece_values[0][getPieceType(piece)] +
+                                  piece_square_tables[getPieceType(piece)][0][i];
+                    late_eval -= piece_values[1][getPieceType(piece)] +
+                                 piece_square_tables[getPieceType(piece)][1][i];
                 }
             }
         }
 
-        int total_eval = (early_eval * game_phase + late_eval * (TOTAL_PHASE - game_phase)) / TOTAL_PHASE;
+        int total_eval =
+            (early_eval * game_phase + late_eval * (TOTAL_PHASE - game_phase)) / TOTAL_PHASE;
 
         entry.s_eval = eval(pos);
         if (pos.side_to_move == BLACK) {
@@ -102,27 +108,26 @@ Tuner::Tuner(): weights{}, gradient{} {
 }
 
 void Tuner::forward() {
-    for (auto &p: t_positions) {
+    for (auto &p : t_positions) {
         double early_eval = 0.0;
         double late_eval = 0.0;
 
-        for (auto &c: p.active_coeffs) {
+        for (auto &c : p.active_coeffs) {
             early_eval += (c.wcoef - c.bcoef) * weights[c.index][0];
             late_eval += (c.wcoef - c.bcoef) * weights[c.index][1];
         }
 
-        p.d_eval = (early_eval * p.phase + late_eval * (TOTAL_PHASE - p.phase)) / TOTAL_PHASE + p.s_eval;
+        p.d_eval =
+            (early_eval * p.phase + late_eval * (TOTAL_PHASE - p.phase)) / TOTAL_PHASE + p.s_eval;
     }
 }
 
-double Tuner::sigmoid(double k, double eval) {
-    return 1.0 / (1.0 + exp(-k * eval / 400.0));
-}
+double Tuner::sigmoid(double k, double eval) { return 1.0 / (1.0 + exp(-k * eval / 400.0)); }
 
 double Tuner::staticEvaluationError(double k) {
     double total_error = 0.0;
 
-    for (auto &p: t_positions) {
+    for (auto &p : t_positions) {
         total_error += pow((p.result - sigmoid(k, p.s_eval)), 2);
     }
 
@@ -132,7 +137,7 @@ double Tuner::staticEvaluationError(double k) {
 double Tuner::evaluationError(double k) {
     double total_error = 0.0;
 
-    for (auto &p: t_positions) {
+    for (auto &p : t_positions) {
         total_error += pow((p.result - sigmoid(k, p.d_eval)), 2);
     }
 
@@ -147,7 +152,6 @@ double Tuner::computeOptimalK() {
     std::cout << "Computing optimal K\n";
 
     for (int i = 0; i < K_PRECISION - 1; i++) {
-
         curr = start - step;
         while (curr < end) {
             curr = curr + step;
@@ -164,27 +168,26 @@ double Tuner::computeOptimalK() {
             start = start - step;
             step = step / 10.0;
         }
-
     }
 
     return start;
 }
 
 void Tuner::zeroGrad() {
-    for (auto &a: gradient) {
+    for (auto &a : gradient) {
         a[0] = 0.0;
         a[1] = 0.0;
     }
 }
 
 void Tuner::calculateGradient() {
-    for (auto &p: t_positions) {
+    for (auto &p : t_positions) {
         double s = sigmoid(k_param, p.d_eval);
         double derr = (p.result - s);
         double ds = s * (1 - s);
         double mg_phase = static_cast<double>(p.phase) / TOTAL_PHASE;
         double eg_phase = 1.0 - mg_phase;
-        for (auto  &t: p.active_coeffs) {
+        for (auto &t : p.active_coeffs) {
             double temp = (t.wcoef - t.bcoef) * derr * ds;
             gradient[t.index][0] += temp * mg_phase;
             gradient[t.index][1] += temp * eg_phase;
@@ -196,7 +199,7 @@ void Tuner::updateWeights(double lr) {
     for (int i = 0; i < PSQ_ARRAY_SIZE; i++) {
         weights[i][0] -= gradient[i][0] * lr;
         weights[i][1] -= gradient[i][1] * lr;
-    }  
+    }
 }
 
 void Tuner::run() {
@@ -205,7 +208,6 @@ void Tuner::run() {
 
     std::cout << "Tuning\n";
     for (int epoch = 0; epoch < MAX_EPOCHS; epoch++) {
-
         zeroGrad();
         forward();
         calculateGradient();
@@ -213,12 +215,15 @@ void Tuner::run() {
             ada_grad[i][0] += pow(2.0 * gradient[i][0] / NUM_PARAMS, 2.0);
             ada_grad[i][1] += pow(2.0 * gradient[i][1] / NUM_PARAMS, 2.0);
 
-            weights[i][0] += (k_param * 2.0 / NUM_PARAMS) * gradient[i][0] * (LEARNING_RATE / sqrt(1e-8 + ada_grad[i][0]));
-            weights[i][1] += (k_param * 2.0 / NUM_PARAMS) * gradient[i][1] * (LEARNING_RATE / sqrt(1e-8 + ada_grad[i][1]));
+            weights[i][0] += (k_param * 2.0 / NUM_PARAMS) * gradient[i][0] *
+                             (LEARNING_RATE / sqrt(1e-8 + ada_grad[i][0]));
+            weights[i][1] += (k_param * 2.0 / NUM_PARAMS) * gradient[i][1] *
+                             (LEARNING_RATE / sqrt(1e-8 + ada_grad[i][1]));
         }
 
         if (epoch % REPORT_INTERVAL == 0) {
-            std::cout << "Epoch " << epoch << "/" << MAX_EPOCHS << " Evaluation Error: " << evaluationError(k_param) << "\n";
+            std::cout << "Epoch " << epoch << "/" << MAX_EPOCHS
+                      << " Evaluation Error: " << evaluationError(k_param) << "\n";
         }
     }
 }
@@ -228,7 +233,7 @@ void Tuner::printWeights() {
         std::cout << "{\n";
         for (int phase = 0; phase <= 1; phase++) {
             std::cout << "    {\n";
-            for (int rank = 0; rank < 8; rank ++) {
+            for (int rank = 0; rank < 8; rank++) {
                 std::cout << "       ";
                 for (int file = 0; file < 8; file++) {
                     int sq = rank * 8 + file;
@@ -262,7 +267,7 @@ void Tuner::outputToFile() {
         out_file << "{\n";
         for (int phase = 0; phase <= 1; phase++) {
             out_file << "    {\n";
-            for (int rank = 0; rank < 8; rank ++) {
+            for (int rank = 0; rank < 8; rank++) {
                 out_file << "       ";
                 for (int file = 0; file < 8; file++) {
                     int sq = rank * 8 + file;
@@ -289,4 +294,4 @@ void Tuner::outputToFile() {
     out_file.close();
 }
 
-} // namespace Spotlight
+}  // namespace Spotlight

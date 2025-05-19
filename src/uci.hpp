@@ -1,18 +1,18 @@
 #pragma once
 
-#include "position.hpp"
+#include <atomic>
+#include <chrono>
+#include <sstream>
+
 #include "movegen.hpp"
+#include "position.hpp"
 #include "search.hpp"
 #include "threads.hpp"
-
-#include <sstream>
-#include <chrono>
-#include <atomic>
 
 namespace Spotlight {
 
 class UCI {
-public:
+   public:
     UCI();
 
     void loop();
@@ -20,9 +20,9 @@ public:
     void parseGo(std::istringstream& commands);
     void parseSetOption(std::istringstream& commands);
 
-private:
+   private:
     Position position;
     Threads search_threads;
 };
 
-} // namespace Spotlight
+}  // namespace Spotlight
