@@ -6,12 +6,12 @@ TTEntry::TTEntry() : hash16(0ULL), depth(0), best_move(0), score(0), flags(0) {}
 
 TTEntry::TTEntry(U64 _z_key, int _depth, move16 _best_move, int _score, NodeType _node_type,
                  int _s_eval, uint8_t _age, bool _is_pv)
-    : depth(_depth), best_move(_best_move), score(_score), age(_age), s_eval(_s_eval) {
+    : depth(_depth), best_move(_best_move), score(_score), s_eval(_s_eval), age(_age) {
     flags = _node_type | (static_cast<uint8_t>(_is_pv) << 2);
     hash16 = static_cast<uint16_t>(_z_key >> 48);
 }
 
-TT::TT() : num_entries(NUM_ENTRIES), hash_size(TT_SIZE) {
+TT::TT() : hash_size(TT_SIZE), num_entries(NUM_ENTRIES), generation(0) {
     hash_table.resize(NUM_ENTRIES);
     clear();
 }

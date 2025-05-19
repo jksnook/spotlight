@@ -12,7 +12,7 @@ DEPENDS := $(patsubst %.cpp,$(TMPDIR)/%.d,$(SOURCES))
 all: $(TARGET)
 clean:
 	rm -rf $(TMPDIR) *.o
-debug: CXXFLAGS += -g
+debug: CXXFLAGS += -g -Wall
 debug: all
 
 $(TARGET): $(OBJECTS)

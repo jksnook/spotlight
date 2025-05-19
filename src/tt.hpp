@@ -58,10 +58,10 @@ class TT {
     int hashfull();
 
    private:
-    uint8_t generation;
-    U64 num_entries;
     size_t hash_size;
+    U64 num_entries;
     std::vector<TTBucket> hash_table;
+    uint8_t generation;
 };
 
 }  // namespace Spotlight

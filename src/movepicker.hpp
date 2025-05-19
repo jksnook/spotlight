@@ -35,12 +35,12 @@ class MovePicker {
     bool tt_played;
     move16 killer_1;
     move16 killer_2;
-    bool generated_noisies;
-    bool generated_quiets;
     MoveList noisy_moves;
     uint16_t capture_index;
     MoveList quiets;
     uint16_t quiet_index;
+    bool generated_noisies;
+    bool generated_quiets;
     Position &pos;
     int (*quiet_history)[2][64][64];
 

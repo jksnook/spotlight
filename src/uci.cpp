@@ -7,7 +7,7 @@
 
 namespace Spotlight {
 
-UCI::UCI() : search_threads(1), position() {}
+UCI::UCI() :  position(), search_threads(1) {}
 
 void UCI::loop() {
     std::string line;

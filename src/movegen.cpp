@@ -597,11 +597,6 @@ bool inCheckSided(Position &pos) {
     // set up all bitboards for easy access according to friendly vs enemy with compiletime stuff
     constexpr const Color enemy_side = getOtherSide(side);
 
-    constexpr const Piece friendly_pawn = getPieceID(PAWN, side);
-    constexpr const Piece friendly_knight = getPieceID(KNIGHT, side);
-    constexpr const Piece friendly_bishop = getPieceID(BISHOP, side);
-    constexpr const Piece friendly_rook = getPieceID(ROOK, side);
-    constexpr const Piece friendly_queen = getPieceID(QUEEN, side);
     constexpr const Piece friendly_king = getPieceID(KING, side);
 
     constexpr const Piece enemy_pawn = getPieceID(PAWN, enemy_side);
@@ -610,9 +605,6 @@ bool inCheckSided(Position &pos) {
     constexpr const Piece enemy_rook = getPieceID(ROOK, enemy_side);
     constexpr const Piece enemy_queen = getPieceID(QUEEN, enemy_side);
     constexpr const Piece enemy_king = getPieceID(KING, enemy_side);
-
-    constexpr const int friendly_occupancy = getOccupancy(side);
-    constexpr const int enemy_occupancy = getOccupancy(enemy_side);
 
     // find the checks on the king
 

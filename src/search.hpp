@@ -84,7 +84,6 @@ class Search {
     }
     void clearKillers();
 
-    bool search_previous_pv;
     bool node_search;
     bool allow_nmp;
     bool times_up;
@@ -96,7 +95,7 @@ class Search {
 
     int time_check;
     int time_check_interval;
-    int max_nodes;
+    U64 max_nodes;
 
     move16 killer_1[MAX_PLY];
     move16 killer_2[MAX_PLY];
@@ -111,8 +110,6 @@ class Search {
 
     TT* tt;
     PVTable pv;
-    std::array<move16, MAX_PLY> old_pv;
-    int old_pv_length;
 };
 
 }  // namespace Spotlight

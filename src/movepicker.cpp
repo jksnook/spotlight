@@ -8,20 +8,20 @@ MovePicker::MovePicker(Position &_pos, int (*_quiet_history)[2][64][64], move16 
                        move16 _killer_1, move16 _killer_2)
     : stage(PickerStage::TT_MOVE),
       tt_move(_tt_move),
+      tt_played(false),
       killer_1(_killer_1),
       killer_2(_killer_2),
       capture_index(0),
       quiet_index(0),
       generated_noisies(false),
       generated_quiets(false),
-      tt_played(false),
       pos(_pos),
       quiet_history(_quiet_history) {}
 
 // Selection sort for getting the highest scored move
 move16 MovePicker::selectMove(int start, MoveList &scored_moves) {
     int best_score = IGNORE_MOVE - 1;
-    int k;
+    int k = 0;
     int s = scored_moves.size();
     for (int i = start; i < s; i++) {
         if (scored_moves[i].score > best_score) {
@@ -38,7 +38,7 @@ move16 MovePicker::selectMove(int start, MoveList &scored_moves) {
 // Select a move with score > 0, otherwise return null move
 move16 MovePicker::selectWinningCapture(int start, MoveList &scored_moves) {
     int best_score = IGNORE_MOVE - 1;
-    int k;
+    int k = 0;
     int s = scored_moves.size();
     for (int i = start; i < s; i++) {
         if (scored_moves[i].score > best_score) {
@@ -207,7 +207,7 @@ move16 MovePicker::getNextMove() {
             capture_index++;
             return m;
         } else {
-            stage == PickerStage::END;
+            stage = PickerStage::END;
         }
     }
 

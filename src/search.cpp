@@ -32,17 +32,19 @@ void PVTable::clearPV() {
 void PVTable::zeroLength(int ply) { pv_length[ply] = 0; }
 
 Search::Search(TT *_tt, std::atomic<bool> *_is_stopped, std::function<U64()> _getNodes)
-    : start_time(std::chrono::steady_clock::now()),
-      tt_hits(0),
-      allow_nmp(true),
-      enable_qsearch_tt(true),
-      tt(_tt),
-      is_stopped(_is_stopped),
+    : tt_hits(0),
+      nodes_searched(0),
       q_nodes(0),
       make_output(true),
-      times_up(false),
       thread_id(0),
-      getNodes(_getNodes) {
+      is_stopped(_is_stopped),
+      getNodes(_getNodes),
+      node_search(false),
+      allow_nmp(true),
+      times_up(false),
+      enable_qsearch_tt(true),
+      start_time(std::chrono::steady_clock::now()),
+      tt(_tt) {
     clearHistory();
     for (int i = 0; i < MAX_PLY; i++) {
         for (int k = 0; k < 256; k++) {
@@ -114,7 +116,7 @@ bool Search::timesUp() {
     }
     auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now() - start_time);
-    if (time_elapsed.count() > timer_duration) {
+    if (time_elapsed.count() > static_cast<int64_t>(timer_duration)) {
         is_stopped->store(true);
         times_up = true;
         return true;
@@ -129,7 +131,7 @@ bool Search::softTimesUp() {
     }
     auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now() - start_time);
-    if (time_elapsed.count() > soft_time_limit) {
+    if (time_elapsed.count() > static_cast<int64_t>(soft_time_limit)) {
         times_up = true;
         is_stopped->store(true);
         return true;
@@ -205,7 +207,6 @@ SearchResult Search::iterSearch(Position &pos, int max_depth) {
         // delta used for widening aspiration windows
         int delta = WINDOW_SIZE;
         int score;
-        U64 nps;
 
         while (true) {
             // call negaMax as a PV-node and root node at ply 0
@@ -417,7 +418,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
     Loop through all the legal moves.
     */
-    while (move = move_picker.getNextMove()) {
+    while ((move = move_picker.getNextMove())) {
         int score = 0;
 
         /*
@@ -451,7 +452,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
         prune late-ordered quiet moves in non-PV nodes at low depth
         */
-        if (!pv_node && !in_check && bad_quiets.size() > 2 + depth * 2 && depth <= 2 &&
+        if (!pv_node && !in_check && static_cast<int>(bad_quiets.size()) > 2 + depth * 2 && depth <= 2 &&
             isQuiet(move) && !inCheck(pos)) {
             pos.unmakeMove();
             continue;
@@ -698,7 +699,6 @@ int Search::qSearch(Position &pos, int depth, int ply, int alpha, int beta) {
 
 int Search::qScore(Position &pos) {
     setTimer(1000, 1000);
-    search_previous_pv = false;
     node_search = false;
     enable_qsearch_tt = false;
 

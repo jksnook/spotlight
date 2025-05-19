@@ -6,16 +6,16 @@
 namespace Spotlight {
 
 BitBoard getAttackersTo(Position &pos, int sq, BitBoard occupancy) {
-    return (knight_moves[sq] & (pos.bitboards[WHITE_KNIGHT] | pos.bitboards[BLACK_KNIGHT]) |
-            pawn_attacks[BLACK][sq] & pos.bitboards[WHITE_PAWN] |
-            pawn_attacks[WHITE][sq] & pos.bitboards[BLACK_PAWN] |
-            getMagicBishopAttack(sq, occupancy) &
+    return ((knight_moves[sq] & (pos.bitboards[WHITE_KNIGHT] | pos.bitboards[BLACK_KNIGHT])) |
+            (pawn_attacks[BLACK][sq] & pos.bitboards[WHITE_PAWN]) |
+            (pawn_attacks[WHITE][sq] & pos.bitboards[BLACK_PAWN]) |
+            (getMagicBishopAttack(sq, occupancy) &
                 (pos.bitboards[WHITE_BISHOP] | pos.bitboards[WHITE_QUEEN] |
-                 pos.bitboards[BLACK_BISHOP] | pos.bitboards[BLACK_QUEEN]) |
-            getMagicRookAttack(sq, occupancy) &
+                 pos.bitboards[BLACK_BISHOP] | pos.bitboards[BLACK_QUEEN])) |
+            (getMagicRookAttack(sq, occupancy) &
                 (pos.bitboards[WHITE_ROOK] | pos.bitboards[WHITE_QUEEN] |
-                 pos.bitboards[BLACK_ROOK] | pos.bitboards[BLACK_QUEEN]) |
-            king_moves[sq] & (pos.bitboards[WHITE_KING] | pos.bitboards[BLACK_KING])) &
+                 pos.bitboards[BLACK_ROOK] | pos.bitboards[BLACK_QUEEN])) |
+            (king_moves[sq] & (pos.bitboards[WHITE_KING] | pos.bitboards[BLACK_KING]))) &
            occupancy;
 }
 
@@ -39,7 +39,6 @@ void refreshXraysRanksFiles(Position &pos, int sq, BitBoard remaining_occupancy,
 
 // Static exchange evaluation for move ordering
 int see(Position &pos, move16 move) {
-    Square from_sq = getFromSquare(move);
     Square to_sq = getToSquare(move);
     move16 move_type = getMoveType(move);
     Color side = pos.side_to_move;
