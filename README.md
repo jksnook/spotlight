@@ -1,5 +1,5 @@
 # Spotlight
-A partial rewrite and cleanup of my C++ chess engine. Future name TBD.
+A piece-square table evaluation chess engine written in C++
 
 ## Features:
 
@@ -18,7 +18,7 @@ A partial rewrite and cleanup of my C++ chess engine. Future name TBD.
 * Internal iterative reductions
 * Late move reductions
 * Late move pruning
-* SEE pruning in quiescence search
+* SEE pruning
 
 ### Move ordering
 * TTmove
@@ -31,5 +31,4 @@ A partial rewrite and cleanup of my C++ chess engine. Future name TBD.
 * Tuned entirely with self-generated data
 
 ## Planned Improvements:
-* Better eval (eventually)
 * Refactor movegen and move ordering
