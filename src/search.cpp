@@ -457,8 +457,8 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
         prune late-ordered quiet moves in non-PV nodes at low depth
         */
-        if (!pv_node && !skip_quiets && !in_check &&
-            static_cast<int>(bad_quiets.size()) > 2 + depth * 2 && depth <= 2 && isQuiet(move) &&
+        if (!pv_node && !skip_quiets && !in_check && depth <= 7 &&
+            static_cast<int>(bad_quiets.size()) > 1 + depth * 2 + 3 * improving && isQuiet(move) &&
             !inCheck(pos)) {
             pos.unmakeMove();
             skip_quiets = true;
