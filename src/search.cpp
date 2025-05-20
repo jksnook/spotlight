@@ -420,9 +420,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     Loop through all the legal moves, or only noisy moves, depending on if futility pruning
     or late move pruning has been activated
     */
-    while ((skip_quiets ? move = move_picker.getNextCapture() : move = move_picker.getNextMove())) {
-        int score = 0;
-
+    while (true) {
         /*
         Futility pruning
 
@@ -430,6 +428,11 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         moves with a decent chance of raising alpha. (in this case only captures and promotions)
         */
         if (allow_fprune && !skip_quiets && best_score > -MATE_THRESHOLD) skip_quiets = true;
+
+        // get the next move from the move picker
+        skip_quiets ? move = move_picker.getNextCapture() : move = move_picker.getNextMove();
+        // break if there is no next move
+        if (!move) break;
 
         /*
         SEE pruning
@@ -464,6 +467,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
         // increase the move counter only for moves that aren't pruned
         num_moves++;
+        int score = 0;
 
         /*
         Late Move Reductions
