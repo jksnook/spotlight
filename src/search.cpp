@@ -402,6 +402,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     move16 best_move = NULL_MOVE;
     int num_moves = 0;
     bool is_upper_bound = true;
+    bool skip_quiets = false;
 
     // List of all the quiet moves that didn't cause a beta cutoff. used for updating history
     MoveList bad_quiets;
@@ -416,9 +417,10 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     /*
     Main Move Loop
 
-    Loop through all the legal moves.
+    Loop through all the legal moves, or only noisy moves, depending on if futility pruning
+    or late move pruning has been activated
     */
-    while ((move = move_picker.getNextMove())) {
+    while ((skip_quiets ? move = move_picker.getNextCapture() : move = move_picker.getNextMove())) {
         int score = 0;
 
         /*
@@ -427,7 +429,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         If our eval is far below alpha at a low depth, then after the first move search only
         moves with a decent chance of raising alpha. (in this case only captures and promotions)
         */
-        if (allow_fprune && best_score > -MATE_THRESHOLD && !isCaptureOrPromotion(move)) continue;
+        if (allow_fprune && !skip_quiets && best_score > -MATE_THRESHOLD) skip_quiets = true;
 
         /*
         SEE pruning
@@ -452,9 +454,11 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
         prune late-ordered quiet moves in non-PV nodes at low depth
         */
-        if (!pv_node && !in_check && static_cast<int>(bad_quiets.size()) > 2 + depth * 2 && depth <= 2 &&
-            isQuiet(move) && !inCheck(pos)) {
+        if (!pv_node && !skip_quiets && !in_check &&
+            static_cast<int>(bad_quiets.size()) > 2 + depth * 2 && depth <= 2 && isQuiet(move) &&
+            !inCheck(pos)) {
             pos.unmakeMove();
+            skip_quiets = true;
             continue;
         }
 
@@ -561,7 +565,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     }
 
     // check for checkmate and stalemate
-    if (num_moves == 0) {
+    if (num_moves == 0 && !move_picker.getNextMove()) {
         if (inCheck(pos)) {
             // subtract our current ply from the mate score to encourage faster checkmates
             return -MATE_SCORE + ply;
