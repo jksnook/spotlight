@@ -4,7 +4,7 @@ core.*
 selfplay.txt
 selfplay*.txt
 tune*.txt
-piece_squares.txt
+piece_squares*.txt
 spotlight
 perf.data
 data*.txt
