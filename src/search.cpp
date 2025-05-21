@@ -412,7 +412,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
     killer_2[ply + 1] = NULL_MOVE;
 
     // enable or disable futility pruning
-    bool allow_fprune = !pv_node && depth <= 4 && !in_check && s_eval < alpha - 50 - 80 * depth;
+    bool allow_fprune = !pv_node && depth <= 5 && !in_check && s_eval < alpha - 150 - 50 * depth;
 
     /*
     Main Move Loop
