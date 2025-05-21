@@ -546,7 +546,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
                     // save this move as a killer move
                     saveKiller(ply, move);
                     // update butterfly history
-                    int bonus = depth * depth;
+                    int bonus = depth;
                     updateHistory(pos.side_to_move, getFromSquare(move), getToSquare(move), bonus);
                     // apply malus to the previous quiet moves
                     for (auto &bq : bad_quiets) {
