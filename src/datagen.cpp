@@ -7,6 +7,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <algorithm>
 
 namespace Spotlight {
 
@@ -162,7 +163,7 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
 
             is_stopped.store(false);
             SearchResult search_result =
-                search.nodeSearch(pos, MAX_PLY, node_count + myRandom() % (node_count / 5));
+                search.nodeSearch(pos, MAX_PLY, node_count + myRandom() % (node_count / 10));
 
             move16 move = search_result.move;
             int score = search_result.score;
@@ -179,8 +180,9 @@ void playGames(int num_games, U64 node_count, int id, int& games_played, std::mu
         }
 
         if (output_file.is_open()) {
-            for (const auto& f : fens) {
-                output_file << f << " " << result << "\n";
+            // log a maximum of about 10 positions from each game to the output file
+            for (unsigned int f = 0; f < fens.size(); f += std::max(static_cast<int>(fens.size() / 10), 1)) {
+                output_file << fens[f] << " " << result << "\n";
             }
         }
     }
