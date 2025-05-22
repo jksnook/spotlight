@@ -51,7 +51,7 @@ Search::Search(TT *_tt, std::atomic<bool> *_is_stopped, std::function<U64()> _ge
             /*
             Late move reductions calculated here
 
-            indices are [improving][depth][num_moves]
+            indices are [depth][num_moves]
             */
             lmr_table[i][k] = log(i) * log(k) / 2.5 + 2.5;
         }
