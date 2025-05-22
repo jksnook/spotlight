@@ -51,9 +51,9 @@ Search::Search(TT *_tt, std::atomic<bool> *_is_stopped, std::function<U64()> _ge
             /*
             Late move reductions calculated here
 
-            indices are [improving][depth][num_moves]
+            indices are [depth][num_moves]
             */
-            lmr_table[i][k] = log(i) * log(k) / 2.5 + 2.5;
+            lmr_table[i][k] = log(i) * log(k) / 2.5 + 2.8;
         }
 
         // clear the killer moves
@@ -478,7 +478,7 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
         be good
         */
         bool do_full_search = true;
-        if (bad_quiets.size() > 1 && depth > 2 && !in_check &&
+        if (bad_quiets.size() > 1 && depth > 1 && !in_check &&
             (!pv_node || !isCaptureOrPromotion(move))) {
             // get pre-calculated reduction from the table
             int lmr_reduction = lmr_table[depth][num_moves];
@@ -488,6 +488,11 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
             lmr_reduction -= inCheck(pos);
 
             lmr_reduction -= isCaptureOrPromotion(move);
+
+            // don't drop directly into qsearch if we're improving
+            if (improving) {
+                lmr_reduction = std::min(lmr_reduction, depth - 1);
+            }
 
             // don't bother unless we have an actual reduction
             if (lmr_reduction > 1) {
