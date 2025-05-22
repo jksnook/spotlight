@@ -489,9 +489,6 @@ int Search::negaMax(Position &pos, int depth, int ply, int alpha, int beta) {
 
             lmr_reduction -= isCaptureOrPromotion(move);
 
-            // don't drop directly into qsearch
-            lmr_reduction = std::min(lmr_reduction, depth - 1);
-
             // don't bother unless we have an actual reduction
             if (lmr_reduction > 1) {
                 score = -negaMax<false, true, false>(pos, depth - lmr_reduction, ply + 1,
